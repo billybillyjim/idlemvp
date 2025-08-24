@@ -1,0 +1,13 @@
+Tilly's minimal activities of a state are
+War-making – "eliminating or neutralizing their own rivals"
+State-making – "eliminating or neutralizing their rivals inside their own territory"
+Protection – "eliminating or neutralizing the enemies of their clients"  These first three can be wrapped up into some kind of military system. Maybe even just manpower being leveraged by 3 sliders?
+Extraction – "acquiring the means of carrying out the first three activities" - a taxation system - all goods produced can be taxed. Will need a better economic system for this.
+Adjudication – "authoritative settlement of disputes among members of the population" - a law and order system A serires of toggles for what is allowed with bonuses/tradeoffs?
+Distribution – "intervention in the allocation of goods among the members of the population" - some kind of welfare system 
+Production – "control of the creation and transformation of goods and services produced by the population" - hire/fire workers via the law system
+
+
+Buildings should supply value to a certain amount of population. High value when you have enough, low value if you overbuild or underbuild.
+Production and consumption need to be simplified, right now it isn't clear how you get 1 from the other. Maybe describe it as hourly production and daily consumption?
+

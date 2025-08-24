@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Technology Dependency Graph</title>
+  <script src="https://d3js.org/d3.v7.min.js"></script>
+  <style>
+    body { font-family: sans-serif; margin: 0; overflow: hidden;background-color:black; }
+    .node circle { fill: #69b3a2; stroke: #333; stroke-width: 1.5px; }
+    .node text { font-size: 12px; pointer-events: none; }
+    .link { stroke: #999; stroke-opacity: 0.6; stroke-width: 1.5px; marker-end: url(#arrow); }
+  </style>
+</head>
+<body>
+  <div style="color:white;">
+      <div>Legend</div>
+  <div>Green: Has requirements and is a requirement</div>
+  <div>Orange: Has no requirements (Available at start of game.)</div>
+  <div>Red: Is a requirement for nothing.</div>
+  </div>
+
+  <script type="module">
+    import technologies from './data/technologydata.js'
+
+    function buildDependencyGraph() {
+      const graph = {};
+      for (const tech of technologies) {
+        graph[tech.Name] = { dependsOn: [], requiredBy: [] };
+      }
+
+      for (const tech of technologies) {
+        const reqs = tech.Requirements?.Technologies || [];
+        for (const dep of reqs) {
+          if (!graph[dep]) graph[dep] = { dependsOn: [], requiredBy: [] };
+          graph[tech.Name].dependsOn.push(dep);
+          graph[dep].requiredBy.push(tech.Name);
+        }
+      }
+
+      // Build node-link structure for D3
+       const nodes = Object.entries(graph).map(([name, rels]) => ({
+            id: name,
+            dependsOn: rels.dependsOn,
+            requiredBy: rels.requiredBy
+        }));
+
+      const links = [];
+
+      for (const [target, data] of Object.entries(graph)) {
+        for (const source of data.dependsOn) {
+          links.push({ source, target });
+        }
+      }
+
+      return { nodes, links };
+    }
+
+    const { nodes, links } = buildDependencyGraph();
+
+    const width = window.innerWidth;
+    const height = window.innerHeight;
+
+    const svg = d3.select("body").append("svg")
+        .attr("width", width)
+        .attr("height", height);
+    const zoomTarget = svg.append("g")
+    .classed("zoom-target", true);
+
+// Setup zoom behavior
+const zoom = d3.zoom()
+    .scaleExtent([0.5, 5])
+    .on("zoom", function (event) {
+        zoomTarget.attr("transform", event.transform);
+    });
+
+// Attach zoom to the SVG
+svg.call(zoom);
+    // Define arrowhead marker
+    zoomTarget.append("defs").append("marker")
+      .attr("id", "arrow")
+      .attr("viewBox", "0 -5 10 10")
+      .attr("refX", 15)
+      .attr("refY", 0)
+      .attr("markerWidth", 6)
+      .attr("markerHeight", 6)
+      .attr("orient", "auto")
+      .append("path")
+      .attr("d", "M0,-5L10,0L0,5")
+      .attr("fill", "#999");
+
+    const simulation = d3.forceSimulation(nodes)
+        .force("link", d3.forceLink(links).id(d => d.id).distance(100))
+        .force("charge", d3.forceManyBody().strength(-400))
+        .force("center", d3.forceCenter(width / 2, height / 2));
+
+    const link = zoomTarget.append("g")
+        .attr("stroke", "#999")
+        .attr("stroke-opacity", 0.6)
+        .selectAll("line")
+        .data(links)
+        .enter().append("line")
+        .attr("class", "link");
+
+    const node = zoomTarget.append("g")
+        .attr("stroke", "#fff")
+        .attr("stroke-width", 1.5)
+        .selectAll("g")
+        .data(nodes)
+        .enter().append("g")
+        .call(d3.drag()
+              .on("start", dragstarted)
+              .on("drag", dragged)
+              .on("end", dragended));
+
+    node.append("circle")
+        .attr("r", 12)
+        .attr("fill", function(d) {
+            const hasAttached = d.requiredBy && d.requiredBy.length > 0;
+            const hasDeps = d.dependsOn && d.dependsOn.length > 0;
+
+            if (!hasAttached) return "red";      // not required by anything
+            if (!hasDeps) return "orange";       // depends on nothing
+            return "#69b3a2";   
+        });
+
+    node.append("text")
+        .text(d => d.id)
+        .attr("x", 14)
+        .attr("y", 4);
+
+    simulation.on("tick", () => {
+      link
+          .attr("x1", d => d.source.x)
+          .attr("y1", d => d.source.y)
+          .attr("x2", d => d.target.x)
+          .attr("y2", d => d.target.y);
+
+      node
+          .attr("transform", d => `translate(${d.x},${d.y})`);
+    });
+
+    function dragstarted(event, d) {
+      if (!event.active) simulation.alphaTarget(0.3).restart();
+      d.fx = d.x;
+      d.fy = d.y;
+    }
+
+    function dragged(event, d) {
+      d.fx = event.x;
+      d.fy = event.y;
+    }
+
+    function dragended(event, d) {
+      if (!event.active) simulation.alphaTarget(0);
+      d.fx = null;
+      d.fy = null;
+    }
+  </script>
+</body>
+</html>
