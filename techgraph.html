@@ -79,7 +79,7 @@ svg.call(zoom);
     zoomTarget.append("defs").append("marker")
       .attr("id", "arrow")
       .attr("viewBox", "0 -5 10 10")
-      .attr("refX", 15)
+      .attr("refX", 20)   // adjust so arrow tip ends at node edge
       .attr("refY", 0)
       .attr("markerWidth", 6)
       .attr("markerHeight", 6)
@@ -96,10 +96,11 @@ svg.call(zoom);
     const link = zoomTarget.append("g")
         .attr("stroke", "#999")
         .attr("stroke-opacity", 0.6)
-        .selectAll("line")
-        .data(links)
-        .enter().append("line")
-        .attr("class", "link");
+      .selectAll("line")
+      .data(links)
+      .enter().append("line")
+        .attr("class", "link")
+        .attr("marker-end", "url(#arrow)");  // force apply arrow
 
     const node = zoomTarget.append("g")
         .attr("stroke", "#fff")
