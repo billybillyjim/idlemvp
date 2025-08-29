@@ -9,9 +9,7 @@ export default {
     },
     data: function () {
         return {
-            testCode: `if wood < 50 and there are 1 farmers and there are 15 unemployed people build a hut.
-if food production is less than food consumption, hire farmers.
-If there are more than 10 unemployed people then hire a lumberjack.`,
+            testCode: `if wood < 50 and there are 1 farmers and there are 15 unemployed print 100`,
             errors: [],
             content: '',
             scrollTop:0,
@@ -54,7 +52,7 @@ If there are more than 10 unemployed people then hire a lumberjack.`,
                     code: 'if Food < x then hire Farmers until there are x.',
                     expected: [
                         {
-                            "type": "Conditional",
+                            "type": "Evaulatable",
                             "test": {
                                 "left": {
                                     "type": "IDENT",
@@ -86,7 +84,7 @@ If there are more than 10 unemployed people then hire a lumberjack.`,
                                     line:1
                                 },
                                 "condition": {
-                                    "type": "Conditional",
+                                    "type": "Evaulatable",
                                     "action": null,
                                     "test": {
                                         "left": {
@@ -113,7 +111,7 @@ If there are more than 10 unemployed people then hire a lumberjack.`,
         }
     },
     created: function () {
-        //this.runTests();
+        this.runTests();
     },
     mounted: function () {
         const textarea = document.querySelector('#code-text-area');
