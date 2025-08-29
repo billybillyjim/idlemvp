@@ -6,10 +6,6 @@ Carts and Wagons
 
 The Alphabet
 
-The Water Wheel
-
-Irrigation Systems
-
 Cuneiform Writing
 
 The Chariot
@@ -149,3 +145,165 @@ The Cart Pulled by Oxen
 Bridges (Wooden Beams)
 
 Battering Rams
+
+Trellises
+    -Basic Woodworking
+    -Rope
+
+Terracing
+    -Irrigation Systems
+    -Lunar Calendar (Some kind of crop time keeping)
+
+Windmill
+    -Water Wheel
+    -Linen Fabric
+    -Saddle Quern
+
+Oil Press
+    -The Lever
+
+Smoked Meats
+    -Firemaking
+    -Basic Woodworking
+
+Winery
+    -Pottery
+    -Basic Architecture
+    -Fermentation
+
+Granaries
+    -Mudbricks
+    -Basic Architecture
+
+Simple Lathe
+    -Spinning Wheel
+    -Basic Woodworking
+
+Wooden Bridges
+    -Basic Woodworking
+    -Basic Architecture
+    -Dirt Roads
+
+Sewing Needles
+    -Bronze metalworking
+    -Fabric
+
+Canvas Sails
+    -Fishing Boats
+    -Loom
+
+Simple Maps
+    -Measuring Sticks
+    -Writing
+
+Postal System
+    -Dirt Roads
+    -Wooden Bridges
+    -Writing
+    -Boundary Slabs
+Pumice
+    -Limestone
+Pozzolana
+    -Limestone
+Quicklime
+    -Limestone
+Concrete
+    -Pumice
+    -Pozzolana
+    -Quicklime
+
+Irrigation Systems
+    -Corvee Labor
+    -Dirt Roads
+    -Plumb Line
+
+Aqueduct
+    -Concrete
+    -Arch
+    -Basic Architecture
+    -Irrigation Systems
+
+Quarrying
+    -Mining
+
+Sledge Transports
+    -Basic Woodworking
+
+Basic Stoneworking
+    -Quarrying
+    -Sledge Transports
+    -Iron Metalworking
+    -Writing
+
+Boundary Slabs
+    -Corvee Labor
+    -Dirt Roads
+    -Basic Stoneworking
+
+Cobblestone Roads
+    -Boundary Slabs
+    
+The Arch
+    -Basic Architecture
+    -Basic Stoneworking
+Urban Planning
+    -Writing
+    -
+Sewer System
+    -Lead Pipes
+    -Basic Architecture
+    -Urban Planning
+
+Stone Bridges
+    -The Arch
+    -Basic Stoneworking
+    -Dirt Roads
+
+Domes
+    -The Arch
+    -Bronze Metalworking
+
+Hypocausts
+    -Cement
+    -Domes
+    -Bronze Metalworking
+    -Firemaking
+
+
+Newspapers
+    -Writing
+    -Scolls
+
+Intercalary Months
+    -Solar Calendar
+    
+Leap Year
+    -Intercalary Months
+    -Some kind of political requirement
+Papyrus
+    -Some kind of Agriculture
+    -Writing
+Scroll
+    -Papyrus
+    -Writing
+Wax Tablets
+    -Wax
+    -Basic Woodworking
+    -Writing
+Codex
+    -Wax Tablets
+    -Sewing
+    -Scroll
+    -Hide Tanning
+Basic Societal Structure
+    -Population of 151
+Basic Laws
+    -Writing
+    -Basic Societal Structure
+State Subsidy
+Crane
+Glassblowing
+Lighthouses
+Lead metalworking
+Lead Pipes
+Hydraulic Cement
