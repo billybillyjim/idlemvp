@@ -1368,7 +1368,6 @@ const gamevm = Vue.createApp({
                 //Until or if or when
                 if(until.type == 'UNTIL' || until.type =='CONDITIONAL'){
                     actionConditional = this.parseConditional(actionTarget);
-
                 }
                 return {
                     type:'Action',
@@ -1416,7 +1415,7 @@ const gamevm = Vue.createApp({
                 }
 
             },
-            parseConditional(actionTarget){
+            parseEvaluatable(actionTarget){
                 //If there are more than 5 unemployed
                 //Until there are 3
                 //when food production is > 10
@@ -1425,64 +1424,79 @@ const gamevm = Vue.createApp({
                 let rhs = null;
                 let lhs = null;
 
-                let condition = this.next();
-                
-                if(condition.type == 'CONDITIONAL'){
-                    //there are more than 5 unemployed
-                    let next = this.peek();
-                    //Ignore there ares.
-                    if(next.type == 'THERE_ARE'){
+                //there are more than 5 unemployed
+                let next = this.peek();
+                //Ignore there ares.
+                if(next.type == 'THERE_ARE'){
+                    this.consume();
+                }
+                //Either a comparator or an identity
+                next = this.peek();
+                //more than 5 unemployed
+                if(next.type == 'OPERATOR'){
+                    operator = this.next();
+                    //5 unemployed
+                    let count = this.next();
+                    if(count.type == 'NUMBER'){
+                        rhs = count;
+                    }
+                    //unemployed
+                    let final = this.next();
+                    if(final.type == 'DOT'){
+                        //If unemployed wasn't mentioned, assume the count refers to the action target.
+                        //for example, hire farmers if there are more than 5 
+                        //Then 5 refers to farmers.
+                        lhs = actionTarget;
+                    }
+                    else if(final.type == 'IDENT'){
+                        lhs = final;
+                    }
+                    else{
+                        condition = {
+                            type:'SyntaxError',
+                            value:{'Count':count,'Final':final}
+                        }
+                    }
+                }
+                else if(next.type == 'IDENT'){
+                    //food production is greater than 10
+                    lhs = this.next();
+                    let potentialModifier = this.peek();
+                    
+                    if(potentialModifier.type == 'CONSUMPTION' || potentialModifier.type == 'PRODUCTION'){
+                        lhs.value += ' ' + potentialModifier.value;
                         this.consume();
                     }
-                    //Either a comparator or an identity
-                    next = this.peek();
-                    //more than 5 unemployed
-                    if(next.type == 'OPERATOR'){
-                        operator = this.next();
-                        //5 unemployed
-                        let count = this.next();
-                        if(count.type == 'NUMBER'){
-                            rhs = count;
-                        }
-                        //unemployed
-                        let final = this.next();
-                        if(final.type == 'DOT'){
-                            //If unemployed wasn't mentioned, assume the count refers to the action target.
-                            //for example, hire farmers if there are more than 5 
-                            //Then 5 refers to farmers.
-                            lhs = actionTarget;
-                        }
-                        else if(final.type == 'IDENT'){
-                            lhs = final;
-                        }
-                        else{
-                            condition = {
-                                type:'SyntaxError',
-                                value:{'Count':count,'Final':final}
-                            }
-                        }
-                    }
-                    else if(next.type == 'IDENT'){
-                        //food production is greater than 10
-                        lhs = this.next();
-                        let potentialModifier = this.peek();
-                        
-                        if(potentialModifier.type == 'CONSUMPTION' || potentialModifier.type == 'PRODUCTION'){
-                            lhs.value += ' ' + potentialModifier.value;
-                            this.consume();
-                        }
-                        operator = this.next();
-                        rhs = this.next();
-                        potentialModifier = this.peek();
-                        
-                        if(potentialModifier.type == 'CONSUMPTION' || potentialModifier.type == 'PRODUCTION'){
-                            rhs.value += ' ' + potentialModifier.value;
-                            this.consume();
-                        }
-                    }
+                    operator = this.next();
+                    rhs = this.next();
+                    potentialModifier = this.peek();
                     
+                    if(potentialModifier.type == 'CONSUMPTION' || potentialModifier.type == 'PRODUCTION'){
+                        rhs.value += ' ' + potentialModifier.value;
+                        this.consume();
+                    }
                 }
-                else if(condition.type == 'UNTIL'){
+                else if(next.type == 'NUMBER'){
+                    console.log('yo');
+                }
+                return {
+                        type:'Evaulatable',
+                        test: {
+                            left:lhs,
+                            op:operator,
+                            right:rhs
+                        }
+                    }
+            },
+            parseUntil(actionTarget){
+                let output = {type:'Evaulatable'};
+                //If there are more than 5 unemployed
+                    //Until there are 3
+                    //when food production is > 10
+                    //until there are x
+                    let operator = null;
+                    let rhs = null;
+                    let lhs = null;
                     //there are 5
                     //there are 10 farmers
                     //there are x
@@ -1507,8 +1521,32 @@ const gamevm = Vue.createApp({
                         };
                         rhs = count;
                     }
-                }
+                    output.test = {
+                            left:lhs,
+                            op:operator,
+                            right:rhs
+                    };
+                    return output;
+            },
+            parseConditional(actionTarget){
+                
+                let output = {type:'Evaulatable'};
+                let condition = this.next();
 
+                if(condition.type == 'CONDITIONAL'){
+                    output = this.parseEvaluatable(actionTarget);
+                }
+                else if(condition.type == 'UNTIL'){
+                    output = this.parseUntil(actionTarget);
+                }
+                if(this.peek().type == 'AND'){
+                    output = {
+                        type:"BooleanOperator",
+                        value:this.next(),
+                        lhs:this.parseEvaluatable(actionTarget),
+                        rhs:JSON.parse(JSON.stringify(output))
+                    }
+                }
                 let optionalThen = this.peek();
                 if(optionalThen.type == 'THEN'){
                     this.consume();
@@ -1519,17 +1557,10 @@ const gamevm = Vue.createApp({
 
                 if(actionToken.type == "ACTION"){
                     action = this.parseAction();
+                    output.action = action;
                 }
-                
-                return {
-                        type:'Conditional',
-                        test: {
-                            left:lhs,
-                            op:operator,
-                            right:rhs
-                        },
-                        action
-                    }
+
+                return output;
             },
             parsePrint(){
                 let printCommand = this.next();
@@ -1630,7 +1661,7 @@ const gamevm = Vue.createApp({
                         }
                         break;
 
-                    case 'Conditional':
+                    case 'Evaulatable':
                         const conditionResult = this.evalNode(
                             {
                                 type:'BinaryExpression', 
@@ -1644,8 +1675,6 @@ const gamevm = Vue.createApp({
                             return this.evalNode(node.action, env);
                         }
                         return conditionResult;
-                        
-                        break;
 
                     case 'Assignment':
                         console.log("Assigning...", node);
