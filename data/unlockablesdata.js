@@ -78,7 +78,7 @@ export default [
         "Name": "Tanner",
         "Type": "Profession",
         "Cost": { "Food": 1000 },
-        "Requirements": { "Technologies": ["Tanning"] },
+        "Requirements": { "Technologies": ["Hide Tanning"] },
         "BaseDemand": { 'Food': 1.2 },
         "ModifiedDemand": {},
         Unlock(vm) {
@@ -187,7 +187,7 @@ export default [
                     Name: 'Miner',
                     Count: 0,
                     Cost: { 'Food': 3.45 },
-                    Produces: { 'Ore': 2, 'Clay': 1 },
+                    Produces: { 'Ore': 2, 'Clay': 1, 'Stone':3 },
                     Unlocked: true,
                     Visible: true,
                     "BaseDemand": { 'Food': 2, 'Stone': 0.1 },
