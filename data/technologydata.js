@@ -44,6 +44,7 @@ export default [
         Visible: false,
         Complexity: 15,
         isLocked: true,
+        QualityOfLifeBoost:0.2,
         demandModifiers: {
             Global: {},
             PerCapita: {}
@@ -62,6 +63,7 @@ export default [
         Visible: false,
         Complexity: 30,
         isLocked: true,
+        QualityOfLifeBoost:0.2,
         demandModifiers: {
             Global: {},
             PerCapita: {}
@@ -72,7 +74,7 @@ export default [
         },
     },
     {
-        Name: "Tanning",
+        Name: "Hide Tanning",
         Description: "There's gotta be something we can do with all these animal skins.",
         Cost: { "Food": 200 },
         Requirements: { Technologies: ["Stone Tools"] },
@@ -82,7 +84,7 @@ export default [
         isLocked: true,
         demandModifiers: {
             Global: {},
-            PerCapita: {}
+            PerCapita: {'Hides':0.1}
         },
         Unlock(vm) {
             vm.logit("We've found something to do with all of these animal skins.");
@@ -136,7 +138,7 @@ export default [
         isLocked: true,
         demandModifiers: {
             Global: {},
-            PerCapita: {},
+            PerCapita: {"Clay":0.1},
         },
         Unlock(vm) {
             vm.logit("The stuff in the ground was clay. Now we know how to make pots like we've seen others make!");
@@ -154,7 +156,7 @@ export default [
         isLocked: true,
         demandModifiers: {
             Global: {},
-            PerCapita: {},
+            PerCapita: {"Clay":0.1},
         },
         Unlock(vm) {
             vm.logit("It turns out that this new spinny wheel is great for making cups and bowls.");
@@ -210,8 +212,8 @@ export default [
         isLocked: true,
         demandModifiers: {
             Global: {},
-            PerCapita: { 'Bronze': 0.001 },
-            Farmer: { 'Bronze Sickles': 0.01 }
+            PerCapita: { 'Bronze Metal': 0.001 },
+            Farmer: { 'Bronze Tools': 0.01 }
         },
         Unlock(vm) {
             vm.logit("Our farmers can harvest more easily with bronze sickles. Our people are beginning to want bronze for all sorts of things now.");
@@ -266,7 +268,7 @@ export default [
         isLocked: true,
         demandModifiers: {
             Global: {},
-            PerCapita: {},
+            PerCapita: {"Stone":0.1},
         },
         Unlock(vm) {
             vm.logit("These sharper stone tools will come in handy for all sorts of things.");
@@ -284,7 +286,7 @@ export default [
         isLocked: true,
         demandModifiers: {
             Global: {},
-            PerCapita: {},
+            PerCapita: {Rope:0.1},
         },
         Unlock(vm) {
             vm.logit("We have developed an easy way to attach things together!");
@@ -853,7 +855,7 @@ export default [
         Name: "Basic Architecture",
         Description: "We should try to figure out the rules for what we can build and how big we can build it.",
         Cost: { "Food": 14000, "Wood": 3000 },
-        Requirements: { Technologies: ["Mudbricks", "Measuring Sticks", "Rope", "Basic Woodworking", "Thatching"] },
+        Requirements: { Technologies: ["Mudbricks", "Measuring Sticks", "Rope", "Basic Woodworking", "Thatching", "Plumb Line"] },
         Progress: 0,
         Visible: false,
         Complexity: 10000,
@@ -925,7 +927,7 @@ export default [
         Name: "The Lever",
         Description: "You can use a long stick to move something more easily.",
         Cost: { "Wood": 50000, "Food": 30000, "Bronze": 1200 },
-        Requirements: { Technologies: ["Wheel", "Basic Woodworking", "Saddle Quern", "Basic Irrigation"] },
+        Requirements: { Technologies: [ "Basic Woodworking", "Saddle Quern",  "Simple Machines"] },
         Progress: 0,
         Visible: false,
         Complexity: 25000,
@@ -1033,7 +1035,7 @@ export default [
         Name: "The Screw",
         Description: "We can modify dowels to hold things even better.",
         Cost: { "Wood": 100000 },
-        Requirements: { Technologies: ["Dowel"] },
+        Requirements: { Technologies: ["Dowel", "Simple Machines"] },
         Progress: 0,
         Visible: false,
         Complexity: 18000,
@@ -1051,7 +1053,7 @@ export default [
         Name: "The Pulley",
         Description: "We may be able to use ropes and wheels to pull things.",
         Cost: { "Wood": 100000 },
-        Requirements: { Technologies: ["Wheel", "Basic Woodworking", "Rope"] },
+        Requirements: { Technologies: ["Wheel", "Simple Machines", "Rope"] },
         Progress: 0,
         Visible: false,
         Complexity: 16000,
@@ -1069,7 +1071,7 @@ export default [
         Name: "Simple Machines",
         Description: "If we used water to spin a wheel, we could grind grain more easily.",
         Cost: { "Food": 100000 },
-        Requirements: { Technologies: ["The Pulley", "The Screw", "The Lever"] },
+        Requirements: { Technologies: ["Basic Woodworking"] },
         Progress: 0,
         Visible: false,
         Complexity: 14000,
@@ -1087,7 +1089,7 @@ export default [
         Name: "Water Wheel",
         Description: "If we used water to spin a wheel, we could grind grain more easily.",
         Cost: { "Wood": 10000, "Iron": 10000 },
-        Requirements: { Technologies: ["Wheel", "Basic Woodworking", "Saddle Quern", "Basic Irrigation", "Simple Machines"] },
+        Requirements: { Technologies: ["Wheel", "Basic Woodworking", "Saddle Quern", "Basic Irrigation", "The Pulley", "The Lever", "The Screw"] },
         Progress: 0,
         Visible: false,
         Complexity: 100000,
