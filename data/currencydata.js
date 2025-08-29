@@ -24,6 +24,14 @@ export default
             Type:'Raw Material',
             Unlocked:true,
         },
+        Stone:{
+            Name:'Stone',
+            Value:1,
+            Amount:0,
+            Icon:'./icons/stone.svg',
+            Type:'Raw Material',
+            Unlocked:true,
+        },
         Clay:{
             Name:'Clay',
             Value:1,
