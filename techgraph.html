@@ -1,257 +1,415 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
-  <meta charset="UTF-8">
-  <title>Technology Dependency Graph</title>
-  <script src="https://d3js.org/d3.v7.min.js"></script>
-  <style>
-    body { font-family: sans-serif; margin: 0; overflow: hidden;background-color:black; }
-    .node circle { fill: #69b3a2; stroke: #333; stroke-width: 1.5px; }
-    .node text { font-size: 12px; pointer-events: none; }
-    .link { stroke: #999; stroke-opacity: 0.6; stroke-width: 1.5px; marker-end: url(#arrow); }
-.tooltip {
-  position: absolute;
-  max-width: 280px;
-  background: #1e1e1e;
-  color: #eaeaea;
-  border: 1px solid #444;
-  border-radius: 10px;
-  padding: 10px 12px;
-  box-shadow: 0 8px 20px rgba(0,0,0,.5);
-  pointer-events: auto;
-  font-size: 12px;
-  z-index: 10;
-}
-.tooltip.hidden { display: none; }
-.tooltip .title { font-weight: 700; margin-bottom: 6px; }
-.tooltip .row { margin: 2px 0; opacity: .9; }
-.tooltip .k { color: #aaa; }
-.tooltip .close {
-  float: right; cursor: pointer; opacity: .7;
-  font-weight: 700; margin-left: 8px;
-}
+	<meta charset="UTF-8">
+	<title>Technology Dependency Graph</title>
+	<script src="https://d3js.org/d3.v7.min.js"></script>
+	<style>
+		body {
+			font-family: sans-serif;
+			margin: 0;
+			overflow: hidden;
+			background-color: black;
+		}
 
-  </style>
+		.node circle {
+			fill: #69b3a2;
+			stroke: #333;
+			stroke-width: 1.5px;
+		}
+
+		text {
+			color: white;
+			font-size: 14px;
+			/* size */
+			font-family: "Arial", sans-serif;
+			/* type */
+			pointer-events: none;
+			stroke-width: 2px;
+			stroke: black;
+			paint-order: stroke fill;
+		}
+
+		.link {
+			stroke: #999;
+			stroke-opacity: 0.6;
+			stroke-width: 1.5px;
+			marker-end: url(#arrow);
+		}
+
+		.tooltip {
+			position: absolute;
+			max-width: 280px;
+			background: #1e1e1e;
+			color: #eaeaea;
+			border: 1px solid #444;
+			border-radius: 10px;
+			padding: 10px 12px;
+			box-shadow: 0 8px 20px rgba(0, 0, 0, .5);
+			pointer-events: auto;
+			font-size: 12px;
+			z-index: 10;
+		}
+
+		.tooltip.hidden {
+			display: none;
+		}
+
+		.tooltip .title {
+			font-weight: 700;
+			margin-bottom: 6px;
+		}
+
+		.tooltip .row {
+			margin: 2px 0;
+			opacity: .9;
+		}
+
+		.tooltip .k {
+			color: #aaa;
+		}
+
+		.tooltip .close {
+			float: right;
+			cursor: pointer;
+			opacity: .7;
+			font-weight: 700;
+			margin-left: 8px;
+		}
+	</style>
 </head>
+
 <body>
-  <div style="color:white;">
-      <div>Legend</div>
-  <div>Green: Has requirements and is a requirement</div>
-  <div>Orange: Has no requirements (Available at start of game.)</div>
-  <div>Red: Is a requirement for nothing.</div>
-  <div>Purple: In a mutual (two-way) dependency</div>
-  </div>
-<div id="tech-tooltip" class="tooltip hidden"></div>
-  <script type="module">
-    import technologies from './data/technologydata.js'
-    const techByName = new Map(technologies.map(t => [t.Name, t]));
-    function buildDependencyGraph() {
-      const graph = {};
-      for (const tech of technologies) {
-        graph[tech.Name] = { dependsOn: [], requiredBy: [] };
-      }
+	<div style="color:white;">
+		<div>Legend</div>
+		<div>Green: Has requirements and is a requirement</div>
+		<div>Orange: Has no requirements (Available at start of game.)</div>
+		<div>Red: Is a requirement for nothing.</div>
+		<div>Purple: In a mutual (two-way) dependency</div>
+		<div id="controls" style="color:white; margin:8px 12px;">
+			<div style="margin-top:6px;">
+				<label for="chargeSlider">Node Pressure</label>
+				<input id="chargeSlider" type="range" min="100" max="1500" step="25" value="600">
+				<span id="chargeVal">600</span>
+			</div>
+			<div style="margin-top:6px;">
+				<label for="linkSlider">Link distance</label>
+				<input id="linkSlider" type="range" min="40" max="200" step="5" value="100">
+				<span id="linkVal">100</span>
+			</div>
+		</div>
+	</div>
+	<div id="tech-tooltip" class="tooltip hidden"></div>
+	<script type="module">
+		import technologies from './data/technologydata.js'
+		const techByName = new Map(technologies.map(t => [t.Name, t]));
+		function buildDependencyGraph() {
+			const graph = {};
+			for (const tech of technologies) {
+				graph[tech.Name] = { dependsOn: [], requiredBy: [] };
+			}
 
-      for (const tech of technologies) {
-        const reqs = tech.Requirements?.Technologies || [];
-        for (const dep of reqs) {
-          if (!graph[dep]) graph[dep] = { dependsOn: [], requiredBy: [] };
-          graph[tech.Name].dependsOn.push(dep);
-          graph[dep].requiredBy.push(tech.Name);
-        }
-      }
-      const mutualNodes = new Set();
-        for (const [a, relsA] of Object.entries(graph)) {
-          for (const b of relsA.dependsOn) {
-            const relsB = graph[b];
-            if (relsB && relsB.dependsOn.includes(a)) {
-              mutualNodes.add(a);
-              mutualNodes.add(b);
-              console.log(a,b);
-            }
-          }
-        }
-            // Build node-link structure for D3
-       const nodes = Object.entries(graph).map(([name, rels]) => ({
-            id: name,
-            dependsOn: rels.dependsOn,
-            requiredBy: rels.requiredBy,
-            hasMutual: mutualNodes.has(name),
-            tech: techByName.get(name) || { Name: name }
-        }));
+			for (const tech of technologies) {
+				const reqs = tech.Requirements?.Technologies || [];
+				for (const dep of reqs) {
+					if (!graph[dep]) graph[dep] = { dependsOn: [], requiredBy: [] };
+					graph[tech.Name].dependsOn.push(dep);
+					graph[dep].requiredBy.push(tech.Name);
+				}
+			}
+			const mutualNodes = new Set();
+			for (const [a, relsA] of Object.entries(graph)) {
+				for (const b of relsA.dependsOn) {
+					const relsB = graph[b];
+					if (relsB && relsB.dependsOn.includes(a)) {
+						mutualNodes.add(a);
+						mutualNodes.add(b);
+						console.log(a, b);
+					}
+				}
+			}
+			// Build node-link structure for D3
+			const nodes = Object.entries(graph).map(([name, rels]) => ({
+				id: name,
+				dependsOn: rels.dependsOn,
+				requiredBy: rels.requiredBy,
+				hasMutual: mutualNodes.has(name),
+				tech: techByName.get(name) || { Name: name }
+			}));
 
-      const links = [];
+			const links = [];
 
-      for (const [target, data] of Object.entries(graph)) {
-        for (const source of data.dependsOn) {
-          links.push({ source, target });
-        }
-      }
+			for (const [target, data] of Object.entries(graph)) {
+				for (const source of data.dependsOn) {
+					links.push({ source, target });
+				}
+			}
 
-      return { nodes, links };
-    }
+			return { nodes, links };
+		}
 
-    const { nodes, links } = buildDependencyGraph();
+		const { nodes, links } = buildDependencyGraph();
 
-    const width = window.innerWidth;
-    const height = window.innerHeight;
+		let width = window.innerWidth;
+		let height = window.innerHeight;
 
-    const svg = d3.select("body").append("svg")
-        .attr("width", width)
-        .attr("height", height);
-    const zoomTarget = svg.append("g")
-    .classed("zoom-target", true);
 
-// Setup zoom behavior
-const zoom = d3.zoom()
-    .scaleExtent([0.5, 5])
-    .on("zoom", function (event) {
-        zoomTarget.attr("transform", event.transform);
-    });
+		const nodeRadius = d => {
+			const c = d.tech?.Complexity;
+			return c ? sizeScale(c) : 8;
+		};
 
-// Attach zoom to the SVG
-svg.call(zoom);
-    // Define arrowhead marker
-    zoomTarget.append("defs").append("marker")
-      .attr("id", "arrow")
-      .attr("viewBox", "0 -5 10 10")
-      .attr("refX", 20)   // adjust so arrow tip ends at node edge
-      .attr("refY", 0)
-      .attr("markerWidth", 6)
-      .attr("markerHeight", 6)
-      .attr("orient", "auto")
-      .append("path")
-      .attr("d", "M0,-5L10,0L0,5")
-      .attr("fill", "#999");
+		const svg = d3.select("body").append("svg")
+			.attr("width", width)
+			.attr("height", height);
+		const zoomTarget = svg.append("g")
+			.classed("zoom-target", true);
 
-    const simulation = d3.forceSimulation(nodes)
-        .force("link", d3.forceLink(links).id(d => d.id).distance(100))
-        .force("charge", d3.forceManyBody().strength(-600))
-        .force("center", d3.forceCenter(width / 2, height / 2));
+		// Setup zoom behavior
+		const zoom = d3.zoom()
+			.scaleExtent([0.5, 5])
+			.translateExtent([[-width, -height], [2 * width, 2 * height]])
+			.on("zoom", function (event) {
+				zoomTarget.attr("transform", event.transform);
+			});
 
-    const link = zoomTarget.append("g")
-        .attr("stroke", "#999")
-        .attr("stroke-opacity", 0.6)
-      .selectAll("line")
-      .data(links)
-      .enter().append("line")
-        .attr("class", "link")
-        .attr("marker-end", "url(#arrow)");  // force apply arrow
+		// Attach zoom to the SVG
+		svg.call(zoom);
+		// Define arrowhead marker
+		zoomTarget.append("defs").append("marker")
+			.attr("id", "arrow")
+			.attr("viewBox", "0 -5 10 10")
+			.attr("refX", 10)
+			.attr("refY", 0)
+			.attr("markerWidth", 6)
+			.attr("markerHeight", 6)
+			.attr("orient", "auto")
+			.append("path")
+			.attr("d", "M0,-5L10,0L0,5")
+			.attr("fill", "#999");
 
-    const node = zoomTarget.append("g")
-        .attr("stroke", "#fff")
-        .attr("stroke-width", 1.5)
-        .selectAll("g")
-        .data(nodes)
-        .enter().append("g")
-        .call(d3.drag()
-              .on("start", dragstarted)
-              .on("drag", dragged)
-              .on("end", dragended))
-        .on("click", function(event, d) {
-    event.stopPropagation(); // prevent background click from hiding it
-    showTooltip(event, d);
-  });
+		const sizeScale = d3.scaleSqrt()
+			.domain([50, 5000000])
+			.range([6, 40]);
 
-    node.append("circle")
-        .attr("r", 12)
-        .attr("fill", function(d) {
+		const simulation = d3.forceSimulation(nodes)
+			.force("link", d3.forceLink(links).id(d => d.id).distance(100))
+			.force("charge", d3.forceManyBody().strength(-600))
+			.force("center", d3.forceCenter(width / 2, height / 2));
 
-          if (d.hasMutual) return "purple";
+		const link = zoomTarget.append("g")
+			.attr("stroke", "#999")
+			.attr("stroke-opacity", 0.6)
+			.selectAll("line")
+			.data(links)
+			.enter().append("line")
+			.attr("class", "link")
+			.attr("marker-end", "url(#arrow)");
 
-            const hasAttached = d.requiredBy && d.requiredBy.length > 0;
-            const hasDeps = d.dependsOn && d.dependsOn.length > 0;
+		const node = zoomTarget.append("g")
+			.attr("stroke", "#fff")
+			.attr("stroke-width", 1.5)
+			.selectAll("g")
+			.data(nodes)
+			.enter().append("g")
+			.call(d3.drag()
+				.on("start", dragstarted)
+				.on("drag", dragged)
+				.on("end", dragended))
+			.on("click", function (event, d) {
+				event.stopPropagation();
+				showTooltip(event, d);
+			});
 
-            if (!hasAttached) return "red";      // not required by anything
-            if (!hasDeps) return "orange";       // depends on nothing
-            return "#69b3a2";   
-        });
+		node.append("circle")
+			.attr("r", d => {
+				;
+				return nodeRadius(d);
+			})
+			.attr("fill", function (d) {
 
-    node.append("text")
-        .text(d => d.id)
-        .attr("x", 14)
-        .attr("y", 4);
+				if (d.hasMutual) return "purple";
 
-    simulation.on("tick", () => {
-      link
-          .attr("x1", d => d.source.x)
-          .attr("y1", d => d.source.y)
-          .attr("x2", d => d.target.x)
-          .attr("y2", d => d.target.y);
+				const hasAttached = d.requiredBy && d.requiredBy.length > 0;
+				const hasDeps = d.dependsOn && d.dependsOn.length > 0;
 
-      node
-          .attr("transform", d => `translate(${d.x},${d.y})`);
-    });
+				if (!hasAttached) return "red";      // not required by anything
+				if (!hasDeps) return "orange";       // depends on nothing
+				return "#69b3a2";
+			});
 
-    function dragstarted(event, d) {
-      if (!event.active) simulation.alphaTarget(0.3).restart();
-      d.fx = d.x;
-      d.fy = d.y;
-    }
+		node.append("text")
+			.text(d => d.id)
+			.attr("x", 14)
+			.attr("y", 4)
+			.style("fill", "white");
 
-    function dragged(event, d) {
-      d.fx = event.x;
-      d.fy = event.y;
-    }
+		simulation.on("tick", () => {
+			link
+				.attr("x1", d => d.source.x)
+				.attr("y1", d => d.source.y)
+				.attr("x2", d => {
+					const dx = d.target.x - d.source.x;
+					const dy = d.target.y - d.source.y;
+					const r = nodeRadius(d.target);
+					const l = Math.sqrt(dx * dx + dy * dy);
+					return d.target.x - (dx * r) / l;
+				})
+				.attr("y2", d => {
+					const dx = d.target.x - d.source.x;
+					const dy = d.target.y - d.source.y;
+					const r = nodeRadius(d.target);
+					const l = Math.sqrt(dx * dx + dy * dy);
+					return d.target.y - (dy * r) / l;
+				});
 
-    function dragended(event, d) {
-      if (!event.active) simulation.alphaTarget(0);
-      d.fx = null;
-      d.fy = null;
-    }
+			node
+				.attr("transform", d => `translate(${d.x},${d.y})`);
+		});
 
-    const tooltipEl = d3.select('#tech-tooltip');
+		function dragstarted(event, d) {
+			if (!event.active) simulation.alphaTarget(0.03).restart();
+			d.fx = d.x;
+			d.fy = d.y;
+		}
 
-function fmtCost(cost) {
-  if (!cost || typeof cost !== 'object') return '—';
-  const entries = Object.entries(cost);
-  if (!entries.length) return '—';
-  return entries.map(([k,v]) => `${k}: ${v}`).join(', ');
-}
+		function dragged(event, d) {
+			d.fx = event.x;
+			d.fy = event.y;
+		}
 
-function safeList(arr) {
-  return Array.isArray(arr) && arr.length ? arr.join(', ') : '—';
-}
+		function dragended(event, d) {
+			if (!event.active) simulation.alphaTarget(0);
+			d.fx = null;
+			d.fy = null;
+		}
 
-function clampTooltip(x, y) {
-  const pad = 12;
-  const w = 280;  // match CSS max-width
-  const h = 180;  // rough height; will reflow but prevents overflow
-  const vw = window.innerWidth, vh = window.innerHeight;
-  return [
-    Math.min(Math.max(pad, x), vw - w - pad),
-    Math.min(Math.max(pad, y), vh - h - pad)
-  ];
-}
+		const tooltipEl = d3.select('#tech-tooltip');
 
-function showTooltip(event, d) {
-  const t = d.tech || {};
-  const reqs = t.Requirements?.Technologies || [];
-  const content = `
-    <span class="close" title="Close">×</span>
-    <div class="title">${t.Name ?? d.id}</div>
-    <div class="row"><span class="k">Description:</span> ${t.Description || '—'}</div>
-    <div class="row"><span class="k">Complexity:</span> ${t.Complexity ?? '—'}</div>
-    <div class="row"><span class="k">Progress:</span> ${t.Progress ?? '—'}</div>
-    <div class="row"><span class="k">Locked:</span> ${t.isLocked === undefined ? '—' : t.isLocked}</div>
-    <div class="row"><span class="k">Visible:</span> ${t.Visible === undefined ? '—' : t.Visible}</div>
-    <div class="row"><span class="k">Requirements:</span> ${safeList(reqs)}</div>
-    <div class="row"><span class="k">Cost:</span> ${fmtCost(t.Cost)}</div>
-  `;
+		function fmtCost(cost) {
+			if (!cost || typeof cost !== 'object') return '—';
+			const entries = Object.entries(cost);
+			if (!entries.length) return '—';
+			return entries.map(([k, v]) => `${k}: ${v}`).join(', ');
+		}
 
-  tooltipEl.html(content).classed('hidden', false);
+		function safeList(arr) {
+			return Array.isArray(arr) && arr.length ? arr.join(', ') : '—';
+		}
 
-  // position near pointer, independent of zoom/pan
-  const [px, py] = d3.pointer(event, document.body);
-  const [tx, ty] = clampTooltip(px + 12, py + 12);
-  tooltipEl.style('left', `${tx}px`).style('top', `${ty}px`);
+		function handleResize() {
+			// 1) Measure
+			width = window.innerWidth;
+			height = window.innerHeight;
 
-  // close button
-  tooltipEl.select('.close').on('click', () => tooltipEl.classed('hidden', true));
-}
+			// 2) Resize the drawing surface
+			svg.attr("width", width).attr("height", height);
 
-function hideTooltip() {
-  tooltipEl.classed('hidden', true);
-}
-  </script>
+			// 3) Update pan bounds to the new canvas
+			zoom.translateExtent([[-width, -height], [2 * width, 2 * height]]);
+
+			// 4) Keep the simulation centered to the new viewport
+			simulation.force("center", d3.forceCenter(width / 2, height / 2));
+
+			// 5) Nudge the sim so the new center takes effect
+			simulation.alpha(0.1).restart();
+
+			// 6) If a tooltip is open, keep it on-screen
+			if (!tooltipEl.classed("hidden")) {
+				const left = parseFloat(tooltipEl.style("left")) || 12;
+				const top = parseFloat(tooltipEl.style("top")) || 12;
+				const [tx, ty] = clampTooltip(left, top);
+				tooltipEl.style("left", `${tx}px`).style("top", `${ty}px`);
+			}
+		}
+
+		function clampTooltip(x, y) {
+			const pad = 12;
+			const w = 280;  // match CSS max-width
+			const h = 180;  // rough height; will reflow but prevents overflow
+			const vw = window.innerWidth, vh = window.innerHeight;
+			return [
+				Math.min(Math.max(pad, x), vw - w - pad),
+				Math.min(Math.max(pad, y), vh - h - pad)
+			];
+		}
+
+		function showTooltip(event, d) {
+			const t = d.tech || {};
+			const reqs = t.Requirements?.Technologies || [];
+			const rby = d.requiredBy || [];
+			const content = `
+				<span class="close" title="Close">×</span>
+				<div class="title">${t.Name ?? d.id}</div>
+				<div class="row"><span class="k">Description:</span> ${t.Description || '—'}</div>
+				<div class="row"><span class="k">Complexity:</span> ${t.Complexity ?? '—'}</div>
+				<div class="row"><span class="k">Progress:</span> ${t.Progress ?? '—'}</div>
+				<div class="row"><span class="k">Requirements:</span> ${safeList(reqs)}</div>
+				<div class="row"><span class="k">Required By:</span> ${safeList(rby)}</div>
+				<div class="row"><span class="k">Cost:</span> ${fmtCost(t.Cost)}</div>
+			`;
+
+			tooltipEl.html(content).classed('hidden', false);
+
+			// position near pointer, independent of zoom/pan
+			const [px, py] = d3.pointer(event, document.body);
+			const [tx, ty] = clampTooltip(px + 12, py + 12);
+			tooltipEl.style('left', `${tx}px`).style('top', `${ty}px`);
+
+			// close button
+			tooltipEl.select('.close').on('click', () => tooltipEl.classed('hidden', true));
+		}
+
+		function hideTooltip() {
+			tooltipEl.classed('hidden', true);
+		}
+
+		const chargeSlider = document.getElementById('chargeSlider');
+		const linkSlider = document.getElementById('linkSlider');
+		const chargeVal = document.getElementById('chargeVal');
+		const linkVal = document.getElementById('linkVal');
+
+		function applyCharge(valAbs) {
+			simulation.force('charge').strength(-Number(valAbs));
+		}
+
+		function applyLinkDistance(val) {
+			simulation.force('link').distance(Number(val));
+		}
+
+
+		let coolTimer = null;
+		function reheat() {
+			if (!simulation) return;
+			simulation.alphaTarget(0.04).restart();
+			clearTimeout(coolTimer);
+			coolTimer = setTimeout(() => simulation.alphaTarget(0), 250);
+		}
+
+		applyCharge(chargeSlider.value);
+		applyLinkDistance(linkSlider.value);
+
+		chargeSlider.addEventListener('input', (e) => {
+			const v = Number(e.target.value);
+			chargeVal.textContent = v;
+			applyCharge(v);
+			reheat();
+		});
+
+		linkSlider.addEventListener('input', (e) => {
+			const v = Number(e.target.value);
+			linkVal.textContent = v;
+			applyLinkDistance(v);
+			reheat();
+		});
+
+		let resizeRaf = null;
+		window.addEventListener("resize", () => {
+			if (resizeRaf) cancelAnimationFrame(resizeRaf);
+			resizeRaf = requestAnimationFrame(handleResize);
+		});
+	</script>
 </body>
+
 </html>
