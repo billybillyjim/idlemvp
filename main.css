@@ -20,6 +20,22 @@
     grid-template-columns: repeat(auto-fit, minmax(480px, 1fr));
 }
 
+.tooltip-container {
+  position: relative;
+}
+
+.tooltip-box {
+  position: fixed;
+  z-index: 9999;
+  font-size: 12px;
+  padding: 4px 8px;
+  border-radius: 4px;
+  background: black;
+  color: white;
+  pointer-events: none;
+  white-space: pre-line;
+}
+
 td {
     white-space:nowrap;
 }

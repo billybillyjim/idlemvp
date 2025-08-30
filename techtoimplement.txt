@@ -130,8 +130,6 @@ The Codex (early book format)
 
 The Blowpipe (used for metalwork)
 
-Papyrus Scrolls
-
 Waterproofing Techniques
 
 The Lamplight (early forms)
@@ -152,7 +150,7 @@ Trellises
 
 Terracing
     -Irrigation Systems
-    -Lunar Calendar (Some kind of crop time keeping)
+    -Lunar Calendar
 
 Windmill
     -Water Wheel
@@ -301,6 +299,7 @@ Basic Laws
     -Writing
     -Basic Societal Structure
 State Subsidy
+
 Crane
 Glassblowing
 Lighthouses

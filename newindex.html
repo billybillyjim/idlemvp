@@ -1,0 +1,268 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Yacig Bimib</title>
+    <!--Yet another civilization idle game, but I made it bigger-->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" />
+    <link rel="stylesheet" href="./main.css" />
+    <style>
+        :root {
+            --navbar-h: 56px;
+            --sidebar-w: 260px;
+        }
+
+        body {
+            padding-top: var(--navbar-h);
+        }
+
+        @media (min-width: 992px) {
+            .sidebar.offcanvas-lg {
+                position: fixed;
+                top: var(--navbar-h);
+                left: 0;
+                width: var(--sidebar-w);
+                height: calc(100vh - var(--navbar-h));
+                border-right: 1px solid rgba(0, 0, 0, .1);
+                transform: none;
+                visibility: visible;
+            }
+
+            main {
+                margin-left: var(--sidebar-w);
+            }
+        }
+
+        .sidebar .offcanvas-body {
+            overflow-y: auto;
+        }
+
+        @media (min-width: 992px) {
+            body {
+                padding-left: var(--sidebar-w);
+            }
+
+            main {
+                margin-left: 0 !important;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div id="vm">
+        <!-- Top Navbar -->
+        <nav class="navbar navbar-expand bg-dark navbar-dark fixed-top">
+            <div class="container-fluid">
+
+                <button class="btn btn-outline-light d-lg-none me-2" type="button" data-bs-toggle="offcanvas"
+                    data-bs-target="#appSidebar" aria-controls="appSidebar" aria-label="Toggle sidebar">
+                    <span class="navbar-toggler-icon"></span>
+                </button>
+
+                <a class="navbar-brand" href="">Idle Game Name</a>
+
+                <ul class="navbar-nav ms-auto gap-2">
+                    <li class="nav-item my-2" style="color:white">
+                        [[formatDate(currentDate)]] [[getWeatherForDate(currentDate)]]
+                    </li>
+                    <li class="nav-item dropdown">
+                        <a class="nav-link dropdown-toggle" href="#" id="userMenu" role="button"
+                            data-bs-toggle="dropdown" aria-expanded="false">Menu</a>
+                        <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="userMenu">
+                            <li><a class="dropdown-item" href="#">Action</a></li>
+                            <li><a class="dropdown-item" href="#">Another action</a></li>
+                            <li>
+                                <hr class="dropdown-divider" />
+                            </li>
+                            <li><a class="dropdown-item" href="#">Something else</a></li>
+                        </ul>
+                    </li>
+                </ul>
+            </div>
+        </nav>
+
+        <!-- Sidebar: offcanvas on mobile, fixed on ≥lg via .offcanvas-lg -->
+        <div class="offcanvas offcanvas-start offcanvas-lg sidebar" tabindex="-1" id="appSidebar"
+            aria-labelledby="appSidebarLabel">
+            <!-- Header only visible when offcanvas (hidden at ≥lg) -->
+            <div class="offcanvas-header d-lg-none">
+                <h5 class="offcanvas-title" id="appSidebarLabel">Navigation</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="offcanvas" aria-label="Close"></button>
+            </div>
+            <div class="offcanvas-body p-0">
+                <div class="d-flex flex-column p-3 bg-light h-100 w-100">
+                    <ul class="nav nav-pills flex-column mb-auto">
+                        <li class="nav-item" v-for="menu in menus">
+                            <button @click="setMenu(menu)" :class="currentMenu == menu ? 'active' : ''"
+                                class="btn-link nav-link ps-2 w-100" style="text-align: left;"
+                                aria-current="page">[[menu]]</a>
+                        </li>
+                    </ul>
+                    <hr />
+                </div>
+            </div>
+        </div>
+
+        <!-- Main content -->
+        <main class="container-fluid py-4">
+            <div>
+                <template v-if="currentMenu == 'Main'">
+                    <h1 class="display-6 mb-4">[[civilizationName]]</h1>
+                </template>
+                <template v-else-if="currentMenu == 'Population'">
+                    <h1 class="display-6 mb-4">The People of [[civilizationName]]</h1>
+                    <div>
+                        <h4 class="my-2">Population</h4>
+                        <div>There are [[formatNumber(getPopulation())]] people in your nation.</div>
+                        <div>The average quality of life is [[formatNumber(QOL)]].</div>
+                        <div class="btn-group" role="group" aria-label="Amount selector">
+
+                            <button v-for="n in [1, 5, 10]" :key="n" type="button" class="btn btn-outline-primary"
+                                :class="{ active: populationMenu.amount === n }" @click="populationMenu.amount = n">
+                                [[n]]
+                            </button>
+                            <button type="button" class="btn btn-outline-primary"
+                                :class="{ active: populationMenu.customSelected }" @click="populationMenu.customSelected = true">
+                                X
+                            </button>
+                            <input v-if="populationMenu.customSelected" type="number" class="form-control" style="max-width: 6rem;"
+                                v-model.number="populationMenu.amount" @click.stop placeholder="Enter" min="1" />
+                        </div>
+                        <div>
+                            <table class="table table-striped">
+                                <thead>
+                                    <tr>
+                                        <th>Profession</th>
+                                        <th>Count</th>
+                                        <th>Produces</th>
+                                        <th>Current</th>
+                                        <th>Cost</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <template v-for="profession in getVisibleProfessions()">
+                                        <tr :style="profession == 'Unlocked' ? '' : 'locked-item'">
+                                            <td>
+                                                [[profession.Name]]
+                                            </td>
+                                            <td>
+                                                [[formatNumber(profession.Count)]] <span v-if="missingProfessionCounts[profession.Name]">+ ([[(missingProfessionCounts[profession.Name])]])</span>
+                                            </td>
+                                            <td>
+                                                <span v-for="(value, key, index) in productionToNiceString(profession)" :key="key">
+                                                    <img class="image-icon" :src="currencydata[key].Icon" /> [[ value ]]
+                                                    <span v-if="index < Object.entries(productionToNiceString(profession)).length - 1">, </span>
+                                                </span>
+                                            </td>
+                                            <td>
+                                                <span v-for="(value, key, index) in getProfessionTotalOutput(profession)" :key="key">
+                                                    <img class="image-icon" :src="currencydata[key].Icon" /> [[ value ]]
+                                                    <span v-if="index < Object.entries(getProfessionTotalOutput(profession)).length - 1">, </span>
+                                                </span>
+                                            </td>
+                                            <td>
+                                                <span v-for="(value, key, index) in profession.Cost" :key="key">
+                                                    <img class="image-icon" :src="currencydata[key].Icon" /> [[ formatNumber(value) ]]
+                                                    <span v-if="index < Object.entries(profession.Cost).length - 1">, </span>
+                                                </span>
+                                            </td>
+                                            <td v-if="profession.Name != 'Unemployed'">
+                                                <button class="btn btn-primary m-2" :disabled="canHire(profession) == false" @click="hire(profession, populationMenu.amount)">Hire</button>
+                                                <button class="btn btn-primary m-2" :disabled="canFire(profession) == false" @click="fire(profession, populationMenu.amount)">Fire</button>
+                                            </td>
+                                            <td v-else></td>
+                                        </tr>
+                                    </template>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </template>
+                <template v-else-if="currentMenu == 'Stockpiles'">
+                    <h1 class="display-6 mb-4">The Stockpiles of [[civilizationName]]</h1>
+                    <div>
+                        <table class="table table-striped">
+                            <thead>
+                                <tr>
+                                    <th>Stockpile</th>
+                                    <th>Amount</th>
+                                    <th>Daily Change</th>
+                                    <th>Demand</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <template v-for="currency in currencydata">
+                                    <tr v-if="currency.Unlocked">
+                                        <td :title="currency.Name">
+                                            <img class="image-icon" :src="currency.Icon" />
+                                        </td>
+                                        <td>
+                                            [[formatNumber(currency.Amount)]]         
+                                        </td>
+                                        <td>
+                                            <Tooltip :data="{ text: getDailyChangeDescription(currency) }">
+                                                [[formatNumber(currencyDailyChange[currency.Name])]]
+                                            </Tooltip>         
+                                        </td>
+                                        <td :title="getDailyDemandDescription(currency)">
+                                            [[formatNumber(demand[currency.Name])]]         
+                                        </td>
+                                    </tr>
+                                </template>
+                            </tbody>
+                        </table>
+                    </div>
+                </template>
+                <template v-else-if="currentMenu == 'Technology'">
+                    <h1 class="display-6 mb-4">The Technology of [[civilizationName]]</h1>
+                    <div><button class="btn btn-primary" @click="showCompleted = !showCompleted">Show Completed</button></div>
+                    <div>
+                        <table class="table table-striped">
+                            <thead>
+                                <tr>
+                                    <th>Technology</th>
+                                    <th>Progress</th>
+                                    <th>Focus</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <template v-for="technology in getTechnologies()">
+                                    <tr v-if="technology.isLocked || technologyMenu.showCompleted">
+                                        <td>
+                                            [[technology.Name]]
+                                        </td>
+                                        <td>
+                                            [[formatNumber(technology.Progress)]] / [[ formatNumber(technology.Complexity) ]]   
+                                        </td>
+                                        <td>
+                                            <button v-if="technology.isLocked" class="btn btn-primary m-2" :disabled="focusedTechnology == technology" @click="focusTechnology(technology)">[[focusedTechnology == technology ? 'Focused' : 'Focus']]</button>      
+                                        </td>
+                                    </tr>
+                                </template>
+                            </tbody>
+                        </table>
+                    </div>
+                </template>
+                <template v-else-if="currentMenu == 'Laws'">
+                    <h1 class="display-6 mb-4">The Laws of [[civilizationName]]</h1>
+
+                </template>
+                <template v-else-if="currentMenu == 'Modifiers'">
+                    <h1 class="display-6 mb-4">Current Modifiers</h1>
+                </template>
+                <template v-else-if="currentMenu == 'Settings'">
+                    <h1 class="display-6 mb-4">Settings</h1>
+                </template>
+            </div>
+        </main>
+    </div>
+</body>
+<script src="./vue.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/lz-string@1.4.4/libs/lz-string.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+<script src="./index.js" type="module"></script>
+
+</html>
