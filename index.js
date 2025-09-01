@@ -1512,17 +1512,15 @@ const gamevm = Vue.createApp({
             }
         },
         parseIdent() {
+            //Allowed ideas of syntax:
+
+            //X = 10.
+            //y is 7.
+            //
             const identToken = this.next();
             const name = identToken.value;
             if (this.isReservedName(name)) {
-                return {
-                    type: 'SyntaxError',
-                    id: {
-                        type: 'Identifier',
-                        name,
-                        message: this.getSyntaxErrorFromToken(identToken)
-                    }
-                };
+                return this.throwSyntaxError('Identifier', name, this.getSyntaxErrorFromToken(identToken));
             }
             if (this.peek().type == 'ASSIGN') {
                 this.consume();
@@ -1545,9 +1543,33 @@ const gamevm = Vue.createApp({
                         init: { type: 'Identifier', name: valueToken.value }
                     };
                 }
+                else{
+                    //Not a number or ident
+                    //x is .
+                    //x is if
+                    //y = until
+                    return this.throwSyntaxError('Identifier', name, `Our scribes are confused by your law. On line ${valueToken.line} it appears you are missing a word to set the value of ${identToken.value} to something.`);
+                }
 
             }
+            else{
+                //Not assigning a value.
+                //x greater than 7.
+                return this.throwSyntaxError('Identifier', name, this.getSyntaxErrorFromToken(this.peek()));
+            }
 
+        },
+        throwSyntaxError(id, name, message){
+            this.parser.i += 10000;
+            return {
+                type: 'SyntaxError',
+                id: {
+                    type: id,
+                    name,
+                    message: message
+                }
+                
+            };
         },
         parseEvaluatable(actionTarget) {
             //If there are more than 5 unemployed
@@ -1606,17 +1628,35 @@ const gamevm = Vue.createApp({
                     this.consume();
                 }
                 operator = this.next();
+                if(operator.type != 'OPERATOR'){
+                    return this.throwSyntaxError('Evaluatable', operator, `Our scribes are confused by your law. On line ${operator.line} we expected a word to compare values instead of the word ${operator.value}`);
+
+                }
                 rhs = this.next();
+                if(rhs.type != 'IDENT' && rhs.type != 'NUMBER'){
+                    return this.throwSyntaxError('Evaluatable', rhs, `Our scribes are confused by your law. On line ${rhs.line} we expected a counting of something or a number, instead of the word ${rhs.value}`);
+
+                }
                 potentialModifier = this.peek();
 
                 if (potentialModifier.type == 'CONSUMPTION' || potentialModifier.type == 'PRODUCTION') {
                     rhs.value += ' ' + potentialModifier.value;
                     this.consume();
                 }
+
+                
             }
             else if (next.type == 'NUMBER') {
                 lhs = this.next();
                 rhs = this.next();
+            }
+            else{
+                //None of the valid inputs:
+                //more than 5 unemployed
+                //food production is greater than 10
+                //greater than 7
+                //
+                return this.throwSyntaxError('Evaluatable', next, `Our scribes are confused by your law. On line ${next.line} we expected a word to compare values, a counting of something, or a number, instead of the word ${next.value}`);
             }
             return {
                 type: 'Evaulatable',
@@ -1673,12 +1713,19 @@ const gamevm = Vue.createApp({
             let condition = this.next();
 
             if (condition.type == 'CONDITIONAL') {
-                output = this.parseEvaluatable(actionTarget);
+                let next = this.peek();
+                if(next.type == 'NUMBER'){
+                    return this.throwSyntaxError('Conditional', next, `Our scribes are confused by your law. On line ${next.line} we expected a word to begin a check of truth, instead of the number ${next.value}.`);
+                }
+                else{
+                    output = this.parseEvaluatable(actionTarget);
+                }
+                
             }
             else if (condition.type == 'UNTIL') {
                 output = this.parseUntil(actionTarget);
             }
-            while (this.peek().type == 'AND') {
+            while (this.peek().type == 'AND' || this.peek().type == 'OR') {
                 output = {
                     type: "BooleanOperator",
                     value: this.next(),
@@ -1730,24 +1777,31 @@ const gamevm = Vue.createApp({
             else if (token.type == 'PRINT') {
                 return this.parsePrint();
             }
+            else if (token.type == 'DOT') {
+                return this.parseDot();
+            }
             else{
                 //Always advance on syntax errors.
                 this.parser.i++;
             }
         },
+        parseDot(){
+            this.parser.i++;
+        },
         parse(tokens) {
             const ast = [];
-            this.parser.tokens = tokens;
+            this.parser.tokens = tokens.filter(x => x.type != 'NEWLINE');
             this.parser.i = 0;
-
+            
             while (this.parser.i < this.parser.tokens.length) {
                 ast.push(this.parsePrimary())
 
+                if(this.peek().type == 'DOT'){
+                    this.parser.i++;
+                }
                 if(this.peek().type == 'EOF'){
                     this.parser.i++;
                 }
-                
-
             }
             console.log(ast);
             return ast;
@@ -2126,8 +2180,9 @@ const gamevm = Vue.createApp({
                 return `Our scribes are confused by your law. Our people cannot make ${name} by magic. On line ${token.line} we wonder if you meant to hire or fire more ${pluralize.plural(name)}?`;
             }
             else if (this.currencyReservedNames.has(name)) {
-                return `Our scribes are confused by your law. Our people cannot make more ${name} by magic. On line ${token.line} we wonder if you meant to hire more workers who can make more ${pluralize.plural(name)}?`;
+                return `Our scribes are confused by your law. On line ${token.line} we wonder if you forgot an 'if' by the word '${name}'?`;
             }
+            
         },
         sanitizeProfName(name) {
             if (!name) {

@@ -62,7 +62,38 @@ td {
     overflow:scroll;
     resize:both;
 }
+.editor-container {
+  display: flex;
+  border: 1px solid #ccc;
+  font-family: monospace;
+  height: 300px;
+  overflow: hidden;
+}
 
+
+.line-numbers {
+    background-color: #f0f0f0;
+    padding: 8px 4px;
+    text-align: right;
+    color: #999;
+    user-select: none;
+    overflow: hidden;
+    overflow-y: clip;
+}
+
+.line-numbers pre {
+  margin: 0;
+}
+
+.text-input {
+  flex: 1;
+  padding: 8px;
+  border: none;
+  resize: none;
+  outline: none;
+  overflow: auto;
+  white-space: pre;
+}
 
 .sidebar {
   position: fixed;

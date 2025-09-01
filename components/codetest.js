@@ -14,6 +14,7 @@ export default {
             content: '',
             scrollTop:0,
             lineCount: 1,
+            height:'',
             tests: [
                 {
                     name: 'assignment',
@@ -110,8 +111,9 @@ export default {
             ]
         }
     },
-    created: function () {
+    mounted: function () {
         this.runTests();
+
     },
     mounted: function () {
         const textarea = document.querySelector('#code-text-area');
@@ -172,21 +174,32 @@ export default {
                 this.errors = output['Errors'];
             }
         },
+        updateHeight(){
+            this.height = '';
+            let codeArea = document.getElementById('code-text-area');
+            if(codeArea && codeArea.style){
+                 this.height = codeArea.style.height;
+            }
+            else{
+                this.height = '500px';
+            }
+            console.log("Updated height");
+        },
         getNumberLineOffsetStyle(){
-            return `margin-top:-${this.scrollTop % 24 + 5}px;`;
+            return `margin-top:-${this.scrollTop % 24 + 5}px; height:${this.height}`;
         }
     },
     delimiters: ['[[', ']]'],
     template: `
     <div>
         <h4 class="my-2">Laws</h4>
-        <div class="d-flex">
+        <div class="d-flex" style="    overflow: hidden;">
             <div class="line-numbers" ref="lineNumbersEle" id="line-numbers" :style="getNumberLineOffsetStyle()">
                 <div v-for="(num, idx) in getLineNumbers()" :key="idx">
                     [[ num !== '' ? num + 1 : '\u00A0' ]]
                 </div>
             </div>
-            <textarea class="code-text-area" @scroll="scrollCheck" @input="getLineNumbers" ref="textarea" v-model="testCode" id="code-text-area"></textarea>
+            <textarea class="code-text-area" @scroll="scrollCheck" @input="getLineNumbers" v-on:resize="updateHeight()" v-model="testCode" id="code-text-area"></textarea>
                 
         </div>
         <div>
