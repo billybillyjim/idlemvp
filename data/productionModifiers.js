@@ -7,7 +7,8 @@ export default [
         ],
         Requirements:{
             Technologies:["Stone Tools"]
-        }
+        },
+        IsUnlocked:false,
     },
     {   
         Name:"Bronze Tools", 
@@ -17,7 +18,8 @@ export default [
         ],
         Requirements:{
             Technologies:["Bronze Tools"]
-        }
+        },
+        IsUnlocked:false,
     },
     {   
         Name:"Well Poles", 
@@ -26,7 +28,8 @@ export default [
         ],
         Requirements:{
             Technologies:["Well Poles"]
-        }
+        },
+        IsUnlocked:false,
     },
     {   
         Name:"Crop Rotations", 
@@ -35,7 +38,8 @@ export default [
         ],
         Requirements:{
             Technologies:["Crop Rotations"]
-        }
+        },
+        IsUnlocked:false,
     },
     {   
         Name:"Rope", 
@@ -47,6 +51,7 @@ export default [
         ],
         Requirements:{
             Technologies:["Rope"]
-        }
+        },
+        IsUnlocked:false,
     }
 ];

@@ -386,7 +386,7 @@ export default [
     {
         Name: "Measuring Sticks",
         Description: "We can figure out how long something is by using a stick.",
-        Cost: { "Food": 600, "Wood": 200 },
+        Cost: { "Food": 300, "Wood": 1 },
         Requirements: { Technologies: ["Stone Tools", "Rope"] },
         Progress: 0,
         Visible: false,
@@ -661,7 +661,7 @@ export default [
         Progress: 0,
         Visible: false,
         Complexity: 1234,
-        isLocked: false,
+        isLocked: true,
         demandModifiers: {
             Global: {},
             PerCapita: {},

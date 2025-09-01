@@ -19,9 +19,12 @@ export default {
     },
     show(e) {
       const c = this.cfg();
-      this.visible = true;
-      this.x = (e?.clientX || 0) + c.offsetX;
-      this.y = (e?.clientY || 0) + c.offsetY;
+      if(c.text){
+        this.visible = true;
+        this.x = (e?.clientX || 0) + c.offsetX;
+        this.y = (e?.clientY || 0) + c.offsetY;
+      }
+
     },
     move(e) {
       if (!this.visible) return;

@@ -68,18 +68,6 @@
                     <li class="nav-item my-2" style="color:white">
                         [[formatDate(currentDate)]] [[getWeatherForDate(currentDate)]]
                     </li>
-                    <li class="nav-item dropdown">
-                        <a class="nav-link dropdown-toggle" href="#" id="userMenu" role="button"
-                            data-bs-toggle="dropdown" aria-expanded="false">Menu</a>
-                        <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="userMenu">
-                            <li><a class="dropdown-item" href="#">Action</a></li>
-                            <li><a class="dropdown-item" href="#">Another action</a></li>
-                            <li>
-                                <hr class="dropdown-divider" />
-                            </li>
-                            <li><a class="dropdown-item" href="#">Something else</a></li>
-                        </ul>
-                    </li>
                 </ul>
             </div>
         </nav>
@@ -111,6 +99,8 @@
             <div>
                 <template v-if="currentMenu == 'Main'">
                     <h1 class="display-6 mb-4">[[civilizationName]]</h1>
+                    [[(professions[0].Count)]]
+                    <codetester></codetester>
                 </template>
                 <template v-else-if="currentMenu == 'Population'">
                     <h1 class="display-6 mb-4">The People of [[civilizationName]]</h1>
@@ -122,9 +112,9 @@
 
                             <button v-for="n in [1, 5, 10]" :key="n" type="button" class="btn btn-outline-primary"
                                 :class="{ active: populationMenu.amount === n }" @click="populationMenu.amount = n">
-                                [[n]]
+                                [[formatNumber(n)]]
                             </button>
-                            <button type="button" class="btn btn-outline-primary"
+                            <button type="button" class="btn btn-outline-primary" v-if="hasNumbers()"
                                 :class="{ active: populationMenu.customSelected }" @click="populationMenu.customSelected = true">
                                 X
                             </button>
@@ -132,14 +122,15 @@
                                 v-model.number="populationMenu.amount" @click.stop placeholder="Enter" min="1" />
                         </div>
                         <div>
-                            <table class="table table-striped">
+                            <table class="table table-striped" style="table-layout: fixed; width: 100%;">
                                 <thead>
                                     <tr>
-                                        <th>Profession</th>
-                                        <th>Count</th>
-                                        <th>Produces</th>
-                                        <th>Current</th>
-                                        <th>Cost</th>
+                                        <th style="width: 15%;">Profession</th>
+                                        <th style="width: 15%;">Count</th>
+                                        <th style="width: 15%;">Produces</th>
+                                        <th style="width: 15%;">Current</th>
+                                        <th style="width: 15%;">Cost</th>
+                                        <th style="width: 15%;">Actions</th>
                                     </tr>
                                 </thead>
                                 <tbody>
@@ -189,15 +180,19 @@
                                 <tr>
                                     <th>Stockpile</th>
                                     <th>Amount</th>
-                                    <th>Daily Change</th>
+                                    <th>Hourly Change</th>
                                     <th>Demand</th>
                                 </tr>
                             </thead>
                             <tbody>
                                 <template v-for="currency in currencydata">
                                     <tr v-if="currency.Unlocked">
-                                        <td :title="currency.Name">
-                                            <img class="image-icon" :src="currency.Icon" />
+                                        <td>
+                                            <Tooltip :data="{ text: currency.Description }">
+                                                <img class="image-icon" :src="currency.Icon" />
+                                            
+                                            [[currency.Name]]
+                                            </Tooltip>
                                         </td>
                                         <td>
                                             [[formatNumber(currency.Amount)]]         
@@ -207,8 +202,11 @@
                                                 [[formatNumber(currencyDailyChange[currency.Name])]]
                                             </Tooltip>         
                                         </td>
-                                        <td :title="getDailyDemandDescription(currency)">
-                                            [[formatNumber(demand[currency.Name])]]         
+                                        <td>
+                                            <Tooltip :data="{ text: getDailyDemandDescription(currency) }">
+                                                [[formatNumber(demand[currency.Name])]] 
+                                            </Tooltip> 
+                                                    
                                         </td>
                                     </tr>
                                 </template>
@@ -218,30 +216,43 @@
                 </template>
                 <template v-else-if="currentMenu == 'Technology'">
                     <h1 class="display-6 mb-4">The Technology of [[civilizationName]]</h1>
-                    <div><button class="btn btn-primary" @click="showCompleted = !showCompleted">Show Completed</button></div>
+                    <div><button class="btn btn-primary" @click="technologyMenu.showCompleted = !technologyMenu.showCompleted">Show Completed</button></div>
                     <div>
-                        <table class="table table-striped">
+                        <table class="table table-striped" style="table-layout: fixed; width: 100%;">
                             <thead>
                                 <tr>
-                                    <th>Technology</th>
-                                    <th>Progress</th>
-                                    <th>Focus</th>
+                                    <th style="width: 25%;">Technology</th>
+                                    <th style="width: 25%;">Progress</th>
+                                    <th style="width: 25%;">Focus</th>
                                 </tr>
                             </thead>
                             <tbody>
-                                <template v-for="technology in getTechnologies()">
+                                <template v-for="technology in getTechnologies(true)">
                                     <tr v-if="technology.isLocked || technologyMenu.showCompleted">
                                         <td>
                                             [[technology.Name]]
                                         </td>
                                         <td>
-                                            [[formatNumber(technology.Progress)]] / [[ formatNumber(technology.Complexity) ]]   
+                                            [[formatNumber(technology.Progress)]] / [[ formatNumber(technology.Complexity) ]] 
+                                              <div class="progress" style="height: 24px;">
+                                                <div 
+                                                    class="progress-bar" 
+                                                    role="progressbar" 
+                                                    :style="{ width: (technology.Progress / technology.Complexity * 100) + '%' }"
+                                                    :aria-valuenow="technology.Progress"
+                                                    :aria-valuemin="0"
+                                                    :aria-valuemax="technology.Complexity">
+                                                </div>
+                                            </div>
                                         </td>
                                         <td>
                                             <button v-if="technology.isLocked" class="btn btn-primary m-2" :disabled="focusedTechnology == technology" @click="focusTechnology(technology)">[[focusedTechnology == technology ? 'Focused' : 'Focus']]</button>      
                                         </td>
                                     </tr>
                                 </template>
+                                <tr v-if="getTechnologies().length == 0">
+                                    <td colspan="1000">No one has any ideas for any technologies right now.</td>
+                                </tr>
                             </tbody>
                         </table>
                     </div>
@@ -252,6 +263,35 @@
                 </template>
                 <template v-else-if="currentMenu == 'Modifiers'">
                     <h1 class="display-6 mb-4">Current Modifiers</h1>
+                    <div>
+                        <table class="table table-striped">
+                            <thead>
+                                <tr>
+                                    <th>Modifier</th>
+                                    <th>Boosts</th>
+                                    <th>Requirements</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <template v-for="modifier in getCurrentModifiers()">
+                                    <tr>
+                                        <td>[[ modifier.modifierName ]]</td>
+                                        <td>
+                                            [[ modifier.boost.Name ]] 
+                                            <Tooltip :data="{ text: getCurrencyByName(modifier.boost.Currency).Description }">
+                                                <img class="image-icon" :src="getCurrencyByName(modifier.boost.Currency).Icon" />
+                                            </Tooltip>
+                                            [[ getModifierTypeDescription(modifier.boost.ModifierType) ]] [[ modifier.boost.Amount ]]
+                                        </td>
+                                        <td>[[ modifier.requirements.Technologies.join(", ") ]]</td>
+                                    </tr>
+                                    </template>
+                                <tr v-if="getCurrentModifiers().length == 0">
+                                    <td colspan="1000">You have no current modifiers.</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
                 </template>
                 <template v-else-if="currentMenu == 'Settings'">
                     <h1 class="display-6 mb-4">Settings</h1>

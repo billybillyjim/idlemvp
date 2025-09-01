@@ -55,6 +55,14 @@ td {
 .locked-item{
     opacity:0.5;
 }
+.code-text-area{
+    width:400px;
+    height:400px;
+    white-space:nowrap;
+    overflow:scroll;
+    resize:both;
+}
+
 
 .sidebar {
   position: fixed;
@@ -67,7 +75,7 @@ td {
   padding: 1rem;
   overflow-y: auto;
   box-shadow: 2px 0 5px rgba(0, 0, 0, 0.05);
-  z-index: 1000;
+  z-index: 1050;
 }
 
 .sidebar a {

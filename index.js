@@ -87,7 +87,7 @@ const gamevm = Vue.createApp({
             professions: [
                 {
                     Name: 'Unemployed',
-                    Count: 5,
+                    Count: 15,
                     Cost: {},
                     Produces: { 'Food': 0.9 },
                     BaseDemand: { Food: 60 },
@@ -163,7 +163,7 @@ const gamevm = Vue.createApp({
         const input = `
                 if Wood >= 0 then hire Test until there are 10.
                 `;
-        console.log(pluralize.pluralize('test'));
+
         this.generateReservedNames();
     },
     mounted: async function () {
@@ -245,7 +245,6 @@ const gamevm = Vue.createApp({
                     this.professionReservedNames.add(pluralize.singular(lower));
                 }
             }
-            console.log(this.reservedNames);
         },
         runCode(code, outputTokens, outputAST, outputOutput) {
             if (this.reservedNames.size == 0) {
@@ -309,7 +308,7 @@ const gamevm = Vue.createApp({
             this.tickspeed = value;
             this.gameProcess = setInterval(this.gameTick, this.tickspeed);
         },
-        getTechnologies() {
+        getTechnologies(sort=false) {
             //const allTechByName = Object.fromEntries(this.technologies.map(t => [t.Name, t]));
             for (let tech of this.technologies) {
                 if (!tech.Visible) {
@@ -319,11 +318,14 @@ const gamevm = Vue.createApp({
                     }
                 }
             }
-
-            return this.technologies.filter(x => {
+            let techs = this.technologies.filter(x => {
                 let hasAllRequirements = this.hasRequirements(x);
                 return x.Visible && hasAllRequirements
             });
+            if(sort){
+                techs.sort((a,b) => b.IsUnlocked - a.IsUnlocked);
+            }
+            return techs; 
         },
         hasTechnology(techName) {
             return this.technologies.find(x => x.Name == techName)?.isLocked == false;
@@ -504,6 +506,7 @@ const gamevm = Vue.createApp({
             this.currencyProductionDescriptions = {};
             this.currencyConsumptionDescriptions = {};
             this.processBaseGrowth();
+            this.processProductionModifiers();
             this.processProfessions();
             this.processTechnology();
             this.processQOL();
@@ -520,9 +523,16 @@ const gamevm = Vue.createApp({
                 this.saveState(this.$data);
             }
         },
+        processProductionModifiers(){
+            for(let prodMod of this.productionModifiers){
+                if(prodMod.IsUnlocked == false){
+                    prodMod.IsUnlocked = this.hasRequirements(prodMod);
+                }
+            }
+        },
         processHousingDemand() {
             this.currencydata.Housing.Amount = this.getTotalHousing();
-            this.demand['Housing'] = (this.getPopulation() / ((this.getAvailableHousing() - this.getPopulation()) + 1)) * 5;
+            this.modifyDemand('Housing', (this.getPopulation() / ((this.getAvailableHousing() - this.getPopulation()) + 1)) * 5, "Base Population Housing Desire");
         },
         buildBuilding(houseType, amount = 1) {
             let target = this.houseTypes.find(x => x.Name.toLowerCase() == houseType.Name.toLowerCase());
@@ -530,7 +540,7 @@ const gamevm = Vue.createApp({
             if (target) {
                 for (let i = 0; i < amount; i++) {
                     if (this.canAfford(target.Cost)) {
-                        this.buy(target.Cost);
+                        this.buy(target.Cost, 1, 'Building ' + target.Name);
                         target.Count++;
                         actual++;
                     }
@@ -541,6 +551,28 @@ const gamevm = Vue.createApp({
 
             }
             return actual;
+        },
+        getCurrencyByName(currencyName){
+            return this.currencydata[currencyName];
+        },
+        getCurrentModifiers(){
+            return this.productionModifiers.filter(x => x.IsUnlocked == true).flatMap(modifier =>
+                modifier.Boosts.map(boost => ({
+                    modifierName: modifier.Name,
+                    boost,
+                    requirements: modifier.Requirements
+                }))
+            );
+        },
+        getModifierTypeDescription(modifierType){
+            if(modifierType == 'Additive'){
+                return '+';
+            }
+            else if(modifierType == 'Multiplicative'){
+                return 'x';
+            }
+            console.error('Yo this modifier type doesn\'t exist!', modifierType);
+            return '';
         },
         processDeaths() {
             let deathOdds = 0.01;
@@ -588,52 +620,75 @@ const gamevm = Vue.createApp({
         resetDemands() {
             for (let key in this.demand) {
                 if (Object.prototype.hasOwnProperty.call(this.demand, key)) {
-                    if (key != 'Housing') {
+
                         this.demand[key] = 0;
-                    }
+                    
                 }
             }
+            this.currencyDemandDescriptions = {};
+        },
+        modifyDemand(good, amount, reason){
+            if(amount == 0){
+                return;
+            }
+            if(this.currencyDemandDescriptions[good]){
+                this.currencyDemandDescriptions[good].push([good, this.formatNumber(amount), reason]);
+            }
+            else{
+                this.currencyDemandDescriptions[good] = [[good, this.formatNumber(amount), reason]];
+            }
+            this.demand[good] += amount;
         },
         processProfessionDemand() {
+            let totalPop = 0;
             for (let prof of this.professions) {
                 for (let demandedGood of Object.keys(prof.BaseDemand)) {
-                    this.demand[demandedGood] += prof.BaseDemand[demandedGood] * prof.Count;
+                    this.modifyDemand(demandedGood, prof.BaseDemand[demandedGood] * prof.Count, prof.Name + ' Base Demand');
                 }
                 for (let demandedGood of Object.keys(prof.ModifiedDemand)) {
-                    this.demand[demandedGood] += prof.ModifiedDemand[demandedGood] * prof.Count;
+                    this.modifyDemand(demandedGood, prof.ModifiedDemand[demandedGood] * prof.Count, prof.Name + ' Modified Demand');
                 }
-
-                //TODO:Move this general societal demand somewhere more fitting.
-                this.demand.Hides += 0.1 * prof.Count;
-                this.demand.Clay += 0.1 * prof.Count;
-                this.demand.Wood += 0.15 * prof.Count;
-                this.demand.Ore += 0.02 * prof.Count;
-                this.demand.Space += 0.015 * prof.Count;
-                this.demand.Housing += 0.01 * prof.Count;
-                this.demand.Furniture += 0.001 * prof.Count;
-                if (this.currencydata.Space.Amount == 0) {
-                    this.ticksOfUnmetSpaceDemand += 1;
-                    this.demand.Space += 0.001 * this.ticksOfUnmetSpaceDemand;
-                }
-                else {
-                    this.ticksOfUnmetSpaceDemand = 0;
-                }
-
+                totalPop += prof.Count;
             }
+
+            let baseHideDemand = 0.1;
+            let baseClayDemand = 0.1;
+            let baseWoodDemand = 0.15;
+            let baseOreDemand = 0.02;
+            let baseSpaceDemand = 0.015;
+            let baseHousingDemand = 0.01;
+            let baseFurnitureDemand = 0.001;
+            let unmetSpaceDemand = 0.001;
+            this.modifyDemand('Hides', baseHideDemand * totalPop, 'Global Demand');
+            this.modifyDemand('Clay', baseClayDemand * totalPop, 'Global Demand');
+            this.modifyDemand('Wood', baseWoodDemand * totalPop, 'Global Demand');
+            this.modifyDemand('Ore', baseOreDemand * totalPop, 'Global Demand');
+            this.modifyDemand('Space', baseSpaceDemand * totalPop, 'Global Demand');
+            if (this.currencydata.Space.Amount == 0) {
+                this.ticksOfUnmetSpaceDemand += 1;
+                this.modifyDemand('Space', unmetSpaceDemand * totalPop * ticksOfUnmetSpaceDemand, 'Unmet Demand');
+            }
+            else {
+                this.ticksOfUnmetSpaceDemand = 0;
+            }
+            
+            
+            this.modifyDemand('Housing', baseHousingDemand * totalPop, 'Global Demand');
+            this.modifyDemand('Furniture', baseFurnitureDemand * totalPop, 'Global Demand');
         },
         processTechnologyDemand() {
             for (let tech of this.technologies) {
                 if (tech.isLocked == false) {
                     for (let [good, mod] of Object.entries(tech.demandModifiers.Global)) {
-                        this.demand[good] += mod;
+                        this.modifyDemand(good, mod, "From " + tech.Name);
                     }
                     for (let [good, mod] of Object.entries(tech.demandModifiers.PerCapita)) {
-                        this.demand[good] += mod * this.getPopulation();
+                        this.modifyDemand(good,  mod * this.getPopulation(), "Per Capita from " + tech.Name);
                     }
                     for (let prof of this.professions) {
                         if (tech.demandModifiers[prof.Name]) {
                             for (let [good, mod] of Object.entries(tech.demandModifiers[prof.Name])) {
-                                this.demand[good] += mod * prof.Count;
+                                this.modifyDemand(good, mod * prof.Count, "From " + prof.Name + " and tech " + tech.Name);
                             }
                         }
                     }
@@ -656,14 +711,14 @@ const gamevm = Vue.createApp({
                 let beginTickAmount = this.beginTickCurrencyValues[currency.Name]?.Amount;
                 let endAmount = this.endTickCurrencyValues[currency.Name]?.Amount;
 
-                let change = (preCostAmount - beginTickAmount) * 24;
-                let dailyChange = (endAmount - beginTickAmount) * 24;
+                let change = (preCostAmount - beginTickAmount);
+                let dailyChange = (endAmount - beginTickAmount);
                 this.currencyDailyChange[currency.Name] = dailyChange;
                 if (currency.Name == 'Space') {
                     continue;
                 }
                 if (change >= 0 && this.demand[currency.Name]) {
-                    this.demand[currency.Name] -= change;
+                    this.modifyDemand(currency.Name, -change, "Met by production ");
 
                     if (!this.unmetdemand[currency.Name]) {
                         this.unmetdemand[currency.Name] = -change;
@@ -675,18 +730,20 @@ const gamevm = Vue.createApp({
                         this.unmetdemand[currency.Name] = 0;
                     }
                     if (this.demand[currency.Name] < 0) {
+
                         this.demand[currency.Name] = 0;
                     }
                 }
 
                 if (endAmount < dailyChange) {
-                    this.demand[currency.Name] += Math.abs(-change - endAmount);
+                    this.modifyDemand(currency.Name, Math.abs(-change - endAmount), "Lowering stockpiles");
+
                 }
             }
 
             for (let [k, v] of Object.entries(this.unmetdemand)) {
                 if (v > 0) {
-                    this.demand[k] += v;
+                    this.modifyDemand(k, v, "Unmet demand");
                 }
             }
         },
@@ -853,10 +910,15 @@ const gamevm = Vue.createApp({
         },
         getDailyDemandDescription(currency) {
             let output = '';
-
+            for (let reason of this.currencyDemandDescriptions[currency.Name] ?? []) {
+                output += reason[2] + ': ' + reason[1] + '\n';
+            }
             return output;
         },
         addCurrency(currencyName, amount, reason){
+            if(amount == 0){
+                return;
+            }
             if(this.currencyProductionDescriptions[currencyName]){
                 this.currencyProductionDescriptions[currencyName].push([currencyName, amount, reason]);
             }
@@ -866,6 +928,9 @@ const gamevm = Vue.createApp({
             this.currencydata[currencyName].Amount += amount;
         },
         payCurrency(currencyName, amount, reason){
+             if(amount == 0){
+                return;
+            }
             if(this.currencyConsumptionDescriptions[currencyName]){
                 this.currencyConsumptionDescriptions[currencyName].push([currencyName, amount, reason]);
             }
@@ -1008,14 +1073,19 @@ const gamevm = Vue.createApp({
             }
             const [additiveModifiers, multModifiers] = this.getProductionModifiers(name);
             for (let [currency, amount] of Object.entries(worker.Produces)) {
-                this.currencydata[currency].Amount += (amount + (additiveModifiers[currency] || 0)) * count * this.getWorkRatio() * (multModifiers[currency] || 1);
+                let baseProduction = amount + (additiveModifiers[currency] || 0);
+                let totalBase = baseProduction * count;
+                let withRatio = totalBase * this.getWorkRatio();
+                let withMult = withRatio * (multModifiers[currency] || 1);
+                let produced = withMult;
+                this.addCurrency(currency, produced, "Produced by " + name);
             }
         },
         getProductionModifiers(name) {
             let additiveModifiers = {};
             let multModifiers = {};
             for (let prod of this.productionModifiers) {
-                if (this.hasRequirements(prod)) {
+                if (prod.IsUnlocked) {
                     for (let boost of prod.Boosts) {
                         if (boost.Name == name) {
                             if (boost.ModifierType == "Additive") {
@@ -1109,9 +1179,7 @@ const gamevm = Vue.createApp({
             location.reload();
         },
         hireByName(name) {
-            console.log(name);
             let prof = this.professions.find(x => x.Name == name);
-            console.log(prof);
             if (prof) {
                 this.hire(prof);
             }
@@ -1158,12 +1226,12 @@ const gamevm = Vue.createApp({
         },
         buy(cost, amount = 1, reason="Lazy Developer") {
             if (!this.canAfford(cost, amount)) {
-                return false;
+                return 0;
             }
             for (const [k, v] of Object.entries(cost)) {
                 this.payCurrency(k, v * amount, reason);
             }
-            return true;
+            return amount;
         },
         getTotalHousing() {
             return this.houseTypes.map(x => x.Count * (x.Houses ?? 0)).reduce((a, b) => a + b);
@@ -1310,10 +1378,22 @@ const gamevm = Vue.createApp({
             if (n == 1) {
                 return "One";
             }
-            if (n > 1 && n < 5) {
+            if (n > 1 && n < 3) {
+                return "Few";
+            }
+            if (n < 5) {
                 return "Some";
             }
-            if (n >= 5 && n < 100) {
+            if (n == 5) {
+                return "A Hand";
+            }
+            if (n < 10) {
+                return "Less Than Both Hands";
+            }
+            if (n == 10) {
+                return "Both Hands";
+            }
+            if (n < 100) {
                 return "Many";
             }
             else {
@@ -1324,7 +1404,7 @@ const gamevm = Vue.createApp({
             const tokenSpec = [
                 ['SKIP', /^,/],
                 ['NUMBER', /^\d+/],
-                ['OPERATOR', /^(greater than|are greater than|is greater than|are less than|is less than|less than|more than)/],
+                ['OPERATOR', /^(greater than|are greater than|is greater than|are less than|is less than|less than|are more than|is more than|more than|fewer than|is fewer than|are fewer than)/],
                 ['AND', /^and\b/],
                 ['OR', /^or\b/],
                 ['NOT', /^not\b/],
@@ -1480,9 +1560,13 @@ const gamevm = Vue.createApp({
 
             //there are more than 5 unemployed
             let next = this.peek();
-            //Ignore there ares.
+            
             if (next.type == 'THERE_ARE') {
                 this.consume();
+                operator = {
+                    type: "OPERATOR",
+                    value: "="
+                };
             }
             //Either a comparator or an identity
             next = this.peek();
@@ -1531,7 +1615,8 @@ const gamevm = Vue.createApp({
                 }
             }
             else if (next.type == 'NUMBER') {
-                console.log('yo');
+                lhs = this.next();
+                rhs = this.next();
             }
             return {
                 type: 'Evaulatable',
@@ -1593,7 +1678,7 @@ const gamevm = Vue.createApp({
             else if (condition.type == 'UNTIL') {
                 output = this.parseUntil(actionTarget);
             }
-            if (this.peek().type == 'AND') {
+            while (this.peek().type == 'AND') {
                 output = {
                     type: "BooleanOperator",
                     value: this.next(),
@@ -1613,7 +1698,10 @@ const gamevm = Vue.createApp({
                 action = this.parseAction();
                 output.action = action;
             }
-
+            if (actionToken.type == "PRINT") {
+                action = this.parsePrint();
+                output.action = action;
+            }
             return output;
         },
         parsePrint() {
@@ -1628,20 +1716,9 @@ const gamevm = Vue.createApp({
                 line: printCommand.line
             }
         },
-        parseAndExpression() {
-            let left = this.parsePrimary();
-            let and = this.next();
-            const right = this.parsePrimary();
-            left = { type: 'And', left, right };
-
-            return left;
-        },
         parsePrimary() {
             const token = this.peek();
-            if (token.type == 'AND') {
-                return this.parseAndExpression();
-            }
-            else if (token.type == 'IDENT') {
+            if (token.type == 'IDENT') {
                 return this.parseIdent();
             }
             else if (token.type == 'CONDITIONAL') {
@@ -1653,6 +1730,10 @@ const gamevm = Vue.createApp({
             else if (token.type == 'PRINT') {
                 return this.parsePrint();
             }
+            else{
+                //Always advance on syntax errors.
+                this.parser.i++;
+            }
         },
         parse(tokens) {
             const ast = [];
@@ -1662,7 +1743,10 @@ const gamevm = Vue.createApp({
             while (this.parser.i < this.parser.tokens.length) {
                 ast.push(this.parsePrimary())
 
-                this.parser.i++;
+                if(this.peek().type == 'EOF'){
+                    this.parser.i++;
+                }
+                
 
             }
             console.log(ast);
@@ -1724,7 +1808,7 @@ const gamevm = Vue.createApp({
                             op: node.test.op
                         }, env);
 
-                    console.log(conditionResult);
+                    console.log(node, conditionResult);
                     if (conditionResult && node.action) {
                         return this.evalNode(node.action, env);
                     }
@@ -1811,17 +1895,25 @@ const gamevm = Vue.createApp({
                     }
                     break;
                 case 'Print':
-                    if (env[node.output] == 1) {
-                        var isword = 'is';
-                        var outword = pluralize.singular(node.output);
-                    }
-                    else {
-                        var isword = ' are '
-                        var outword = pluralize.plural(node.output);
+                    let num = parseInt(node.output);
 
+                    if(num){
+                        this.consoleOutputs.push('Line ' + node.line + ': ' + num);
                     }
-                    this.consoleOutputs.push('Line ' + node.line + ': There ' + isword + ' ' + env[node.output] + ' ' + outword);
-                    console.log(env[node.output], env);
+                    else{
+                        if (env[node.output] == 1) {
+                            var isword = 'is';
+                            var outword = pluralize.singular(node.output);
+                        }
+                        else {
+                            var isword = ' are '
+                            var outword = pluralize.plural(node.output);
+
+                        }
+                        this.consoleOutputs.push('Line ' + node.line + ': There ' + isword + ' ' + env[node.output] + ' ' + outword);
+                        console.log(env[node.output], env);
+                    }
+                    
                     break;
 
                 case 'Identifier':
@@ -1834,36 +1926,29 @@ const gamevm = Vue.createApp({
                     return node.value;
 
                 case 'BooleanOperator':
-                    let leftAction = node.left.action;
-                    let rightAction = node.right.action;
-
-                    delete node.left.action;
-                    delete node.right.action;
-
-                    let leftHand = this.evalNode(node.left, env);
-                    let rightHand = this.evalNode(node.right, env);
+                    let leftHand = this.evalNode(node.lhs, env);
+                    let rightHand = this.evalNode(node.rhs, env);
 
                     let truthiness = false;
-                    if (node.value == 'AND') {
+                    if (node.value.type == 'AND') {
                         truthiness = leftHand && rightHand;
                     }
-                    else if (node.value == 'OR') {
+                    else if (node.value.type == 'OR') {
                         truthiness = leftHand || rightHand;
                     }
-                    else if (node.value == 'NOT') {
+                    else if (node.value.type == 'NOT') {
                         truthiness = !(leftHand && rightHand);
                     }
-                    else if (node.value == 'XOR') {
+                    else if (node.value.type == 'XOR') {
                         truthiness = (leftHand == true && rightHand == false) || (leftHand == false && rightHand == true);
                     }
                     if (truthiness) {
-                        if (leftAction) {
-                            this.evalNode(leftAction);
+                        if(node.action){
+                            return this.evalNode(node.action, env);
                         }
-                        if (rightAction) {
-                            this.evalNode(rightAction);
-                        }
+                        return true;
                     }
+                    return false;
                     break;
                 case 'BinaryExpression':
 
@@ -1878,10 +1963,10 @@ const gamevm = Vue.createApp({
                     }
                     let left = env[node.left.value];
                     let right = env[node.right.value];
-                    if (!left) {
+                    if (!left && left !== 0) {
                         left = parseFloat(node.left.value);
                     }
-                    if (!right) {
+                    if (!right && right !== 0) {
                         right = parseFloat(node.right.value);
                     }
                     switch (node.op.value) {
@@ -1894,11 +1979,17 @@ const gamevm = Vue.createApp({
                         case 'more than': return left > right;
                         case 'is more than': return left > right;
                         case 'is greater than': return left > right;
+                        case 'are more than': return left > right;
+                        case 'are greater than': return left > right;
                         case '>=': return left >= right;
                         case '<=': return left <= right;
                         case '<': return left < right;
                         case 'less than': return left < right;
                         case 'is less than': return left < right;
+                        case 'are less than': return left < right;
+                        case 'fewer than': return left < right;
+                        case 'are fewer than': return left < right;
+                        case 'is fewer than': return left < right;
                         case '==': return left == right;
                         case '=': return left == right;
                         default: console.error(`Unknown operator: ${node.op}`);
