@@ -36,7 +36,7 @@ const gamevm = Vue.createApp({
             Verbose: true,
             civilizationName:"",
             currentMenu:"Main",
-            menus:["Main", "Population", "Stockpiles", "Technology", "Laws", "Modifiers", "Settings"],
+            menus:["Main", "Population", "Stockpiles", "Buildings", "Technology", "Laws", "Modifiers", "Settings"],
             currentDate: new Date(2000, 0, 1),
             populationMenu:{
                 amount:1,
@@ -44,6 +44,9 @@ const gamevm = Vue.createApp({
             },
             technologyMenu:{
                 showCompleted:false,
+            },
+            buildingMenu:{
+                hoverIndex:-1,
             },
             log: [],
             consoleOutputs: [],
@@ -552,6 +555,19 @@ const gamevm = Vue.createApp({
             }
             return actual;
         },
+        getCurrencyStorage(currencyName){
+            let base = 1000;
+            for(let building of this.houseTypes){
+                if(building.Stores){
+                    
+                    let storage = building.Stores[currencyName] * building.Count;
+                    if(storage){
+                        base += storage;
+                    }
+                }
+            }
+            return base;
+        },
         getCurrencyByName(currencyName){
             return this.currencydata[currencyName];
         },
@@ -919,6 +935,11 @@ const gamevm = Vue.createApp({
             if(amount == 0){
                 return;
             }
+            if(this.currencydata[currencyName].Amount + amount > this.getCurrencyStorage(currencyName)){
+                amount = this.getCurrencyStorage(currencyName) - this.currencydata[currencyName].Amount;
+                reason += " (Capped by Storage)";
+            }
+
             if(this.currencyProductionDescriptions[currencyName]){
                 this.currencyProductionDescriptions[currencyName].push([currencyName, amount, reason]);
             }
@@ -2177,10 +2198,10 @@ const gamevm = Vue.createApp({
             console.log(token);
             let name = token.value;
             if (this.professionReservedNames.has(name)) {
-                return `Our scribes are confused by your law. Our people cannot make ${name} by magic. On line ${token.line} we wonder if you meant to hire or fire more ${pluralize.plural(name)}?`;
+                return `Our scribes are confused by your law. Our people cannot make ${pluralize.plural(name)} by magic. On line ${token.line} we wonder if you meant to hire or fire more ${pluralize.plural(name)}? ${name.charAt(0).toUpperCase() + name.slice(1)} is a special word that always refers to our people with the profession of ${name}.`;
             }
             else if (this.currencyReservedNames.has(name)) {
-                return `Our scribes are confused by your law. On line ${token.line} we wonder if you forgot an 'if' by the word '${name}'?`;
+                return `Our scribes are confused by your law. On line ${token.line} we wonder if you forgot an 'if' by the word '${name}'? ${name.charAt(0).toUpperCase() + name.slice(1)} is a special word that always refers to our people's ${name}.`;
             }
             
         },

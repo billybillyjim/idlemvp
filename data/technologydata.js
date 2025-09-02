@@ -3,7 +3,7 @@ export default [
         Name: "Stone Tools",
         Description: "Other nations seem to have figured this out ages ago. But not to worry, we will catch up!",
         Cost: { "Food": 100 },
-        Requirements: {Populations:{Global:12}},
+        Requirements: {Populations:{Global:6}},
         Progress: 0,
         Visible: false,
         Complexity: 5,
@@ -661,7 +661,7 @@ export default [
         Progress: 0,
         Visible: false,
         Complexity: 1234,
-        isLocked: true,
+        isLocked: false,
         demandModifiers: {
             Global: {},
             PerCapita: {},
