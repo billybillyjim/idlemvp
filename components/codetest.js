@@ -9,7 +9,7 @@ export default {
     },
     data: function () {
         return {
-            testCode: `if wood < 50 and there are 1 farmers and there are 15 unemployed print 100`,
+            testCode: `if available housing is 0 print 1.`,
             errors: [],
             content: '',
             scrollTop:0,

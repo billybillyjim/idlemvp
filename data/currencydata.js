@@ -77,7 +77,7 @@ export default
             Value:1,
             Amount:100,
             Description:"Housing needs are met by building buildings.",
-            Type:'Invisible',
+            Type:'Nonphysical Good',
             Icon:'./icons/house.svg',
             Unlocked:false,
         },

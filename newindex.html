@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="en">
+<html lang="en" data-bs-theme="dark">
 
 <head>
     <meta charset="utf-8" />
@@ -18,6 +18,9 @@
             padding-top: var(--navbar-h);
         }
 
+        button{
+             touch-action: manipulation;
+        }
         @media (min-width: 992px) {
             .sidebar.offcanvas-lg {
                 position: fixed;
@@ -62,7 +65,7 @@
                     <span class="navbar-toggler-icon"></span>
                 </button>
 
-                <a class="navbar-brand" href="">Yacig Bimib</a>
+                <a class="navbar-brand" href="">Yasig Bimib</a>
 
                 <ul class="navbar-nav w-100 justify-content-between gap-2">
                     <li class="nav-item my-3" style="color:white">
@@ -90,11 +93,11 @@
                 <button type="button" class="btn-close" data-bs-dismiss="offcanvas" aria-label="Close"></button>
             </div>
             <div class="offcanvas-body p-0">
-                <div class="d-flex flex-column p-3 bg-light h-100 w-100">
+                <div class="d-flex flex-column p-3 h-100 w-100">
                     <ul class="nav nav-pills flex-column mb-auto">
                         <li class="nav-item" v-for="menu in menus">
                             <button @click="setMenu(menu)" :class="currentMenu == menu ? 'active' : ''"
-                                class="btn-link nav-link ps-2 w-100" style="text-align: left;"
+                                class="btn-link nav-link ps-2 w-100" style="text-align: left;" data-bs-dismiss="offcanvas"
                                 aria-current="page">[[menu]]</a>
                         </li>
                     </ul>
@@ -108,8 +111,7 @@
             <div>
                 <template v-if="currentMenu == 'Main'">
                     <h1 class="display-6 mb-4">[[civilizationName]]</h1>
-                    [[(professions[0].Count)]]
-                    <codetester></codetester>
+                    
                 </template>
                 <template v-else-if="currentMenu == 'Population'">
                     <h1 class="display-6 mb-4">The People of [[civilizationName]]</h1>
@@ -199,12 +201,12 @@
                                         <td>
                                             <Tooltip :data="{ text: currency.Description }">
                                                 <img class="image-icon" :src="currency.Icon" />
-                                            
-                                            [[currency.Name]]
+                                                [[currency.Name]]
                                             </Tooltip>
                                         </td>
                                         <td>
-                                            [[formatNumber(currency.Amount)]] / [[formatNumber(getCurrencyStorage(currency.Name))]]      
+                                            [[formatNumber(currency.Amount)]] 
+                                            <span v-if="currency.Type != 'Nonphysical Good'">/ [[formatNumber(getCurrencyStorage(currency.Name))]]   </span>   
                                         </td>
                                         <td>
                                             <Tooltip :data="{ text: getDailyChangeDescription(currency) }">
@@ -270,6 +272,7 @@
                  <template v-else-if="currentMenu == 'Buildings'">
                     <h1 class="display-6 mb-4">The Buildings of [[civilizationName]]</h1>
                     <div>There is enough housing for [[formatNumber(getTotalHousing())]] people. [[formatNumber(getAvailableHousing())]] room<span v-if="getAvailableHousing() != 1">s are</span><span v-else> is</span> still open.</div>
+                    <div>The homelessness rate is [[getHomelessnessRatio() * 100]]%</div>
                     <div>
                         <table class="table table-striped">
                             <thead>
@@ -279,31 +282,38 @@
                                     <th>Supports</th>
                                     <th>Current</th>
                                     <th>Cost</th>
+                                    <th>Actions</th>
                                 </tr>
                             </thead>
                             <tbody>
                                 <template v-for="(houseType, index) in getVisibleHouseTypes()">
                                     <tr  style="height:65px;" :class="houseType.Unlocked ? '' : 'locked-item'" @mouseenter="houseType.Unlocked == false ? hoverIndex = index : ''" @mouseleave="buildingMenu.hoverIndex = null">
-                                        <td v-if="index == buildingMenu.hoverIndex" colspan="100">
-                                            <div v-html="costToString(houseType.unlockCost)"></div>    
+                                        <td>
+                                            <Tooltip :data="{ text: houseType.Description }">
+                                                [[houseType.Name]]
+                                            </Tooltip>
+
                                         </td>
-                                        <td v-if="index != buildingMenu.hoverIndex" >
-                                            [[houseType.Name]]
-                                        </td>
-                                        <td v-if="index != buildingMenu.hoverIndex" >
+                                        <td>
                                             [[formatNumber(houseType.Count)]]         
                                         </td>
-                                        <td v-if="index != buildingMenu.hoverIndex" >
+                                        <td>
                                             [[formatNumber(houseType.Houses)]]   
                                         </td>
-                                        <td v-if="index != buildingMenu.hoverIndex" >
-                                            [[formatNumber(houseType.Houses * houseType.Count)]]         
+                                        <td>
+                                             <Tooltip :data="{ text: houseType.Houses + ' x ' + houseType.Count }">
+                                                [[formatNumber(houseType.Houses * houseType.Count)]]  
+                                             </Tooltip>
+                                                   
                                         </td>
-                                        <td v-if="index != buildingMenu.hoverIndex" >
-                                            <div v-html="costToString(houseType.Cost)"></div>       
+                                        <td>
+                                            <Tooltip :data="{ text: costToText(houseType.Cost) }">
+                                                <div v-html="costToString(houseType.Cost)"></div>      
+                                            </Tooltip>     
                                         </td>
-                                        <td v-if="index != buildingMenu.hoverIndex" >
-                                            <button class="btn btn-primary" :disabled="houseType.Unlocked == false || canAfford(houseType.Cost) == false" @click="buildBuilding(houseType)">Buy</button>
+                                        <td>
+                                            <button class="btn btn-primary m-2" :disabled="houseType.Unlocked == false || canAfford(houseType.Cost) == false" @click="buildBuilding(houseType)">Build</button>
+                                            <button class="btn btn-primary m-2" :disabled="!canDemolish(houseType)" @click="demolishBuilding(houseType)">Demolish</button>
                                         </td>
                                     </tr>
                                 </template>
@@ -317,34 +327,41 @@
                                     <th>Description</th>
                                     <th>Current</th>
                                     <th>Cost</th>
+                                    <th>Actions</th>
                                 </tr>
                             </thead>
                             <tbody>
                                 <template v-for="(houseType, index) in getVisibleBuildings()">
-                                    <tr  style="height:65px;" :class="houseType.Unlocked ? '' : 'locked-item'" @mouseenter="houseType.Unlocked == false ? buildingMenu.hoverIndex = index : ''" @mouseleave="buildingMenu.hoverIndex = null">
-                                        <td v-if="index == buildingMenu.hoverIndex" colspan="100">
-                                            <div v-html="costToString(houseType.unlockCost)"></div>    
+                                    <tr  style="height:65px;" :class="houseType.Unlocked ? '' : 'locked-item'">
+                                        <td>
+                                            <Tooltip :data="{ text: houseType.Description }">
+                                                [[houseType.Name]]
+                                            </Tooltip>
                                         </td>
-                                        <td v-if="index != buildingMenu.hoverIndex" >
-                                            [[houseType.Name]]
-                                        </td>
-                                        <td v-if="index != buildingMenu.hoverIndex" >
+                                        <td>
                                             [[formatNumber(houseType.Count)]]         
                                         </td>
-                                        <td v-if="index != buildingMenu.hoverIndex" >
+                                        <td>
                                             <span v-if="houseType.Type == 'Storage'">
-                                            Stores </span>  
+                                                Stores 
+                                            </span>
+                                            <Tooltip :data="{ text: costToText(houseType.Stores) }">
                                                 <div v-html="costToString(houseType.Stores)"></div>
-                                            
+                                            </Tooltip>
                                         </td>
-                                        <td v-if="index != buildingMenu.hoverIndex" >
-                                            [[formatNumber(houseType.Houses * houseType.Count)]]         
+                                        <td>
+                                            <Tooltip :data="{ text: costToText(houseType.Stores, houseType.Count) }">
+                                                <div v-html="costToString(houseType.Stores, houseType.Count)"></div>
+                                            </Tooltip>       
                                         </td>
-                                        <td v-if="index != buildingMenu.hoverIndex" >
-                                            <div v-html="costToString(houseType.Cost)"></div>       
+                                        <td>
+                                             <Tooltip :data="{ text: costToText(houseType.Cost) }">
+                                                <div v-html="costToString(houseType.Cost)"></div>      
+                                            </Tooltip> 
                                         </td>
-                                        <td v-if="index != buildingMenu.hoverIndex" >
-                                            <button class="btn btn-primary" :disabled="houseType.Unlocked == false || canAfford(houseType.Cost) == false" @click="buildBuilding(houseType)">Buy</button>
+                                        <td>
+                                            <button class="btn btn-primary m-2" :disabled="houseType.Unlocked == false || canAfford(houseType.Cost) == false" @click="buildBuilding(houseType)">Build</button>
+                                            <button class="btn btn-primary m-2" :disabled="!canDemolish(houseType)" @click="demolishBuilding(houseType)">Demolish</button>
                                         </td>
                                     </tr>
                                 </template>
@@ -354,7 +371,7 @@
                 </template>
                 <template v-else-if="currentMenu == 'Laws'">
                     <h1 class="display-6 mb-4">The Laws of [[civilizationName]]</h1>
-
+                    <codetester></codetester>
                 </template>
                 <template v-else-if="currentMenu == 'Modifiers'">
                     <h1 class="display-6 mb-4">Current Modifiers</h1>
@@ -383,6 +400,18 @@
                                     </template>
                                 <tr v-if="getCurrentModifiers().length == 0">
                                     <td colspan="1000">You have no current modifiers.</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </template>
+                <template v-else-if="currentMenu == 'Log'">
+                    <h1 class="display-6 mb-4">Log</h1>
+                    <div class="log">
+                        <table class="table table-striped">
+                            <tbody>
+                            <tr v-for="log in log">
+                                <td>[[log.Time]]</td><td>[[log.message]]</td>
                                 </tr>
                             </tbody>
                         </table>

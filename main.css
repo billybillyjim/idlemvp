@@ -1,3 +1,138 @@
+/* Apply dark background and light text globally */
+body {
+  background-color: #232323; /* Deep dark gray */
+  color: #e0e0e0;            /* Light gray text */
+}
+
+/* Navbar */
+.navbar {
+  background-color: #1f1f1f !important;
+}
+
+.navbar .nav-link,
+.navbar-brand {
+  color: #e0e0e0 !important;
+}
+
+.navbar .nav-link:hover {
+  color: #ffffff !important;
+}
+
+/* Cards */
+.card {
+  background-color: #1e1e1e;
+  color: #e0e0e0;
+  border: 1px solid #2a2a2a;
+}
+
+.card-header {
+  background-color: #2a2a2a;
+  border-bottom: 1px solid #3a3a3a;
+}
+
+/* Buttons */
+.btn {
+  border: none;
+}
+
+.btn-primary {
+  background-color: #2962ff;
+  color: #fff;
+}
+
+.btn-primary:hover {
+  background-color: #0039cb;
+}
+
+/* Forms */
+.form-control {
+  background-color: #2a2a2a;
+  border: 1px solid #3a3a3a;
+  color: #e0e0e0;
+}
+
+.form-control:focus {
+  background-color: #2a2a2a;
+  color: #fff;
+  border-color: #2962ff;
+  box-shadow: 0 0 0 0.25rem rgba(41, 98, 255, 0.25);
+}
+
+/* Tables */
+.table {
+  background-color: #1e1e1e;
+  color: #e0e0e0;
+}
+
+.table-striped tbody tr:nth-of-type(odd) {
+  background-color: #2a2a2a;
+}
+
+.table-hover tbody tr:hover {
+  background-color: #333333;
+}
+
+/* Base table styles */
+.table {
+  background-color: #1e1e1e;   /* Dark table background */
+  color: #e0e0e0;             /* Light text */
+  border-color: #2a2a2a;      /* Subtle borders */
+}
+
+/* Table header */
+.table thead th {
+  background-color: #2a2a2a;
+  color: #ffffff;
+  border-color: #3a3a3a;
+}
+
+/* Table rows */
+.table tbody tr {
+  border-color: #2a2a2a;
+}
+
+/* Striped rows */
+.table-striped tbody tr:nth-of-type(odd) {
+  background-color: #252525; /* Darker gray for odd rows */
+}
+
+.table-striped tbody tr:nth-of-type(even) {
+  background-color: #1e1e1e; /* Base table background */
+}
+
+/* Hover effect */
+.table-hover tbody tr:hover {
+  background-color: #333333;
+}
+
+/* Optional: active row */
+.table tbody tr.table-active {
+  background-color: #444444;
+  color: #ffffff;
+}
+
+/* Scope all dark overrides to the Bootstrap dark theme */
+[data-bs-theme="dark"] .table {
+  --bs-table-color:        #e0e0e0;
+  --bs-table-bg:           #1e1e1e;
+  --bs-table-border-color: #2a2a2a;
+
+  /* Accents used by Bootstrap’s child-combinator rule */
+  --bs-table-accent-bg:    transparent;   /* base cell overlay */
+  --bs-table-striped-bg:   #252525;
+  --bs-table-striped-color:#e0e0e0;
+  --bs-table-hover-bg:     #333333;
+  --bs-table-hover-color:  #ffffff;
+  --bs-table-active-bg:    #444444;
+  --bs-table-active-color: #ffffff;
+}
+
+/* Optional: stronger header contrast */
+[data-bs-theme="dark"] .table thead th {
+  background-color: #2a2a2a;  /* visual only; variables already control cells */
+  border-color: #3a3a3a;
+}
+
 .grid-item{
     padding:1rem;
     border:solid 1px gray;
@@ -95,6 +230,19 @@ td {
   white-space: pre;
 }
 
+.documentation-code-block{
+    border-left: solid 4px rgb(4, 145, 170);
+    padding-left:1rem;
+    background:black;
+    color:white;
+}
+
+td {
+    white-space: pre-wrap;
+}
+.navbar-nav{
+    white-space: nowrap;
+}
 .sidebar {
   position: fixed;
   top: 0;

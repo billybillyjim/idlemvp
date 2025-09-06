@@ -36,7 +36,7 @@ const gamevm = Vue.createApp({
             Verbose: true,
             civilizationName:"",
             currentMenu:"Main",
-            menus:["Main", "Population", "Stockpiles", "Buildings", "Technology", "Laws", "Modifiers", "Settings"],
+            menus:["Main", "Population", "Stockpiles", "Buildings", "Technology", "Laws", "Modifiers", "Log", "Settings"],
             currentDate: new Date(2000, 0, 1),
             populationMenu:{
                 amount:1,
@@ -82,9 +82,9 @@ const gamevm = Vue.createApp({
 
             ],
             houseTypes: [
-                { Name: 'Hut', Type: "Housing", Count: 1, Cost: { Wood: 50, Space: 10 }, Houses: 3, Unlocked: true, Visible: true, },
-                { Name: 'Granary', Type: "Storage", Count: 1, Cost: { Bricks: 50, Space: 10 }, Stores: { 'Food': 1000 }, Unlocked: true, Visible: true, },
-                { Name: 'Large Hut', Type: "Housing", Count: 1, Cost: { Wood: 500, Space: 25 }, Houses: 12, Unlocked: true, Visible: true, },
+                { Name: 'Hut', Description:"A poorly assembled hut. It should safely house about 3 people.", Type: "Housing", Count: 1, Cost: { Wood: 50, Space: 10 }, Houses: 3, Unlocked: true, Visible: true, },
+                { Name: 'Granary', Description:"A dry place to store a lot of grain.", Type: "Storage", Count: 1, Cost: { Bricks: 50, Space: 10 }, Stores: { 'Food': 1000 }, Unlocked: true, Visible: true, },
+                { Name: 'Large Hut', Description:"A larger hut. It should safely house about 12 people.", Type: "Housing", Count: 1, Cost: { Wood: 500, Space: 25 }, Houses: 12, Unlocked: true, Visible: true, },
             ],
             missingProfessionCounts: {},
             professions: [
@@ -92,8 +92,8 @@ const gamevm = Vue.createApp({
                     Name: 'Unemployed',
                     Count: 15,
                     Cost: {},
-                    Produces: { 'Food': 0.9 },
-                    BaseDemand: { Food: 60 },
+                    Produces: { 'Food': 0.8 },
+                    BaseDemand: { Food: 6 },
                     ModifiedDemand: {},
                     Unlocked: true,
                     Visible: true,
@@ -248,6 +248,11 @@ const gamevm = Vue.createApp({
                     this.professionReservedNames.add(pluralize.singular(lower));
                 }
             }
+            this.reservedNames.add('total population');
+            this.reservedNames.add('current population');
+            this.reservedNames.add('total housing');
+            this.reservedNames.add('available housing');
+            this.reservedNames.add('current housing');
         },
         runCode(code, outputTokens, outputAST, outputOutput) {
             if (this.reservedNames.size == 0) {
@@ -542,8 +547,7 @@ const gamevm = Vue.createApp({
             let actual = 0;
             if (target) {
                 for (let i = 0; i < amount; i++) {
-                    if (this.canAfford(target.Cost)) {
-                        this.buy(target.Cost, 1, 'Building ' + target.Name);
+                    if (this.buy(target.Cost, 1, 'Building ' + target.Name)) {
                         target.Count++;
                         actual++;
                     }
@@ -555,7 +559,37 @@ const gamevm = Vue.createApp({
             }
             return actual;
         },
+        demolishBuilding(houseType, amount = 1) {
+            let target = this.houseTypes.find(x => x.Name.toLowerCase() == houseType.Name.toLowerCase());
+            let actual = 0;
+            if (target) {
+                for (let i = 0; i < amount; i++) {
+                    if (this.canDemolish(houseType)) {
+                        target.Count--;
+                        actual++;
+                    }
+                    else {
+                        break;
+                    }
+                }
+
+            }
+            return actual;
+        },
+        canDemolish(houseType){
+            if(houseType.Name == 'Hut' && houseType.Count == 1){
+                return false;
+            }
+            if(houseType.Count == 0){
+                return false;
+            }
+            return true;
+        },
         getCurrencyStorage(currencyName){
+            let currency = this.currencydata[currencyName];
+            if(currency.Type == 'Nonphysical Good'){
+                return -1;
+            }
             let base = 1000;
             for(let building of this.houseTypes){
                 if(building.Stores){
@@ -592,12 +626,30 @@ const gamevm = Vue.createApp({
         },
         processDeaths() {
             let deathOdds = 0.01;
+            let homelessRate = this.getHomelessnessRatio();
+            console.log(homelessRate);
+            deathOdds += homelessRate;
             for (let prof of this.professions) {
                 let rand = Math.random();
                 if (rand < deathOdds) {
                     this.die(prof, 1);
                 }
             }
+            if(this.getPopulation() == 0){
+                this.logit('Everyone is dead.');
+            }
+        },
+        getHomelessnessRatio(){
+            let population = this.getPopulation();
+            if(population == 0){
+                return 0;
+            }
+            let housing = this.getTotalHousing();
+            if(housing >= population){
+                return 0;
+            }
+
+            return Math.abs((housing - population) / population);
         },
         die(profession, amount) {
             if (profession.Count == 0) {
@@ -713,55 +765,55 @@ const gamevm = Vue.createApp({
         },
         processUnmetDemand() {
             for (let currency of Object.values(this.currencydata)) {
-                if (currency.Name == 'Housing') {
-                    if (this.getAvailableHousing() < 10) {
-                        this.unmetdemand['Housing'] += 0.1;
-                    }
-                    if (this.getAvailableHousing() > 15) {
-                        this.unmetdemand['Housing'] = 0;
-                    }
-                    continue;
-                }
+            //     if (currency.Name == 'Housing') {
+            //         if (this.getAvailableHousing() < 10) {
+            //             this.unmetdemand['Housing'] += 0.1;
+            //         }
+            //         if (this.getAvailableHousing() > 15) {
+            //             this.unmetdemand['Housing'] = 0;
+            //         }
+            //         continue;
+            //     }
 
-                let preCostAmount = this.preCostTickCurrencyValues[currency.Name]?.Amount;
+            //     let preCostAmount = this.preCostTickCurrencyValues[currency.Name]?.Amount;
                 let beginTickAmount = this.beginTickCurrencyValues[currency.Name]?.Amount;
                 let endAmount = this.endTickCurrencyValues[currency.Name]?.Amount;
 
-                let change = (preCostAmount - beginTickAmount);
+            //     let change = (preCostAmount - beginTickAmount);
                 let dailyChange = (endAmount - beginTickAmount);
                 this.currencyDailyChange[currency.Name] = dailyChange;
-                if (currency.Name == 'Space') {
-                    continue;
+            //     if (currency.Name == 'Space') {
+            //         continue;
+            //     }
+            //     if (change >= 0 && this.demand[currency.Name]) {
+            //         this.modifyDemand(currency.Name, -change, "Met by production ");
+
+            //         if (!this.unmetdemand[currency.Name]) {
+            //             this.unmetdemand[currency.Name] = -change;
+            //         }
+            //         else {
+            //             this.unmetdemand[currency.Name] -= change;
+            //         }
+            //         if (this.unmetdemand[currency.Name] < 0) {
+            //             this.unmetdemand[currency.Name] = 0;
+            //         }
+            //         if (this.demand[currency.Name] < 0) {
+
+            //             this.demand[currency.Name] = 0;
+            //         }
                 }
-                if (change >= 0 && this.demand[currency.Name]) {
-                    this.modifyDemand(currency.Name, -change, "Met by production ");
 
-                    if (!this.unmetdemand[currency.Name]) {
-                        this.unmetdemand[currency.Name] = -change;
-                    }
-                    else {
-                        this.unmetdemand[currency.Name] -= change;
-                    }
-                    if (this.unmetdemand[currency.Name] < 0) {
-                        this.unmetdemand[currency.Name] = 0;
-                    }
-                    if (this.demand[currency.Name] < 0) {
+            //     if (endAmount < dailyChange) {
+            //         this.modifyDemand(currency.Name, Math.abs(-change - endAmount), "Lowering stockpiles");
 
-                        this.demand[currency.Name] = 0;
-                    }
-                }
+            //     }
+            // }
 
-                if (endAmount < dailyChange) {
-                    this.modifyDemand(currency.Name, Math.abs(-change - endAmount), "Lowering stockpiles");
-
-                }
-            }
-
-            for (let [k, v] of Object.entries(this.unmetdemand)) {
-                if (v > 0) {
-                    this.modifyDemand(k, v, "Unmet demand");
-                }
-            }
+            // for (let [k, v] of Object.entries(this.unmetdemand)) {
+            //     if (v > 0) {
+            //         this.modifyDemand(k, v, "Unmet demand");
+            //     }
+            // }
         },
         processDemand() {
             this.resetDemands();
@@ -958,9 +1010,13 @@ const gamevm = Vue.createApp({
             else{
                 this.currencyConsumptionDescriptions[currencyName] = [[currencyName, amount, reason]];
             }
-            this.currencydata[currencyName].Amount += amount;
+            this.currencydata[currencyName].Amount -= amount;
         },
         processBaseGrowth() {
+            if(this.getPopulation() == 0){
+                this.logit("Despite extreme mismanagement of your state, a wanderer has joined your civilization as the sole member.");
+                this.professions.find(x => x.Name == "Unemployed").Count = 1;
+            }
             this.addCurrency('Food', 5, 'Base Production');
             this.addCurrency('Knowledge', this.getPopulation() * 0.002, 'From Population');
             if (this.currencydata.Food.Amount >= this.growthThreshold && this.hasAvailableHousing()) {
@@ -995,7 +1051,7 @@ const gamevm = Vue.createApp({
         },
         processCosts() {
             for (let profession of this.professions) {
-                this.payCurrency('Food', -profession.Count, "Feeding " + (profession.Count == 1 ? profession.Name : pluralize.plural(profession.Name)));
+                this.payCurrency('Food', profession.Count, "Feeding " + (profession.Count == 1 ? profession.Name : pluralize.plural(profession.Name)));
                 //this.currencydata.Food.Amount -= profession.Count;
 
                 if (!this.buy(profession.Cost, profession.Count, "Cost of " + profession.Name)) {
@@ -1266,10 +1322,15 @@ const gamevm = Vue.createApp({
         getVisibleProfessions() {
             return this.professions.filter(x => x.Visible);
         },
-        costToString(cost) {
+        costToString(cost, amount = 1) {
             return Object.entries(cost)
-                .map(([key, value]) => `<img class="image-icon" src="${this.currencydata[key].Icon}" /> ${this.formatNumber(value)}`)
+                .map(([key, value]) => `<img class="image-icon" src="${this.currencydata[key].Icon}" /> ${this.formatNumber(value * amount)}`)
                 .join(', ');
+        },
+        costToText(cost, amount = 1){
+            return Object.entries(cost)
+                .map(([key, value]) => `${key}: ${this.formatNumber(value * amount)}`)
+            .join(', ');
         },
         getProduction(profession) {
             return this.professions.find(x => x.Name == profession).Produces;
@@ -1452,6 +1513,10 @@ const gamevm = Vue.createApp({
                 ['SKIP', /^(a )\b/],
                 ['IDENT', /^(construction worker|construction workers)\b/],
                 ['IDENT', /^(unemployed people)\b/],
+                ['IDENT', /^(available housing)\b/],
+                ['IDENT', /^(total housing)\b/],
+                ['IDENT', /^(total population)\b/],
+                ['IDENT', /^(current population)\b/],
                 ['IDENT', /^[a-zA-Z_]\w*/],
                 ['OPERATOR', /^(>=|<=|>|<|==|=)/],
             ];
@@ -1649,10 +1714,15 @@ const gamevm = Vue.createApp({
                     this.consume();
                 }
                 operator = this.next();
-                if(operator.type != 'OPERATOR'){
+                if(operator.type == 'ASSIGN'){
+                    //Convert is in any evaluatable to comparison.
+                    operator.type = 'OPERATOR';
+                }
+                if(operator.type != 'OPERATOR' ){
                     return this.throwSyntaxError('Evaluatable', operator, `Our scribes are confused by your law. On line ${operator.line} we expected a word to compare values instead of the word ${operator.value}`);
 
                 }
+                
                 rhs = this.next();
                 if(rhs.type != 'IDENT' && rhs.type != 'NUMBER'){
                     return this.throwSyntaxError('Evaluatable', rhs, `Our scribes are confused by your law. On line ${rhs.line} we expected a counting of something or a number, instead of the word ${rhs.value}`);
@@ -1845,7 +1915,12 @@ const gamevm = Vue.createApp({
                 env[pluralize.plural(lowername)] = prof.Count;
                 env[pluralize.singular(lowername)] = prof.Count;
             }
-            console.log(env);
+            env['current population'] = this.getPopulation();
+            env['total population'] = this.getPopulation();
+            env['unemployed people'] = this.getAvailableWorkers();
+            env['total housing'] = this.getAvailableHousing();
+            env['available housing'] = this.getAvailableHousing();
+
             for (const node of ast) {
                 this.evalNode(node, env);
             }
@@ -2066,6 +2141,7 @@ const gamevm = Vue.createApp({
                         case 'are fewer than': return left < right;
                         case 'is fewer than': return left < right;
                         case '==': return left == right;
+                        case 'is': return left == right;
                         case '=': return left == right;
                         default: console.error(`Unknown operator: ${node.op}`);
                     }
@@ -2202,6 +2278,13 @@ const gamevm = Vue.createApp({
             }
             else if (this.currencyReservedNames.has(name)) {
                 return `Our scribes are confused by your law. On line ${token.line} we wonder if you forgot an 'if' by the word '${name}'? ${name.charAt(0).toUpperCase() + name.slice(1)} is a special word that always refers to our people's ${name}.`;
+            }
+            else if(this.isReservedName(name)){
+                return `
+                Our scribes fear your law may be difficult to understand. 
+                On line ${token.line} your reference to '${name}' makes us think of something else. 
+                Trying to say it is something else is unclear. 
+                It may need a different name.`;
             }
             
         },
