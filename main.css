@@ -157,10 +157,12 @@ body {
 
 .tooltip-container {
   position: relative;
+  opacity:1;
 }
 
 .tooltip-box {
   position: fixed;
+  opacity: 1;
   z-index: 9999;
   font-size: 12px;
   padding: 4px 8px;
@@ -207,10 +209,10 @@ td {
 
 
 .line-numbers {
-    background-color: #f0f0f0;
+    background-color: #1f1f1f;
     padding: 8px 4px;
     text-align: right;
-    color: #999;
+    color: #cccccc;
     user-select: none;
     overflow: hidden;
     overflow-y: clip;
@@ -249,8 +251,8 @@ td {
   left: 0;
   height: 100vh;
   width: 250px;
-  background-color: #f8f9fa; /* light gray Bootstrap tone */
-  border-right: 1px solid #dee2e6;
+  background-color: #1f1f1f; /* light gray Bootstrap tone */
+  border-right: 1px solid #4b4b4b;
   padding: 1rem;
   overflow-y: auto;
   box-shadow: 2px 0 5px rgba(0, 0, 0, 0.05);
@@ -269,7 +271,7 @@ td {
 .sidebar a:hover {
   color: #0056b3;
   text-decoration: underline;
-  background-color: #e9ecef;
+  background-color: #1f1f1f;
   border-radius: 0.25rem;
 }
 
@@ -299,7 +301,7 @@ td {
 .menu-tab{
     cursor:pointer;
     padding:.25rem;
-    background-color: #f8f9fa; /* light gray Bootstrap tone */
+    background-color: #1f1f1f; /* light gray Bootstrap tone */
     border:solid 1px gray;
     border-radius:.25rem;
     width:105px;

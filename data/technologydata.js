@@ -9,7 +9,7 @@ export default [
         Complexity: 5,
         isLocked: true,
         demandModifiers: {
-            Global: {},
+            Global: {"Wood":0.5},
             PerCapita: {}
         },
         Unlock(vm) {

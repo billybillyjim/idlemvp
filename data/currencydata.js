@@ -12,7 +12,7 @@ export default
         Space:{
             Name:'Space',
             Value:1,
-            Amount:1000,
+            Amount:1,
             Description:"Space is necessary for our growth. Buildings need space to be built.",
             Type:'Nonphysical Good',
             Icon:'./icons/space.svg',
@@ -22,7 +22,7 @@ export default
             Name:'Wood',
             Value:1,
             Description:"You can chop down trees to acquire wood. It's pretty cool.",
-            Amount:0,
+            Amount:10,
             Icon:'./icons/wood.svg',
             Type:'Raw Material',
             Unlocked:true,
@@ -159,7 +159,7 @@ export default
             Amount:0,
             Type:'Nonphysical Good',
             Icon:'./icons/knowledge.svg',
-            Unlocked:false,
+            Unlocked:true,
         },
         'Bronze Tools':{
             Name:'Bronze Tools',

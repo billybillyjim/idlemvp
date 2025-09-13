@@ -7,6 +7,7 @@ import technology from './components/technology.js'
 import settings from './components/settings.js'
 import laws from './components/laws.js'
 import Tooltip from './components/tooltip.js'
+import tooltipwrapper from './components/tooltipwrapper.js'
 import codetester from './components/codetest.js'
 
 import pluralize from './lib/pluralize.js'
@@ -28,7 +29,8 @@ const gamevm = Vue.createApp({
         settings,
         laws,
         codetester,
-        Tooltip
+        Tooltip,
+        tooltipwrapper
     },
     delimiters: ['[[', ']]'],
     data: function () {
@@ -51,6 +53,7 @@ const gamevm = Vue.createApp({
             log: [],
             consoleOutputs: [],
             uploadedSaveFile: null,
+            activeTooltipData:null,
             population: 1,
             growthThreshold: 50,
             QOLDecay: 0.95,
@@ -104,7 +107,6 @@ const gamevm = Vue.createApp({
                     Cost: {},
                     Produces: { 'Food': 2.1 },
                     BaseDemand: {
-                        Wood: 0.1,
                         Food: 1
                     },
                     ModifiedDemand: {},
@@ -316,7 +318,7 @@ const gamevm = Vue.createApp({
             this.tickspeed = value;
             this.gameProcess = setInterval(this.gameTick, this.tickspeed);
         },
-        getTechnologies(sort=false) {
+        getTechnologies(sort=false, includeResearched=false) {
             //const allTechByName = Object.fromEntries(this.technologies.map(t => [t.Name, t]));
             for (let tech of this.technologies) {
                 if (!tech.Visible) {
@@ -332,6 +334,9 @@ const gamevm = Vue.createApp({
             });
             if(sort){
                 techs.sort((a,b) => b.IsUnlocked - a.IsUnlocked);
+            }
+            if(includeResearched == false){
+                return techs.filter(x => x.isLocked == true);
             }
             return techs; 
         },
@@ -729,7 +734,6 @@ const gamevm = Vue.createApp({
             let unmetSpaceDemand = 0.001;
             this.modifyDemand('Hides', baseHideDemand * totalPop, 'Global Demand');
             this.modifyDemand('Clay', baseClayDemand * totalPop, 'Global Demand');
-            this.modifyDemand('Wood', baseWoodDemand * totalPop, 'Global Demand');
             this.modifyDemand('Ore', baseOreDemand * totalPop, 'Global Demand');
             this.modifyDemand('Space', baseSpaceDemand * totalPop, 'Global Demand');
             if (this.currencydata.Space.Amount == 0) {
@@ -931,9 +935,11 @@ const gamevm = Vue.createApp({
 
             const needed = this.focusedTechnology.Complexity - this.focusedTechnology.Progress;
             const usable = Math.min(this.currencydata["Knowledge"].Amount, needed);
-
+            if(usable <= 0){
+                return;
+            }
             this.focusedTechnology.Progress += usable;
-            this.currencydata["Knowledge"].Amount -= usable;
+            this.payCurrency('Knowledge', usable, 'For the advancement of ' + this.focusedTechnology.Name);
 
             if (this.focusedTechnology.Progress >= this.focusedTechnology.Complexity) {
                 this.focusedTechnology.Unlock(this);
@@ -987,16 +993,17 @@ const gamevm = Vue.createApp({
             if(amount == 0){
                 return;
             }
-            if(this.currencydata[currencyName].Amount + amount > this.getCurrencyStorage(currencyName)){
+            let storage = this.getCurrencyStorage(currencyName);
+            if(this.currencydata[currencyName].Amount + amount > storage && storage != -1){
                 amount = this.getCurrencyStorage(currencyName) - this.currencydata[currencyName].Amount;
                 reason += " (Capped by Storage)";
             }
 
             if(this.currencyProductionDescriptions[currencyName]){
-                this.currencyProductionDescriptions[currencyName].push([currencyName, amount, reason]);
+                this.currencyProductionDescriptions[currencyName].push([currencyName, this.formatNumber(amount), reason]);
             }
             else{
-                this.currencyProductionDescriptions[currencyName] = [[currencyName, amount, reason]];
+                this.currencyProductionDescriptions[currencyName] = [[currencyName, this.formatNumber(amount), reason]];
             }
             this.currencydata[currencyName].Amount += amount;
         },
@@ -1049,10 +1056,15 @@ const gamevm = Vue.createApp({
                 }
             }
         },
+        setTooltipData(text, isHtml, eventData){
+            this.activeTooltipData = {text: text, isHtml:isHtml, visible:true, data:eventData};
+        },
+        clearTooltipData(){
+            this.activeTooltipData = {};
+        },
         processCosts() {
             for (let profession of this.professions) {
                 this.payCurrency('Food', profession.Count, "Feeding " + (profession.Count == 1 ? profession.Name : pluralize.plural(profession.Name)));
-                //this.currencydata.Food.Amount -= profession.Count;
 
                 if (!this.buy(profession.Cost, profession.Count, "Cost of " + profession.Name)) {
                     for (const key in profession.Cost) {
@@ -1063,9 +1075,12 @@ const gamevm = Vue.createApp({
                         }
                     }
                 }
+                else{
+                    
+                }
             }
             for (let [good, demand] of Object.entries(this.demand)) {
-                if (good == 'Space' || good == 'Knowledge') {
+                if (good == 'Space' || good == 'Knowledge' || good == 'Housing' || good == 'Food') {
                     continue;
                 }
                 let obj = {}
@@ -1302,6 +1317,9 @@ const gamevm = Vue.createApp({
             return this.professions.find(x => x.Name == 'Unemployed').Count;
         },
         buy(cost, amount = 1, reason="Lazy Developer") {
+            if(this.objectIsEmpty(cost)){
+                return amount;
+            }
             if (!this.canAfford(cost, amount)) {
                 return 0;
             }
@@ -1309,6 +1327,9 @@ const gamevm = Vue.createApp({
                 this.payCurrency(k, v * amount, reason);
             }
             return amount;
+        },
+        objectIsEmpty(obj) {
+            return Object.keys(obj).length === 0;
         },
         getTotalHousing() {
             return this.houseTypes.map(x => x.Count * (x.Houses ?? 0)).reduce((a, b) => a + b);
@@ -1321,6 +1342,69 @@ const gamevm = Vue.createApp({
         },
         getVisibleProfessions() {
             return this.professions.filter(x => x.Visible);
+        },
+        getBuildingCostTooltip(houseType){
+            if(this.canAfford(houseType.Cost)){
+                return 'You can afford this building.';
+            }
+
+            let output = this.playerCantAffordCostToString(houseType.Cost, 1);
+            output += '<br/><br/>';
+            let timeToCompletion = this.getTimeToAffordCost(houseType.Cost);
+            if(timeToCompletion == 'Never'){
+               return output + 'Time to afford: Never'; 
+            }
+
+            output += '<span style="color:white;"> Time to afford: ' + timeToCompletion + '</span>';
+            return output;
+        },
+        getTimeToAffordCost(cost, amount = 1){
+            let maxTime = 0;
+
+            for(let [key, value] of Object.entries(cost)){
+                if(this.currencydata[key].Amount > value * amount){
+                    continue;
+                }
+                
+                let change = this.currencyDailyChange[key];
+                if(change <= 0){
+                    return "Never";
+                }
+                let missing = (value * amount) - this.currencydata[key].Amount;
+                let ticks = missing / change;
+                if(ticks > maxTime){
+                    maxTime = ticks;
+                }
+
+            }
+            let seconds = maxTime * (this.tickspeed / 1000);
+            if(seconds == 1){
+                return '1 second.';
+            }
+            if(seconds <= 60){
+                return Math.round(seconds) + ' seconds.';
+            }
+            let minutes = Math.floor(seconds / 60);
+            if(minutes == 1){
+                return '1 minute ' + Math.round(seconds - 60) + ' seconds.';
+            }
+            if(minutes <= 60){
+                return minutes + ' minutes ' + Math.round(seconds % 60) + ' seconds.';
+            }
+            let hours = Math.floor(seconds / 60 / 60);
+            if(hours == 1){
+                return '1 hour ' + Math.round(minutes % 60) + ' minutes.'; 
+            }
+            return hours + ' hours ' + Math.round(minutes % 60) + ' minutes.'; 
+
+        },
+        playerCantAffordCostToString(cost, amount = 1) {
+            return Object.entries(cost).map(([key, value]) => [key, value])
+                .filter(key => this.currencydata[key[0]].Amount > key[1] * amount == false)
+                .map(([key, value]) => {
+                    return `<img class="image-icon" src="${this.currencydata[key].Icon}" /><span style="color:red"> ${this.formatNumber((value * amount) - this.currencydata[key].Amount)}</span>`
+                })
+                .join(', ');
         },
         costToString(cost, amount = 1) {
             return Object.entries(cost)
