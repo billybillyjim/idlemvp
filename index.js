@@ -1056,8 +1056,8 @@ const gamevm = Vue.createApp({
                 }
             }
         },
-        setTooltipData(text, isHtml, eventData){
-            this.activeTooltipData = {text: text, isHtml:isHtml, visible:true, data:eventData};
+        setTooltipData(text, isHtml, eventData, calcfrom){
+            this.activeTooltipData = {text: text, isHtml:isHtml, visible:true, data:eventData, calcfrom};
         },
         clearTooltipData(){
             this.activeTooltipData = {};

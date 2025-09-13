@@ -320,7 +320,7 @@
                                             <button class="btn btn-primary m-2" 
                                                 :style="(houseType.Unlocked == false || canAfford(houseType.Cost) == false) ? 'opacity:0.65' : ''" 
                                                 @click="buildBuilding(houseType)">
-                                                <tooltipwrapper :text="getBuildingCostTooltip(houseType)" :ishtml="true">
+                                                <tooltipwrapper :calcfrom="() => getBuildingCostTooltip(houseType)" :text="getBuildingCostTooltip(houseType)" :ishtml="true">
                                                     Build
                                                 </tooltipwrapper>
                                             </button>
@@ -366,12 +366,15 @@
                                             </tooltipwrapper>       
                                         </td>
                                         <td>
-                                             <tooltipwrapper :text="costToText(houseType.Cost)">
+                                             <tooltipwrapper :calcfrom="() => costToText(houseType.Cost)" :text="costToText(houseType.Cost)">
                                                 <div v-html="costToString(houseType.Cost)"></div>      
                                             </tooltipwrapper> 
                                         </td>
                                         <td>
-                                            <button class="btn btn-primary m-2" :disabled="houseType.Unlocked == false || canAfford(houseType.Cost) == false" @click="buildBuilding(houseType)">Build</button>
+                                            <button class="btn btn-primary m-2" 
+                                            :disabled="houseType.Unlocked == false || canAfford(houseType.Cost) == false" 
+                                            @click="buildBuilding(houseType)"
+                                            >Build</button>
                                             <button class="btn btn-primary m-2" :disabled="!canDemolish(houseType)" @click="demolishBuilding(houseType)">Demolish</button>
                                         </td>
                                     </tr>

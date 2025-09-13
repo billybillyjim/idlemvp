@@ -20,8 +20,15 @@ export default {
         }
         return '';
     },
-    setData(data){
-        console.log(data);
+    getText(){
+        if(this.data?.calcfrom){
+            return this.data.calcfrom();
+        }
+        if(this.data?.text){
+            return this.data.text;
+        }
+        return '';
+        
     }
   },
   delimiters: ['[[', ']]'],
@@ -30,8 +37,8 @@ export default {
       <slot></slot>
 
       <div :class="['tooltip-box', tooltipClass]" :style="pos()">
-        <span v-if="!data?.isHtml">[[ data?.text ]]</span>
-        <span v-else v-html="data?.text"></span>
+        <span v-if="!data?.isHtml">[[ getText() ]]</span>
+        <span v-else v-html="getText()"></span>
       </div>
     </span>
   `
