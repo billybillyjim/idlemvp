@@ -158,13 +158,16 @@ body {
 .tooltip-container {
   position: relative;
   opacity:1;
+  max-width:500px;
 }
+
 
 .tooltip-box {
   position: fixed;
   opacity: 1;
   z-index: 9999;
   font-size: 12px;
+  max-width:500px;
   padding: 4px 8px;
   border-radius: 4px;
   background: black;

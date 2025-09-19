@@ -122,6 +122,7 @@ const gamevm = Vue.createApp({
             endTickCurrencyValues: {},
             beginTickCurrencyValues: {},
             preCostTickCurrencyValues: {},
+            tickProductionValues:{},
             currencyDemandDescriptions: {},
             currencyProductionDescriptions: {},
             currencyConsumptionDescriptions: {},
@@ -156,7 +157,8 @@ const gamevm = Vue.createApp({
             parser: {
                 i: 0,
                 tokens: [],
-            }
+            },
+            pluralizer:pluralize,
         }
     },
     created() {
@@ -515,6 +517,10 @@ const gamevm = Vue.createApp({
             this.currentTick++;
             this.currentDate = new Date(this.currentDate.getFullYear(), this.currentDate.getMonth(), this.currentDate.getDate(), this.currentDate.getHours() + 1);
             this.beginTickCurrencyValues = JSON.parse(JSON.stringify(this.currencydata));
+            this.tickProductionValues = {};
+            for(let currency of Object.keys(this.currencydata)){
+                this.tickProductionValues[currency] = 0;
+            }
             this.currencyDemandDescriptions = {};
             this.currencyProductionDescriptions = {};
             this.currencyConsumptionDescriptions = {};
@@ -567,6 +573,7 @@ const gamevm = Vue.createApp({
         demolishBuilding(houseType, amount = 1) {
             let target = this.houseTypes.find(x => x.Name.toLowerCase() == houseType.Name.toLowerCase());
             let actual = 0;
+            let spaceCost = this.getBuildingSpaceCost(houseType);
             if (target) {
                 for (let i = 0; i < amount; i++) {
                     if (this.canDemolish(houseType)) {
@@ -579,6 +586,7 @@ const gamevm = Vue.createApp({
                 }
 
             }
+            this.addCurrency("Space", spaceCost, "Demolishing " + actual + ' ' + this.toProperPluralize(houseType.Name, actual));
             return actual;
         },
         canDemolish(houseType){
@@ -637,7 +645,12 @@ const gamevm = Vue.createApp({
             for (let prof of this.professions) {
                 let rand = Math.random();
                 if (rand < deathOdds) {
-                    this.die(prof, 1);
+                    let reason = " of natural causes";
+                    if(homelessRate > rand){
+                        reason = " homeless";
+                    }
+
+                    this.die(prof, 1, reason);
                 }
             }
             if(this.getPopulation() == 0){
@@ -656,7 +669,7 @@ const gamevm = Vue.createApp({
 
             return Math.abs((housing - population) / population);
         },
-        die(profession, amount) {
+        die(profession, amount, reason='') {
             if (profession.Count == 0) {
                 return;
             }
@@ -681,13 +694,37 @@ const gamevm = Vue.createApp({
             }
             else if (actual == 1) {
                 if (this.getPopulation() < 1000) {
-                    this.logit(this.getNameOrProfession(profession, actual) + " has died.");
+                    this.logit(this.getNameOrProfession(profession, actual) + ` has died${reason}.`);
                 }
             }
             else {
                 if (this.getPopulation() < 1000) {
-                    this.logit(actual + " " + this.getNameOrProfession(profession, actual) + " have died.");
+                    this.logit(this.getNameOrProfession(profession, actual) + ` have died${reason}.`);
                 }
+            }
+        },
+        getTimeToFullStockpile(currency){
+            if(currency.Name == "Housing"){
+                return "Housing is as much as is built. We can build more housing in the Buildings menu.";
+            }
+            if(currency.Type == "Nonphysical Good"){
+                return currency.Name + " isn't real, and has no known limits of storage.";
+            }
+            let full = this.getCurrencyStorage(currency.Name);
+            let current = currency.Amount;
+            let change = this.currencyDailyChange[currency.Name];
+            if(change > 0){
+                let timeToHappen = Math.abs((full - current) / change);
+                let time = this.ticksToTime(timeToHappen);
+                return "Our " + currency.Name + " will fill our storage in " + time;
+            }
+            if(change < 0){
+                let timeToHappen = Math.abs(current / change);
+                let time = this.ticksToTime(timeToHappen);
+                return "Our " + currency.Name + " will run out in " + time;
+            }
+            else{
+                return "Our " + currency.Name + " is unchanging.";
             }
         },
         resetDemands() {
@@ -947,6 +984,12 @@ const gamevm = Vue.createApp({
 
             }
         },
+        toProperPluralize(word, number){
+            if(number == 1){
+                return pluralize.singular(word);
+            }
+            return pluralize.plural(word);
+        },
         hasAvailableHousing() {
             return this.getPopulation() < this.getTotalHousing();
         },
@@ -971,15 +1014,22 @@ const gamevm = Vue.createApp({
         },
         getDailyChangeDescription(currency) {
             let output = '';
-
+            let anyreason = false;
             for (let reason of this.currencyProductionDescriptions[currency.Name] ?? []) {
                 output += reason[2] + ': ' + reason[1] + '\n';
+                anyreason = true;
             }
 
             for (let reason of this.currencyConsumptionDescriptions[currency.Name] ?? []) {
                 output += reason[2] + ': ' + reason[1] + '\n';
+                anyreason = true;
             }
-
+            if(currency.Name == 'Housing'){
+                return "Housing is a special resource. It is consumed by population, and created by specific buildings. If you run out of housing, your population will stop growing. If you destroy housing, your population might become homeless.";
+            }
+            if(!anyreason){
+                return "This is neither currently produced nor consumed.";
+            }
             return output;
         },
         getDailyDemandDescription(currency) {
@@ -987,7 +1037,43 @@ const gamevm = Vue.createApp({
             for (let reason of this.currencyDemandDescriptions[currency.Name] ?? []) {
                 output += reason[2] + ': ' + reason[1] + '\n';
             }
+            if(output == ''){
+                return "There doesn't appear to be any reason for any demand here.";
+            }
             return output;
+        },
+        getDemolishInfo(housingType){
+            if(housingType.Name == 'Hut' && housingType.Count == 1){
+                return "You can't demolish our last hut, even if you think it would be really funny.";
+            }
+            let spaceCost = this.getBuildingSpaceCost(housingType);
+            return "Demolishing this building would free up " + spaceCost + " Space for our people. None of the costs of building would be returned.";
+        },
+        getBuildingSpaceCost(housingType){
+            let spaceCost = 0;
+            
+            for(let [c, price] of Object.entries(housingType.Cost)){
+                if(c == "Space"){
+                    spaceCost = price;
+                    break;
+                }
+            }
+            return spaceCost;
+        },
+        getTechnologyProgressDescription(technology){
+            let output = 'We have researched ' + this.formatNumber(technology.Progress) + ' of ' + this.formatNumber(technology.Complexity) + ' so far.';
+            let knowledgeSpeed = this.tickProductionValues['Knowledge'];
+            let currentKnowledge = this.currencydata['Knowledge'].Amount ?? 0;
+            if(knowledgeSpeed <= 0){
+                return output + '\n' + "We will never finish researching this.";
+            }
+            let timeRequired = (technology.Complexity - technology.Progress - currentKnowledge) / knowledgeSpeed;
+            let t = this.ticksToTime(timeRequired);
+            if(this.focusedTechnology == technology){
+                return output + '\n' + 'This will be completed in ' + t;
+            }
+
+            return output + '\n' + 'This could be completed in ' + t;
         },
         addCurrency(currencyName, amount, reason){
             if(amount == 0){
@@ -1005,6 +1091,7 @@ const gamevm = Vue.createApp({
             else{
                 this.currencyProductionDescriptions[currencyName] = [[currencyName, this.formatNumber(amount), reason]];
             }
+            this.tickProductionValues[currencyName] += amount;
             this.currencydata[currencyName].Amount += amount;
         },
         payCurrency(currencyName, amount, reason){
@@ -1258,8 +1345,8 @@ const gamevm = Vue.createApp({
                 for (const prof of this.professions.filter(filter)) {
                     const take = Math.ceil(Math.min(prof.Count, foodDebt));
                     prof.Count -= take;
+                    this.die(prof, take, ' of starvation.');
                     foodDebt -= take;
-                    this.logit("Your population is starving. " + this.formatNumber(take) + " " + prof.Name + "(s) died.");
                     if (foodDebt <= 0) {
                         return;
                     }
@@ -1377,26 +1464,23 @@ const gamevm = Vue.createApp({
                 }
 
             }
-            let seconds = maxTime * (this.tickspeed / 1000);
-            if(seconds == 1){
-                return '1 second.';
-            }
+
+            return this.ticksToTime(maxTime);
+
+        },
+        ticksToTime(ticks){
+            let seconds = ticks * (this.tickspeed / 1000);
             if(seconds <= 60){
-                return Math.round(seconds) + ' seconds.';
+                let rounded = Math.floor(seconds);
+                return this.formatNumber(rounded) + ' ' + this.toProperPluralize('second', rounded) + '.';
             }
             let minutes = Math.floor(seconds / 60);
-            if(minutes == 1){
-                return '1 minute ' + Math.round(seconds - 60) + ' seconds.';
-            }
             if(minutes <= 60){
-                return minutes + ' minutes ' + Math.round(seconds % 60) + ' seconds.';
+                return this.formatNumber(minutes) + ' ' + this.toProperPluralize('minute', minutes) + ' ' + this.formatNumber(Math.round(seconds % 60)) + ' ' + this.toProperPluralize('second', Math.round(seconds % 60)) + '.';
             }
             let hours = Math.floor(seconds / 60 / 60);
-            if(hours == 1){
-                return '1 hour ' + Math.round(minutes % 60) + ' minutes.'; 
-            }
-            return hours + ' hours ' + Math.round(minutes % 60) + ' minutes.'; 
 
+            return this.formatNumber(hours) + ' ' + this.toProperPluralize('hour', hours) + ' ' + this.formatNumber(Math.round(minutes % 60)) + ' ' + this.toProperPluralize('minute', minutes) + '.'; 
         },
         playerCantAffordCostToString(cost, amount = 1) {
             return Object.entries(cost).map(([key, value]) => [key, value])
