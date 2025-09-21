@@ -25,6 +25,32 @@ export default [
         isLocked: true,
     },
     {
+        "Name": "Miller",
+        "Type": "Profession",
+        "Cost": { "Food": 100 },
+        "Requirements": { "Technologies": ["Saddle Quern"],"Buildings":{"Mill":1 }},
+        "BaseDemand": { 'Food': 1.5, 'Grain': 0.1 },
+        "ModifiedDemand": {},
+        Unlock(vm) {
+            vm.professions.push(
+                {
+                    Name: 'Miller',
+                    Count: 0,
+                    Cost: { "Food": 100 },
+                    Produces: { 'Food': 1.5 },
+                    Unlocked: true,
+                    Visible: true,
+                    BaseDemand: { 'Food': 1.5 },
+                    ModifiedDemand: {},
+                    RequiredBuilding:'Mill',
+                }
+            )
+            vm.logit("Your food stockpiles have grown enough to support labor outside of farming.");
+            this.isLocked = false;
+        },
+        isLocked: true,
+    },
+    {
         "Name": "Fisherman",
         "Type": "Profession",
         "Cost": { "Food": 100 },
@@ -237,7 +263,7 @@ export default [
                     Name: 'Bronze Metalworker',
                     Count: 0,
                     Cost: { 'Food': 2.4, 'Bronze': 0.25, },
-                    Produces: { 'Bronze Sickles': 0.25 },
+                    Produces: { 'Bronze Tools': 0.25 },
                     Unlocked: true,
                     Visible: true,
                     "BaseDemand": { 'Food': 1.5, 'Bronze': 1 },

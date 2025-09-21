@@ -12,7 +12,7 @@ export default
         Space:{
             Name:'Space',
             Value:1,
-            Amount:1,
+            Amount:1000,
             Description:"Space is necessary for our growth. Buildings need space to be built.",
             Type:'Nonphysical Good',
             Icon:'./icons/space.svg',
@@ -70,6 +70,24 @@ export default
             Type:'Essential',
             Description:"Food is the most delicious of all resources. And if there isn't enough, people will starve.",
             Icon:'./icons/food.svg',
+            Unlocked:true,
+        },
+        Water:{
+            Name:'Water',
+            Value:1,
+            Amount:100,
+            Type:'Essential',
+            Description:"Water is the most precious of all resources. And if there isn't enough, people will die of dehydration.",
+            Icon:'./icons/water.svg',
+            Unlocked:true,
+        },
+        Grain:{
+            Name:'Grain',
+            Value:1,
+            Amount:0,
+            Type:'Raw Material',
+            Description:"Grain isn't useful on its own. It needs to be converted into a more useful material to be consumed.",
+            Icon:'./icons/grain.svg',
             Unlocked:true,
         },
         Housing:{

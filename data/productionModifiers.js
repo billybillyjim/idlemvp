@@ -25,6 +25,7 @@ export default [
         Name:"Well Poles", 
         Boosts:[
             {Name:"Farmer", Currency:"Food", ModifierType:"Additive", Amount:0.1,},
+            {Name:"Well", Currency:"Water", ModifierType:"Additive", Amount:2, },
         ],
         Requirements:{
             Technologies:["Well Poles"]

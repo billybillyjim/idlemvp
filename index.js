@@ -17,6 +17,7 @@ import currencydata from './data/currencydata.js'
 import unlockablesdata from './data/unlockablesdata.js'
 import technologies from './data/technologydata.js'
 import productionModifiers from './data/productionModifiers.js'
+import buildingdata from './data/buildingdata.js'
 
 const gamevm = Vue.createApp({
     el: '#vm',
@@ -84,16 +85,12 @@ const gamevm = Vue.createApp({
                 { Name: 'Settings', component: 'settings', isActive: true, },
 
             ],
-            houseTypes: [
-                { Name: 'Hut', Description:"A poorly assembled hut. It should safely house about 3 people.", Type: "Housing", Count: 1, Cost: { Wood: 50, Space: 10 }, Houses: 3, Unlocked: true, Visible: true, },
-                { Name: 'Granary', Description:"A dry place to store a lot of grain.", Type: "Storage", Count: 1, Cost: { Bricks: 50, Space: 10 }, Stores: { 'Food': 1000 }, Unlocked: true, Visible: true, },
-                { Name: 'Large Hut', Description:"A larger hut. It should safely house about 12 people.", Type: "Housing", Count: 1, Cost: { Wood: 500, Space: 25 }, Houses: 12, Unlocked: true, Visible: true, },
-            ],
+            buildingdata,
             missingProfessionCounts: {},
             professions: [
                 {
                     Name: 'Unemployed',
-                    Count: 15,
+                    Count: 5,
                     Cost: {},
                     Produces: { 'Food': 0.8 },
                     BaseDemand: { Food: 6 },
@@ -105,7 +102,7 @@ const gamevm = Vue.createApp({
                     Name: 'Farmer',
                     Count: 0,
                     Cost: {},
-                    Produces: { 'Food': 2.1 },
+                    Produces: { 'Food': 2.1, 'Grain':5, },
                     BaseDemand: {
                         Food: 1
                     },
@@ -164,9 +161,9 @@ const gamevm = Vue.createApp({
     created() {
         this.endTickCurrencyValues = JSON.parse(JSON.stringify(this.currencydata));
         this.beginTickCurrencyValues = JSON.parse(JSON.stringify(this.currencydata));
-        // for(let tech of this.technologies){
-        //     tech.Unlock(this);
-        // }
+        for(let tech of this.technologies){
+            tech.Unlock(this);
+        }
         const input = `
                 if Wood >= 0 then hire Test until there are 10.
                 `;
@@ -444,7 +441,7 @@ const gamevm = Vue.createApp({
             if (!requireable.Requirements) {
                 return true;
             }
-            if (requireable?.Requirements?.Technologies) {
+            if (requireable.Requirements.Technologies) {
                 for (let techName of requireable?.Requirements?.Technologies) {
                     let tech = this.technologies.find(x => x.Name == techName);
                     if (!tech) {
@@ -457,7 +454,7 @@ const gamevm = Vue.createApp({
                 }
             }
 
-            if (requireable?.Requirements?.Populations) {
+            if (requireable.Requirements.Populations) {
                 for (let [population, count] of Object.entries(requireable?.Requirements?.Populations)) {
                     if (population == 'Global') {
                         let enough = this.getPopulation() >= count;
@@ -470,6 +467,15 @@ const gamevm = Vue.createApp({
                         if (!enough) {
                             return false;
                         }
+                    }
+                }
+            }
+
+            if(requireable.Requirements.Buildings){
+                for (let [buildingName, count] of Object.entries(requireable.Requirements.Buildings)){
+                    let building = this.buildingdata.find(x => x.Name == buildingName);
+                    if(building.Count < count){
+                        return false;
                     }
                 }
             }
@@ -527,6 +533,7 @@ const gamevm = Vue.createApp({
             this.processBaseGrowth();
             this.processProductionModifiers();
             this.processProfessions();
+            this.processBuildings();
             this.processTechnology();
             this.processQOL();
             this.checkUnlocks();
@@ -554,7 +561,7 @@ const gamevm = Vue.createApp({
             this.modifyDemand('Housing', (this.getPopulation() / ((this.getAvailableHousing() - this.getPopulation()) + 1)) * 5, "Base Population Housing Desire");
         },
         buildBuilding(houseType, amount = 1) {
-            let target = this.houseTypes.find(x => x.Name.toLowerCase() == houseType.Name.toLowerCase());
+            let target = this.buildingdata.find(x => x.Name.toLowerCase() == houseType.Name.toLowerCase());
             let actual = 0;
             if (target) {
                 for (let i = 0; i < amount; i++) {
@@ -571,7 +578,7 @@ const gamevm = Vue.createApp({
             return actual;
         },
         demolishBuilding(houseType, amount = 1) {
-            let target = this.houseTypes.find(x => x.Name.toLowerCase() == houseType.Name.toLowerCase());
+            let target = this.buildingdata.find(x => x.Name.toLowerCase() == houseType.Name.toLowerCase());
             let actual = 0;
             let spaceCost = this.getBuildingSpaceCost(houseType);
             if (target) {
@@ -604,7 +611,7 @@ const gamevm = Vue.createApp({
                 return -1;
             }
             let base = 1000;
-            for(let building of this.houseTypes){
+            for(let building of this.buildingdata){
                 if(building.Stores){
                     
                     let storage = building.Stores[currencyName] * building.Count;
@@ -984,6 +991,12 @@ const gamevm = Vue.createApp({
 
             }
         },
+        processBuildings(){
+            for(let building of this.buildingdata){
+                this.processBuildingConsumption(building.Name);
+                this.processBuildingProduction(building.Name);
+            }
+        },
         toProperPluralize(word, number){
             if(number == 1){
                 return pluralize.singular(word);
@@ -1098,11 +1111,14 @@ const gamevm = Vue.createApp({
              if(amount == 0){
                 return;
             }
+            if(this.currencydata[currencyName].Amount < amount){
+                return;
+            }
             if(this.currencyConsumptionDescriptions[currencyName]){
-                this.currencyConsumptionDescriptions[currencyName].push([currencyName, amount, reason]);
+                this.currencyConsumptionDescriptions[currencyName].push([currencyName, this.formatNumber(amount), reason]);
             }
             else{
-                this.currencyConsumptionDescriptions[currencyName] = [[currencyName, amount, reason]];
+                this.currencyConsumptionDescriptions[currencyName] = [[currencyName, this.formatNumber(amount), reason]];
             }
             this.currencydata[currencyName].Amount -= amount;
         },
@@ -1112,7 +1128,8 @@ const gamevm = Vue.createApp({
                 this.professions.find(x => x.Name == "Unemployed").Count = 1;
             }
             this.addCurrency('Food', 5, 'Base Production');
-            this.addCurrency('Knowledge', this.getPopulation() * 0.002, 'From Population');
+            this.addCurrency('Water', 15, 'Base Production');
+            this.addCurrency('Knowledge', this.getPopulation() * 0.005, 'From Population');
             if (this.currencydata.Food.Amount >= this.growthThreshold && this.hasAvailableHousing()) {
                 let growthChance = 0.05 * (this.currencydata.Food.Amount / this.growthThreshold);
                 let rand = Math.random();
@@ -1151,7 +1168,8 @@ const gamevm = Vue.createApp({
         },
         processCosts() {
             for (let profession of this.professions) {
-                this.payCurrency('Food', profession.Count, "Feeding " + (profession.Count == 1 ? profession.Name : pluralize.plural(profession.Name)));
+                this.payCurrency('Food', profession.Count, "Feeding " + this.toProperPluralize(profession.Name, profession.Count));
+                this.payCurrency('Water', profession.Count, "Watering " + this.toProperPluralize(profession.Name, profession.Count));
 
                 if (!this.buy(profession.Cost, profession.Count, "Cost of " + profession.Name)) {
                     for (const key in profession.Cost) {
@@ -1176,6 +1194,9 @@ const gamevm = Vue.createApp({
             }
             if (this.currencydata.Food.Amount < 0) {
                 this.starvePeople();
+            }
+            if (this.currencydata.Water.Amount < 0) {
+                this.dehydratePeople();
             }
         },
         processProfessions() {
@@ -1250,15 +1271,48 @@ const gamevm = Vue.createApp({
             if (!this.canAfford(worker.Cost)) {
                 return;
             }
-            const [additiveModifiers, multModifiers] = this.getProductionModifiers(name);
-            for (let [currency, amount] of Object.entries(worker.Produces)) {
+            for(let [currency, production] of this.getActualProduction(worker)){
+                this.addCurrency(currency, production, "Produced by " + name);
+            }
+        },
+        processBuildingConsumption(name){
+            const building = this.buildingdata.find(x => x.Name == name);
+            if(!building.Consumes){
+                return;
+            }
+
+            let count = building.Count;
+            for (let [currency, amount] of Object.entries(building.Consumes)) {
+                let produced = amount * count;
+                this.payCurrency(currency, produced, "Consumed by " + name);
+            }
+        },
+        processBuildingProduction(name){
+            const building = this.buildingdata.find(x => x.Name == name);
+            if(!building.Produces){
+                return;
+            }
+
+            for(let [currency, production] of this.getActualProduction(building)){
+                this.addCurrency(currency, production, "Produced by " + name);
+            }
+        },
+        getActualProduction(producer, customAmount = -1){
+            let output = [];
+            let count = producer.Count;
+            if(customAmount != -1){
+                count = customAmount;
+            }
+            const [additiveModifiers, multModifiers] = this.getProductionModifiers(producer.Name);
+            for (let [currency, amount] of Object.entries(producer.Produces)) {
                 let baseProduction = amount + (additiveModifiers[currency] || 0);
                 let totalBase = baseProduction * count;
                 let withRatio = totalBase * this.getWorkRatio();
                 let withMult = withRatio * (multModifiers[currency] || 1);
                 let produced = withMult;
-                this.addCurrency(currency, produced, "Produced by " + name);
+                output.push([currency, produced]);
             }
+            return output;
         },
         getProductionModifiers(name) {
             let additiveModifiers = {};
@@ -1312,14 +1366,7 @@ const gamevm = Vue.createApp({
             if (!profession.Produces) {
                 return '';
             }
-            const [additiveModifiers, multModifiers] = this.getProductionModifiers(profession.Name);
-            let o = Object.entries(profession.Produces)
-                .map(([currency, baseAmount]) => {
-                    const additive = additiveModifiers[currency] || 0;
-                    const multiplier = multModifiers[currency] || 1;
-                    const total = (baseAmount + additive) * profession.Count * this.getWorkRatio() * multiplier;
-                    return [currency, this.formatNumber(total)]
-                });
+            let o = this.getActualProduction(profession);
             let output = {};
             for (let [k, v] of o) {
                 output[k] = v;
@@ -1353,6 +1400,32 @@ const gamevm = Vue.createApp({
                 }
             }
         },
+        dehydratePeople(){
+            let waterDebt = -this.currencydata.Water.Amount;
+            if (waterDebt < 0) {
+                return;
+            }
+            this.currencydata.Water.Amount = 0;
+
+            // Priority list: 1) Unemployed, 2) non-Farmers, 3) Farmers
+            const groups = [
+                p => p.Name === 'Unemployed',
+                p => p.Name !== 'Unemployed' && p.Name !== 'Farmer',
+                p => p.Name === 'Farmer'
+            ];
+
+            for (const filter of groups) {
+                for (const prof of this.professions.filter(filter)) {
+                    const take = Math.ceil(Math.min(prof.Count, waterDebt));
+                    prof.Count -= take;
+                    this.die(prof, take, ' of dehydration.');
+                    waterDebt -= take;
+                    if (waterDebt <= 0) {
+                        return;
+                    }
+                }
+            }
+        },
         deleteSave() {
             localStorage.clear();
             location.reload();
@@ -1365,11 +1438,52 @@ const gamevm = Vue.createApp({
         },
         hire(profession, amount = 1) {
             let maxPossible = Math.min(amount, this.getAvailableWorkers());
+            if(profession.RequiredBuilding){
+                let building = this.buildingdata.find(x => x.Name == profession.RequiredBuilding);
+                if(!building){
+                    console.error("Invalid building name for required building for " + profession.Name);
+                }
+                else{
+                    let available = (profession.Count + amount) - building.Count;
+                    if(available < 0){
+                        return;
+                    }
+                    maxPossible = Math.min(maxPossible, available);
+                }
+            }
             let actual = this.buy(profession.Cost, maxPossible, "Hiring " + profession.Name);
             profession.Count += actual;
             this.modifyUnemployed(-actual);
 
             return actual;
+        },
+        hireInfo(profession, amount = 1){
+            let maxPossible = Math.min(amount, this.getAvailableWorkers());
+            if(profession.RequiredBuilding){
+                let building = this.buildingdata.find(x => x.Name == profession.RequiredBuilding);
+                if(!building){
+                    console.error("Invalid building name for required building for " + profession.Name);
+                }
+                else{
+                    let available = (profession.Count + amount) - building.Count;
+                    if(available < 0){
+                        available = 1;
+                    }
+                    maxPossible = Math.min(maxPossible, available);
+                }
+            }
+            let minimumForUsefulInfo = maxPossible;
+            if(maxPossible == 0){
+                minimumForUsefulInfo = 1;
+            }
+            let prodDict = {};
+            let actualProd = this.getActualProduction(profession, minimumForUsefulInfo).map(x => prodDict[x[0]] = x[1]);
+            let modified = this.relativeProductionChangeToString(profession, prodDict);
+            if(maxPossible == amount){
+                return `Hiring ${amount} ${this.toProperPluralize(profession.Name, maxPossible)} will result in:<br/><br/>${modified}`;
+            }
+            return `Hiring ${amount} (Can afford ${maxPossible}) ${this.toProperPluralize(profession.Name, maxPossible)} will result in:<br/><br/>${modified}`;
+
         },
         fire(profession, amount = 1) {
             let maxPossible = Math.min(amount, profession.Count);
@@ -1377,6 +1491,16 @@ const gamevm = Vue.createApp({
             this.modifyUnemployed(maxPossible);
 
             return maxPossible;
+        },
+        fireInfo(profession, amount = 1){
+            let maxPossible = Math.min(amount, profession.Count);
+            let prodDict = {};
+            let actualProd = this.getActualProduction(profession, maxPossible).map(x => prodDict[x[0]] = x[1]);
+            let modified = this.relativeProductionChangeToString(profession, prodDict, -1);
+            console.log(modified);
+
+            return `Firing ${maxPossible} ${this.toProperPluralize(profession.Name, maxPossible)} will result in:<br/><br/>${modified}`;
+
         },
         canFire(profession) {
             if (profession.Count > 0) {
@@ -1419,13 +1543,13 @@ const gamevm = Vue.createApp({
             return Object.keys(obj).length === 0;
         },
         getTotalHousing() {
-            return this.houseTypes.map(x => x.Count * (x.Houses ?? 0)).reduce((a, b) => a + b);
+            return this.buildingdata.map(x => x.Count * (x.Houses ?? 0)).reduce((a, b) => a + b);
         },
         getVisibleHouseTypes() {
-            return this.houseTypes.filter(x => x.Visible && x.Type == 'Housing');
+            return this.buildingdata.filter(x => x.Visible && x.Type == 'Housing');
         },
         getVisibleBuildings() {
-            return this.houseTypes.filter(x => x.Visible && x.Type != 'Housing');
+            return this.buildingdata.filter(x => x.Visible && x.Type != 'Housing');
         },
         getVisibleProfessions() {
             return this.professions.filter(x => x.Visible);
@@ -1494,6 +1618,34 @@ const gamevm = Vue.createApp({
             return Object.entries(cost)
                 .map(([key, value]) => `<img class="image-icon" src="${this.currencydata[key].Icon}" /> ${this.formatNumber(value * amount)}`)
                 .join(', ');
+        },
+        relativeProductionChangeToString(profession, produced, amount = 1) {
+            if(!produced){
+                return '';
+            }
+            let productionOutput = Object.entries(profession.Produces)
+                .map(([key, value]) => 
+                    { 
+                        let icon = `<img class="image-icon" src="${this.currencydata[key].Icon}" />`;
+                        let current = `<span style="${this.currencyDailyChange[key] < 0 ? 'color:red' : ''}">${this.formatNumber(this.currencyDailyChange[key])}</span>`;
+                        let change = `${amount >= 0 ? ' + ' : ' '}${this.formatNumber(produced[key] * amount)}`;
+                        let newOutput = `${this.formatNumber(this.currencyDailyChange[key] + (produced[key] * amount))}`;
+                        return icon + current + change + ' = ' + newOutput;
+                    }
+                )
+                .join('<br/>');
+            let consumptionOutput = Object.entries(profession.BaseDemand)
+            .map(([key, value]) => 
+                { 
+                    let icon = `<img class="image-icon" src="${this.currencydata[key].Icon}" />`;
+                    let current = `<span style="${this.currencyDailyChange[key] < 0 ? 'color:red' : ''}">${this.formatNumber(this.currencyDailyChange[key])}</span>`;
+                    let change = `${amount >= 0 ? ' - ' : ' '}${this.formatNumber(produced[key] * amount)}`;
+                    let newOutput = `${this.formatNumber(this.currencyDailyChange[key] - (produced[key] * amount))}`;
+                    return icon + current + change + ' = ' + newOutput;
+                }
+            )
+            .join('<br/>');
+            return productionOutput + '<br/>' + consumptionOutput;
         },
         costToText(cost, amount = 1){
             return Object.entries(cost)
@@ -1622,8 +1774,11 @@ const gamevm = Vue.createApp({
             return description.join(", ");
         },
         getRelativeNumber(n) {
-            if (n < 1) {
+            if (n <= 0) {
                 return "None";
+            }
+            if(n < 1){
+                return "Not Even One";
             }
             if (n == 1) {
                 return "One";
