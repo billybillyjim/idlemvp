@@ -165,7 +165,7 @@ const gamevm = Vue.createApp({
         this.endTickCurrencyValues = JSON.parse(JSON.stringify(this.currencydata));
         this.beginTickCurrencyValues = JSON.parse(JSON.stringify(this.currencydata));
         for (let tech of this.technologies) {
-            tech.Unlock(this);
+             tech.Unlock(this);
         }
         const input = `
                 if Wood >= 0 then hire Test until there are 10.
@@ -1505,6 +1505,10 @@ const gamevm = Vue.createApp({
             let actualProd = this.getActualProduction(profession, minimumForUsefulInfo).map(x => prodDict[x[0]] = x[1]);
             let modified = this.riskyRelativeProductionChangeToString(profession, prodDict);
 
+            if(this.hasNumbers() == false){
+                return modified;
+            }
+
             if (maxPossible == amount) {
                 return `Hiring ${amount} ${this.toProperPluralize(profession.Name, maxPossible)} will result in:${modified}`;
             }
@@ -1522,8 +1526,11 @@ const gamevm = Vue.createApp({
             let maxPossible = Math.min(amount, profession.Count);
             let prodDict = {};
             let actualProd = this.getActualProduction(profession, maxPossible).map(x => prodDict[x[0]] = x[1]);
-            let modified = this.relativeProductionChangeToString(profession, prodDict, -1);
-            // console.log(modified);
+            let modified = this.riskyRelativeProductionChangeToString(profession, prodDict, -1);
+
+            if(this.hasNumbers() == false){
+                return modified;
+            }
 
             return `Firing ${maxPossible} ${this.toProperPluralize(profession.Name, maxPossible)} will result in:<br/><br/>${modified}`;
 
@@ -1633,6 +1640,9 @@ const gamevm = Vue.createApp({
             return this.formatNumber(hours) + ' ' + this.toProperPluralize('hour', hours) + ' ' + this.formatNumber(Math.round(minutes % 60)) + ' ' + this.toProperPluralize('minute', minutes) + '.';
         },
         playerCantAffordCostToString(cost, amount = 1) {
+            if(!cost){
+                return '';
+            }
             return Object.entries(cost).map(([key, value]) => [key, value])
                 .filter(key => this.currencydata[key[0]].Amount > key[1] * amount == false)
                 .map(([key, value]) => {
@@ -1641,12 +1651,18 @@ const gamevm = Vue.createApp({
                 .join(', ');
         },
         costToString(cost, amount = 1) {
+            if(!cost){
+                return '';
+            }
             return Object.entries(cost)
                 .map(([key, value]) => `<img class="image-icon" src="${this.currencydata[key].Icon}" /> ${this.formatNumber(value * amount)}`)
                 .join(', ');
         },
         riskyRelativeProductionChangeToString(profession, produced, amount = 1) {
             if (!produced) { return ''; }
+            if(this.hasNumbers() == false){
+                return "If we had a better way of keeping track of how many things there are, we could know more about what doing this would do.";
+            }
 
             const unemployed = this.professions.find(x => x.Name === 'Unemployed');
             const unemployedProdDict = {};
@@ -1665,7 +1681,7 @@ const gamevm = Vue.createApp({
                 `<tr class="${extraClass}"><td>${icon}</td><td style="text-align:left">${reason}</td><td>${current}</td><td>${op}</td><td>${change}</td><td>=</td><td>${result}</td></tr>`;
 
             const sectionHeader = (label, initialValue) =>
-                `<tr style="text-align:left;"><td colspan="6">${label}</td><td style="text-align:right">${initialValue}</td></tr>`;
+                `<tr style="text-align:left;font-weight:bold;vertical-align:bottom""><td colspan="6">${label}</td><td style="text-align:right">${initialValue}</td></tr>`;
 
             let tableRows = [];
             tableRows.push(`<table style="text-align:right">`);
@@ -1725,7 +1741,7 @@ const gamevm = Vue.createApp({
                 if (sectionsToAdd.length == 0) {
                     continue;
                 }
-                tableRows.push(sectionHeader(`${icon} ${key}`.trim(), this.formatNumber(this.currencyDailyChange[key] || 0)));
+                tableRows.push(sectionHeader(`${icon} <span style="vertical-align:middle">Current ${key}</span>`.trim(), this.formatNumber(this.currencyDailyChange[key] || 0)));
                 for (let section of sectionsToAdd) {
                     tableRows.push(section);
                 }
@@ -1733,7 +1749,7 @@ const gamevm = Vue.createApp({
                 const netSpan = `<span style="${currentVal < 0 ? 'color:red' : ''}">${this.formatNumber(currentVal)}</span>`;
 
                 tableRows.push(
-                    `<tr class="net border-top"><td>${icon}</td><td colspan="4" style="text-align:left">Net</td><td>=</td><td>${netSpan}</td></tr>`
+                    `<tr class="net" style="border-top:solid 1px #555;border-bottom:solid 1px #888;background-color:#222"><td>${icon}</td><td colspan="4" style="text-align:left">Net</td><td>=</td><td>${netSpan}</td></tr>`
                 );
             }
 
