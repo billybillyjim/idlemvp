@@ -16,7 +16,14 @@ export default {
   methods: {
     pos() {
         if(this.data && this.data.visible){
-            return { top: (this.data?.data.clientY - this.offsetY) + "px", left: (this.data?.data.clientX  + this.offsetX) + "px" };
+            let height = this.getTooltipHeight();
+            let max = window.innerHeight;
+            let top = (this.data?.data.clientY - this.offsetY)
+            let overflow = this.data?.data.clientY - this.offsetY + height - max;
+            if(overflow > 0){
+                top -= overflow;
+            }
+            return { top: top + "px", left: (this.data?.data.clientX  + this.offsetX) + "px" };
         }
         return '';
     },
@@ -29,16 +36,21 @@ export default {
         }
         return '';
         
-    }
+    },
+    getTooltipHeight(){
+       let el = document.getElementById('tooltip');
+       return el?.clientHeight;
+    },
   },
   delimiters: ['[[', ']]'],
   template: `
    <span :class="containerClass" class="tooltip-container" v-show="data?.visible">
       <slot></slot>
 
-      <div :class="['tooltip-box', tooltipClass]" :style="pos()">
+      <div id="tooltip" :class="['tooltip-box', tooltipClass]" :style="pos()">
         <span v-if="!data?.isHtml">[[ getText() ]]</span>
         <span v-else v-html="getText()"></span>
+        [[getTooltipHeight()]]
       </div>
     </span>
   `
