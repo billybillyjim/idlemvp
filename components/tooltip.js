@@ -50,7 +50,6 @@ export default {
       <div id="tooltip" :class="['tooltip-box', tooltipClass]" :style="pos()">
         <span v-if="!data?.isHtml">[[ getText() ]]</span>
         <span v-else v-html="getText()"></span>
-        [[getTooltipHeight()]]
       </div>
     </span>
   `
