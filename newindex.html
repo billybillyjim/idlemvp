@@ -69,16 +69,31 @@
 
                 <a class="navbar-brand" href="">Yasig Bimib</a>
 
-                <ul class="navbar-nav w-100 ">
-                    <li class="nav-item my-3" style="color:white">
-                        Population: [[formatNumber(getPopulation(), true)]]
+                <ul class="navbar-nav w-100 row">
+                    <li class="nav-item my-3 col-1" style="color:white">
+                        <div style="text-align:center;">
+                            Population
+                        </div>
+                        <div style="text-align:center;border-radius:0.375rem;background-color:#111" class="mx-3">
+                            [[formatNumber(getPopulation(), true)]]
+                        </div>
+
                     </li>
-                    <li class="nav-item my-2" style="color:white">
-                        Speed: <button v-for="n in [1, 2, 5, 200]" :key="n" type="button" class="btn btn-outline-light" :class="{ active: tickspeed == 300 / n }" @click="setSpeed(300 / n)">
-                            [[n]]
-                        </button>
+                    <li class="nav-item my-2 col-1" style="color:white">
+                        <div style="text-align:center;">
+                            Speed
+                        </div>
+                        <div>
+                            <button v-for="n in [1, 2, 5, 200]" :key="n" type="button" class="btn btn-outline-light" :class="{ active: tickspeed == 300 / n }" @click="setSpeed(300 / n)">
+                                [[n]]
+                            </button>
+                        </div>
+
                     </li>
-                    <li class="nav-item my-3 align-right" style="color:white">
+                    <li class="nav-item my-3 col-6" style="color:white">
+                        [[(log[0]?.message)]]
+                    </li>
+                    <li class="nav-item my-3 align-right col-4" style="color:white">
                         [[formatDate(currentDate)]] [[getWeatherForDate(currentDate)]]
                     </li>
                 </ul>
@@ -168,8 +183,7 @@
 
                                                 <span v-for="(value, key, index) in productionToNiceString(profession)" :key="key">
                                                     <tooltipwrapper :text="currencydata[key]?.Description">
-                                                        <img class="image-icon" :src="currencydata[key]?.Icon" /> [[
-                                                        value ]]
+                                                        <img class="image-icon" :src="currencydata[key]?.Icon" /> [[ value ]]
                                                     </tooltipwrapper>
                                                     <span v-if="index < Object.entries(productionToNiceString(profession)).length - 1">,
                                                     </span>
@@ -178,8 +192,7 @@
                                             <td>
                                                 <span v-for="(value, key, index) in getProfessionTotalOutput(profession)" :key="key">
                                                     <tooltipwrapper :text="currencydata[key]?.Description">
-                                                        <img class="image-icon" :src="currencydata[key]?.Icon" /> [[
-                                                        formatNumber(value) ]]
+                                                        <img class="image-icon" :src="currencydata[key]?.Icon" /> [[ formatNumber(value) ]]
                                                     </tooltipwrapper>
                                                     <span v-if="index < Object.entries(getProfessionTotalOutput(profession)).length - 1">,
                                                     </span>
@@ -188,8 +201,7 @@
                                             <td>
                                                 <span v-for="(value, key, index) in profession.Cost" :key="key">
                                                     <tooltipwrapper :text="currencydata[key]?.Description">
-                                                        <img class="image-icon" :src="currencydata[key]?.Icon" /> [[
-                                                        formatNumber(value) ]]
+                                                        <img class="image-icon" :src="currencydata[key]?.Icon" /> [[ formatNumber(value) ]]
                                                     </tooltipwrapper>
                                                     <span v-if="index < Object.entries(profession.Cost).length - 1">,
                                                     </span>
@@ -519,6 +531,11 @@
                 </template>
                 <template v-else-if="currentMenu == 'Settings'">
                     <h1 class="display-6 mb-4">Settings</h1>
+                    <div>
+                        <label>Gravity</label>
+                        <input type="range" min="0" max="100" v-model="gravity" />
+                        <div>Current: [[gravity]]</div>
+                    </div>
                 </template>
             </div>
         </main>

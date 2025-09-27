@@ -37,6 +37,7 @@ const gamevm = Vue.createApp({
     data: function () {
         return {
             Verbose: true,
+            gravity:9.81,
             civilizationName: "",
             currentMenu: "Main",
             menus: ["Main", "Population", "Stockpiles", "Buildings", "Technology", "Laws", "Modifiers", "Log", "Settings"],
@@ -165,7 +166,8 @@ const gamevm = Vue.createApp({
         this.endTickCurrencyValues = JSON.parse(JSON.stringify(this.currencydata));
         this.beginTickCurrencyValues = JSON.parse(JSON.stringify(this.currencydata));
         for (let tech of this.technologies) {
-             tech.Unlock(this);
+            this.techDict[tech.Name] = tech;
+            //  tech.Unlock(this);
         }
         const input = `
                 if Wood >= 0 then hire Test until there are 10.
@@ -325,18 +327,16 @@ const gamevm = Vue.createApp({
         },
         getTechnologies(sort = false, includeResearched = false) {
             //const allTechByName = Object.fromEntries(this.technologies.map(t => [t.Name, t]));
+            let techs = [];
             for (let tech of this.technologies) {
                 if (!tech.Visible) {
                     let hasResources = this.canAfford(tech.Cost);
-                    if (hasResources) {
-                        tech.Visible = true;
+                    let hasRequirements = this.hasRequirements(tech);
+                    if (hasResources && hasRequirements) {
+                        techs.push(tech);
                     }
                 }
             }
-            let techs = this.technologies.filter(x => {
-                let hasAllRequirements = this.hasRequirements(x);
-                return x.Visible && hasAllRequirements
-            });
             if (sort) {
                 techs.sort((a, b) => b.IsUnlocked - a.IsUnlocked);
             }
@@ -346,7 +346,7 @@ const gamevm = Vue.createApp({
             return techs;
         },
         hasTechnology(techName) {
-            return this.technologies.find(x => x.Name == techName)?.isLocked == false;
+            return this.techDict[techName]?.isLocked == false;
         },
         buildDependencyGraph() {
             const graph = {};
@@ -449,7 +449,7 @@ const gamevm = Vue.createApp({
             }
             if (requireable.Requirements.Technologies) {
                 for (let techName of requireable?.Requirements?.Technologies) {
-                    let tech = this.technologies.find(x => x.Name == techName);
+                    let tech = this.techDict[techName];
                     if (!tech) {
                         console.error("Invalid tech name for requirement in hasRequirements:", requireable, techName);
                     }
@@ -489,8 +489,8 @@ const gamevm = Vue.createApp({
             return true;
         },
         getCalendarTech() {
-            let solarUnlocked = this.technologies.find(x => x.Name == 'Solar Calendar')?.isLocked == false;
-            let lunarUnlocked = this.technologies.find(x => x.Name == 'Lunar Calendar')?.isLocked == false;
+            let solarUnlocked = this.techDict['Solar Calendar']?.isLocked == false;
+            let lunarUnlocked = this.techDict['Lunar Calendar']?.isLocked == false;
             if (solarUnlocked) {
                 return 'Solar';
             }
@@ -654,14 +654,26 @@ const gamevm = Vue.createApp({
         processDeaths() {
             let deathOdds = 0.01;
             let homelessRate = this.getHomelessnessRatio();
-            console.log(homelessRate);
+            if(this.gravity == 0){
+                deathOdds = 1;
+            }
+            if(this.gravity > 25){
+                deathOdds *= this.gravity;
+            }
+
             deathOdds += homelessRate;
             for (let prof of this.professions) {
                 let rand = Math.random();
                 if (rand < deathOdds) {
-                    let reason = " of natural causes";
-                    if (homelessRate > rand) {
-                        reason = " homeless";
+                    let reason = "has died of natural causes.";
+                    if(this.gravity == 0){
+                        reason = "has floated off into space.";
+                    }
+                    else if(this.gravity > 25){
+                        reason = "has been crushed by extreme gravity.";
+                    }
+                    else if (homelessRate > rand) {
+                        reason = "has died homeless.";
                     }
 
                     this.die(prof, 1, reason);
@@ -708,12 +720,12 @@ const gamevm = Vue.createApp({
             }
             else if (actual == 1) {
                 if (this.getPopulation() < 1000) {
-                    this.logit(this.getNameOrProfession(profession, actual) + ` has died${reason}.`);
+                    this.logit(this.getNameOrProfession(profession, actual) + ` ${reason}.`);
                 }
             }
             else {
                 if (this.getPopulation() < 1000) {
-                    this.logit(this.getNameOrProfession(profession, actual) + ` have died${reason}.`);
+                    this.logit(this.getNameOrProfession(profession, actual) + ` ${reason}.`);
                 }
             }
         },
@@ -1063,6 +1075,9 @@ const gamevm = Vue.createApp({
             return output;
         },
         getDemolishInfo(housingType) {
+            if (housingType.Count == 0) {
+                return "You can't demolish a building that doesn't exist.";
+            }
             if (housingType.Name == 'Hut' && housingType.Count == 1) {
                 return "You can't demolish our last hut, even if you think it would be really funny.";
             }
@@ -1134,8 +1149,17 @@ const gamevm = Vue.createApp({
         },
         processBaseGrowth() {
             if (this.getPopulation() == 0) {
-                this.logit("Despite extreme mismanagement of your state, a wanderer has joined your civilization as the sole member.");
-                this.professions.find(x => x.Name == "Unemployed").Count = 1;
+                if(this.gravity == 0){
+                    this.logit("There isn't enough gravity for anyone to join your civilization.");
+                }
+                else if(this.gravity > 25){
+                    this.logit("There's way too much gravity for someone to join your civilization.");
+                }
+                else{
+                    this.logit("Despite extreme mismanagement of your state, a wanderer has joined your civilization as the sole member.");
+                    this.professions.find(x => x.Name == "Unemployed").Count = 1;
+                }
+                
             }
             this.addCurrency('Food', 5, 'Base Production');
             this.addCurrency('Water', 15, 'Base Production');
@@ -1147,8 +1171,8 @@ const gamevm = Vue.createApp({
                     this.professions.find(x => x.Name == "Unemployed").Count += 1;
                     for (let [prof, missingCount] of Object.entries(this.missingProfessionCounts)) {
                         if (missingCount > 0) {
-                            this.hire(this.professions.find(x => x.Name == prof), 1);
-                            this.missingProfessionCounts[prof] -= 1;
+                            let actual = this.hire(this.professions.find(x => x.Name == prof), missingCount);
+                            this.missingProfessionCounts[prof] -= actual;
                             break;
                         }
                     }
@@ -1230,6 +1254,16 @@ const gamevm = Vue.createApp({
             this.processWorker('Construction Worker');
         },
         processUnemployed() {
+            //Check if any jobs are missing workers and assign them there
+            for (let [prof, missingCount] of Object.entries(this.missingProfessionCounts)) {
+                if (missingCount > 0) {
+                    let actual = this.hire(this.professions.find(x => x.Name == prof), missingCount);
+                    this.missingProfessionCounts[prof] -= actual;
+                    if(actual == 0){
+                        break;
+                    }
+                }
+            }
             this.processWorker('Unemployed');
         },
         processSurveyors() {
@@ -1476,11 +1510,11 @@ const gamevm = Vue.createApp({
                     maxPossible = Math.min(maxPossible, available);
                 }
             }
-            let actual = this.buy(profession.Cost, maxPossible, "Hiring " + profession.Name);
-            profession.Count += actual;
-            this.modifyUnemployed(-actual);
+            //let actual = this.buy(profession.Cost, maxPossible, "Hiring " + profession.Name);
+            profession.Count += maxPossible;
+            this.modifyUnemployed(-maxPossible);
 
-            return actual;
+            return maxPossible;
         },
         hireInfo(profession, amount = 1) {
             let maxPossible = Math.min(amount, this.getAvailableWorkers());
@@ -1503,7 +1537,7 @@ const gamevm = Vue.createApp({
             }
             let prodDict = {};
             let actualProd = this.getActualProduction(profession, minimumForUsefulInfo).map(x => prodDict[x[0]] = x[1]);
-            let modified = this.riskyRelativeProductionChangeToString(profession, prodDict);
+            let modified = this.riskyRelativeProductionChangeToString(profession, prodDict, maxPossible);
 
             if(this.hasNumbers() == false){
                 return modified;
@@ -1526,7 +1560,7 @@ const gamevm = Vue.createApp({
             let maxPossible = Math.min(amount, profession.Count);
             let prodDict = {};
             let actualProd = this.getActualProduction(profession, maxPossible).map(x => prodDict[x[0]] = x[1]);
-            let modified = this.riskyRelativeProductionChangeToString(profession, prodDict, -1);
+            let modified = this.riskyRelativeProductionChangeToString(profession, prodDict, -amount);
 
             if(this.hasNumbers() == false){
                 return modified;
@@ -1543,8 +1577,7 @@ const gamevm = Vue.createApp({
         },
         canHire(profession) {
             return profession.Unlocked == true
-                && this.getAvailableWorkers() > 0
-                && this.canAfford(profession.Cost);
+                && this.getAvailableWorkers() > 0;
         },
         canAfford(cost, amount = 1) {
             return Object.entries(cost).every(([k, v]) =>
@@ -1693,7 +1726,7 @@ const gamevm = Vue.createApp({
                 let sectionsToAdd = [];
 
                 const prodDelta = (produced[key] || 0) * amount;
-                if (prodDelta !== 0) {
+                if (prodDelta != 0) {
                     const op = prodDelta >= 0 ? '+' : '-';
                     const changeAbs = this.formatNumber(Math.abs(prodDelta));
                     let newOutputTxt = this.formatNumber(currentVal + prodDelta);
@@ -1706,13 +1739,13 @@ const gamevm = Vue.createApp({
 
                     currentVal += prodDelta;
                     if (prodDelta != 0) {
-                        sectionsToAdd.push(row(icon, '', op, changeAbs, newOutputTxt, 'Produced'));
+                        sectionsToAdd.push(row(icon, '', op, changeAbs, newOutputTxt, 'Will Produce'));
                     }
 
                 }
 
                 const consDeltaRaw = (profession.BaseDemand?.[key] || 0) * amount;
-                if (consDeltaRaw !== 0) {
+                if (consDeltaRaw != 0) {
                     const consDelta = -consDeltaRaw;
                     const op = consDelta >= 0 ? '+' : '-';
                     const changeAbs = this.formatNumber(Math.abs(consDelta));
@@ -1720,13 +1753,13 @@ const gamevm = Vue.createApp({
 
                     currentVal += consDelta;
                     if (consDelta != 0) {
-                        sectionsToAdd.push(row(icon, '', op, changeAbs, newOutputTxt, 'Consumed'));
+                        sectionsToAdd.push(row(icon, '', op, changeAbs, newOutputTxt, 'Will Consume'));
                     }
 
                 }
 
                 const lostUnempRaw = (unemployedProdDict[key] || 0) * amount;
-                if (lostUnempRaw !== 0) {
+                if (lostUnempRaw != 0) {
                     const lostDelta = -lostUnempRaw;
                     const op = lostDelta >= 0 ? '+' : '-';
                     const changeAbs = this.formatNumber(Math.abs(lostDelta));
@@ -1749,7 +1782,7 @@ const gamevm = Vue.createApp({
                 const netSpan = `<span style="${currentVal < 0 ? 'color:red' : ''}">${this.formatNumber(currentVal)}</span>`;
 
                 tableRows.push(
-                    `<tr class="net" style="border-top:solid 1px #555;border-bottom:solid 1px #888;background-color:#222"><td>${icon}</td><td colspan="4" style="text-align:left">Net</td><td>=</td><td>${netSpan}</td></tr>`
+                    `<tr class="net" style="border-top:solid 1px #555;border-bottom:solid 1px #888;background-color:#222"><td>${icon}</td><td colspan="4" style="text-align:left">New ${key}</td><td>=</td><td>${netSpan}</td></tr>`
                 );
             }
 
@@ -1833,7 +1866,7 @@ const gamevm = Vue.createApp({
             return this.professions.find(x => x.Name == profession).Produces;
         },
         hasNumbers() {
-            if (this.technologies.find(x => x.Name == 'Numbers')?.isLocked) {
+            if (this.techDict['Numbers']?.isLocked) {
                 return false;
             }
             return true;
