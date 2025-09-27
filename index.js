@@ -37,24 +37,24 @@ const gamevm = Vue.createApp({
     data: function () {
         return {
             Verbose: true,
-            civilizationName:"",
-            currentMenu:"Main",
-            menus:["Main", "Population", "Stockpiles", "Buildings", "Technology", "Laws", "Modifiers", "Log", "Settings"],
+            civilizationName: "",
+            currentMenu: "Main",
+            menus: ["Main", "Population", "Stockpiles", "Buildings", "Technology", "Laws", "Modifiers", "Log", "Settings"],
             currentDate: new Date(2000, 0, 1),
-            populationMenu:{
-                amount:1,
-                customSelected:false,
+            populationMenu: {
+                amount: 1,
+                customSelected: false,
             },
-            technologyMenu:{
-                showCompleted:false,
+            technologyMenu: {
+                showCompleted: false,
             },
-            buildingMenu:{
-                hoverIndex:-1,
+            buildingMenu: {
+                hoverIndex: -1,
             },
             log: [],
             consoleOutputs: [],
             uploadedSaveFile: null,
-            activeTooltipData:null,
+            activeTooltipData: null,
             population: 1,
             growthThreshold: 50,
             QOLDecay: 0.95,
@@ -73,7 +73,8 @@ const gamevm = Vue.createApp({
             QOL: 1,
             showSidebar: false,
             focusedTechnology: null,
-            currencyDailyChange:{},
+            currencyDailyChange: {},
+            currencyPotentialChange: {},
             activeComponents: [
                 { Name: 'CodeTester', component: 'codetester', isActive: true, },
                 { Name: 'Population', component: 'population', isActive: true, },
@@ -102,7 +103,7 @@ const gamevm = Vue.createApp({
                     Name: 'Farmer',
                     Count: 0,
                     Cost: {},
-                    Produces: { 'Food': 2.1, 'Grain':5, },
+                    Produces: { 'Food': 2.1, 'Grain': 5, },
                     BaseDemand: {
                         Food: 1
                     },
@@ -115,17 +116,19 @@ const gamevm = Vue.createApp({
             ],
             productionModifiers,
             technologies,
+            techDict: {},
             currencydata,
             endTickCurrencyValues: {},
             beginTickCurrencyValues: {},
             preCostTickCurrencyValues: {},
-            tickProductionValues:{},
+            tickProductionValues: {},
             currencyDemandDescriptions: {},
             currencyProductionDescriptions: {},
             currencyConsumptionDescriptions: {},
             demand: {},
             unmetdemand: {},
             unlockablesdata,
+            civNameConfirmed: false,
             gameProcess: null,
             currentVillagerNameIndex: 0,
             negativeDemandThreshold: -20,
@@ -155,13 +158,13 @@ const gamevm = Vue.createApp({
                 i: 0,
                 tokens: [],
             },
-            pluralizer:pluralize,
+            pluralizer: pluralize,
         }
     },
     created() {
         this.endTickCurrencyValues = JSON.parse(JSON.stringify(this.currencydata));
         this.beginTickCurrencyValues = JSON.parse(JSON.stringify(this.currencydata));
-        for(let tech of this.technologies){
+        for (let tech of this.technologies) {
             tech.Unlock(this);
         }
         const input = `
@@ -174,26 +177,29 @@ const gamevm = Vue.createApp({
         this.gameProcess = setInterval(this.gameTick, this.tickspeed);
     },
     methods: {
-        setMenu(menu){
+        confirmCivName() {
+            this.civNameConfirmed = true;
+        },
+        setMenu(menu) {
             this.currentMenu = menu;
         },
         formatDate(date) {
-            if(typeof date === "string"){
+            if (typeof date === "string") {
                 date = new Date(date);
             }
             let calTech = this.getCalendarTech()
-            if(calTech == 'Solar'){
+            if (calTech == 'Solar') {
                 const year = date.getFullYear() - 2000;
                 const month = date.toLocaleString('en-US', { month: 'long' });
                 const day = String(date.getDate()).padStart(2, '0');
 
                 return `${year} ${month} ${day}`;
             }
-            else if(calTech == 'Lunar'){
+            else if (calTech == 'Lunar') {
                 let [day, month] = this.getLunarDate(date);
                 return `${day} ${month}`;
             }
-            else{
+            else {
                 return this.getPrecalendarDate(date);
             }
         },
@@ -317,7 +323,7 @@ const gamevm = Vue.createApp({
             this.tickspeed = value;
             this.gameProcess = setInterval(this.gameTick, this.tickspeed);
         },
-        getTechnologies(sort=false, includeResearched=false) {
+        getTechnologies(sort = false, includeResearched = false) {
             //const allTechByName = Object.fromEntries(this.technologies.map(t => [t.Name, t]));
             for (let tech of this.technologies) {
                 if (!tech.Visible) {
@@ -331,13 +337,13 @@ const gamevm = Vue.createApp({
                 let hasAllRequirements = this.hasRequirements(x);
                 return x.Visible && hasAllRequirements
             });
-            if(sort){
-                techs.sort((a,b) => b.IsUnlocked - a.IsUnlocked);
+            if (sort) {
+                techs.sort((a, b) => b.IsUnlocked - a.IsUnlocked);
             }
-            if(includeResearched == false){
+            if (includeResearched == false) {
                 return techs.filter(x => x.isLocked == true);
             }
-            return techs; 
+            return techs;
         },
         hasTechnology(techName) {
             return this.technologies.find(x => x.Name == techName)?.isLocked == false;
@@ -471,10 +477,10 @@ const gamevm = Vue.createApp({
                 }
             }
 
-            if(requireable.Requirements.Buildings){
-                for (let [buildingName, count] of Object.entries(requireable.Requirements.Buildings)){
+            if (requireable.Requirements.Buildings) {
+                for (let [buildingName, count] of Object.entries(requireable.Requirements.Buildings)) {
                     let building = this.buildingdata.find(x => x.Name == buildingName);
-                    if(building.Count < count){
+                    if (building.Count < count) {
                         return false;
                     }
                 }
@@ -524,8 +530,9 @@ const gamevm = Vue.createApp({
             this.currentDate = new Date(this.currentDate.getFullYear(), this.currentDate.getMonth(), this.currentDate.getDate(), this.currentDate.getHours() + 1);
             this.beginTickCurrencyValues = JSON.parse(JSON.stringify(this.currencydata));
             this.tickProductionValues = {};
-            for(let currency of Object.keys(this.currencydata)){
+            for (let currency of Object.keys(this.currencydata)) {
                 this.tickProductionValues[currency] = 0;
+                this.currencyPotentialChange[currency] = 0;
             }
             this.currencyDemandDescriptions = {};
             this.currencyProductionDescriptions = {};
@@ -549,9 +556,9 @@ const gamevm = Vue.createApp({
                 this.saveState(this.$data);
             }
         },
-        processProductionModifiers(){
-            for(let prodMod of this.productionModifiers){
-                if(prodMod.IsUnlocked == false){
+        processProductionModifiers() {
+            for (let prodMod of this.productionModifiers) {
+                if (prodMod.IsUnlocked == false) {
                     prodMod.IsUnlocked = this.hasRequirements(prodMod);
                 }
             }
@@ -596,36 +603,36 @@ const gamevm = Vue.createApp({
             this.addCurrency("Space", spaceCost, "Demolishing " + actual + ' ' + this.toProperPluralize(houseType.Name, actual));
             return actual;
         },
-        canDemolish(houseType){
-            if(houseType.Name == 'Hut' && houseType.Count == 1){
+        canDemolish(houseType) {
+            if (houseType.Name == 'Hut' && houseType.Count == 1) {
                 return false;
             }
-            if(houseType.Count == 0){
+            if (houseType.Count == 0) {
                 return false;
             }
             return true;
         },
-        getCurrencyStorage(currencyName){
+        getCurrencyStorage(currencyName) {
             let currency = this.currencydata[currencyName];
-            if(currency.Type == 'Nonphysical Good'){
+            if (currency.Type == 'Nonphysical Good') {
                 return -1;
             }
             let base = 1000;
-            for(let building of this.buildingdata){
-                if(building.Stores){
-                    
+            for (let building of this.buildingdata) {
+                if (building.Stores) {
+
                     let storage = building.Stores[currencyName] * building.Count;
-                    if(storage){
+                    if (storage) {
                         base += storage;
                     }
                 }
             }
             return base;
         },
-        getCurrencyByName(currencyName){
+        getCurrencyByName(currencyName) {
             return this.currencydata[currencyName];
         },
-        getCurrentModifiers(){
+        getCurrentModifiers() {
             return this.productionModifiers.filter(x => x.IsUnlocked == true).flatMap(modifier =>
                 modifier.Boosts.map(boost => ({
                     modifierName: modifier.Name,
@@ -634,11 +641,11 @@ const gamevm = Vue.createApp({
                 }))
             );
         },
-        getModifierTypeDescription(modifierType){
-            if(modifierType == 'Additive'){
+        getModifierTypeDescription(modifierType) {
+            if (modifierType == 'Additive') {
                 return '+';
             }
-            else if(modifierType == 'Multiplicative'){
+            else if (modifierType == 'Multiplicative') {
                 return 'x';
             }
             console.error('Yo this modifier type doesn\'t exist!', modifierType);
@@ -653,30 +660,30 @@ const gamevm = Vue.createApp({
                 let rand = Math.random();
                 if (rand < deathOdds) {
                     let reason = " of natural causes";
-                    if(homelessRate > rand){
+                    if (homelessRate > rand) {
                         reason = " homeless";
                     }
 
                     this.die(prof, 1, reason);
                 }
             }
-            if(this.getPopulation() == 0){
+            if (this.getPopulation() == 0) {
                 this.logit('Everyone is dead.');
             }
         },
-        getHomelessnessRatio(){
+        getHomelessnessRatio() {
             let population = this.getPopulation();
-            if(population == 0){
+            if (population == 0) {
                 return 0;
             }
             let housing = this.getTotalHousing();
-            if(housing >= population){
+            if (housing >= population) {
                 return 0;
             }
 
             return Math.abs((housing - population) / population);
         },
-        die(profession, amount, reason='') {
+        die(profession, amount, reason = '') {
             if (profession.Count == 0) {
                 return;
             }
@@ -710,27 +717,27 @@ const gamevm = Vue.createApp({
                 }
             }
         },
-        getTimeToFullStockpile(currency){
-            if(currency.Name == "Housing"){
+        getTimeToFullStockpile(currency) {
+            if (currency.Name == "Housing") {
                 return "Housing is as much as is built. We can build more housing in the Buildings menu.";
             }
-            if(currency.Type == "Nonphysical Good"){
+            if (currency.Type == "Nonphysical Good") {
                 return currency.Name + " isn't real, and has no known limits of storage.";
             }
             let full = this.getCurrencyStorage(currency.Name);
             let current = currency.Amount;
             let change = this.currencyDailyChange[currency.Name];
-            if(change > 0){
+            if (change > 0) {
                 let timeToHappen = Math.abs((full - current) / change);
                 let time = this.ticksToTime(timeToHappen);
                 return "Our " + currency.Name + " will fill our storage in " + time;
             }
-            if(change < 0){
+            if (change < 0) {
                 let timeToHappen = Math.abs(current / change);
                 let time = this.ticksToTime(timeToHappen);
                 return "Our " + currency.Name + " will run out in " + time;
             }
-            else{
+            else {
                 return "Our " + currency.Name + " is unchanging.";
             }
         },
@@ -738,20 +745,20 @@ const gamevm = Vue.createApp({
             for (let key in this.demand) {
                 if (Object.prototype.hasOwnProperty.call(this.demand, key)) {
 
-                        this.demand[key] = 0;
-                    
+                    this.demand[key] = 0;
+
                 }
             }
             this.currencyDemandDescriptions = {};
         },
-        modifyDemand(good, amount, reason){
-            if(amount == 0){
+        modifyDemand(good, amount, reason) {
+            if (amount == 0) {
                 return;
             }
-            if(this.currencyDemandDescriptions[good]){
+            if (this.currencyDemandDescriptions[good]) {
                 this.currencyDemandDescriptions[good].push([good, this.formatNumber(amount), reason]);
             }
-            else{
+            else {
                 this.currencyDemandDescriptions[good] = [[good, this.formatNumber(amount), reason]];
             }
             this.demand[good] += amount;
@@ -787,8 +794,8 @@ const gamevm = Vue.createApp({
             else {
                 this.ticksOfUnmetSpaceDemand = 0;
             }
-            
-            
+
+
             this.modifyDemand('Housing', baseHousingDemand * totalPop, 'Global Demand');
             this.modifyDemand('Furniture', baseFurnitureDemand * totalPop, 'Global Demand');
         },
@@ -799,7 +806,7 @@ const gamevm = Vue.createApp({
                         this.modifyDemand(good, mod, "From " + tech.Name);
                     }
                     for (let [good, mod] of Object.entries(tech.demandModifiers.PerCapita)) {
-                        this.modifyDemand(good,  mod * this.getPopulation(), "Per Capita from " + tech.Name);
+                        this.modifyDemand(good, mod * this.getPopulation(), "Per Capita from " + tech.Name);
                     }
                     for (let prof of this.professions) {
                         if (tech.demandModifiers[prof.Name]) {
@@ -813,43 +820,43 @@ const gamevm = Vue.createApp({
         },
         processUnmetDemand() {
             for (let currency of Object.values(this.currencydata)) {
-            //     if (currency.Name == 'Housing') {
-            //         if (this.getAvailableHousing() < 10) {
-            //             this.unmetdemand['Housing'] += 0.1;
-            //         }
-            //         if (this.getAvailableHousing() > 15) {
-            //             this.unmetdemand['Housing'] = 0;
-            //         }
-            //         continue;
-            //     }
+                //     if (currency.Name == 'Housing') {
+                //         if (this.getAvailableHousing() < 10) {
+                //             this.unmetdemand['Housing'] += 0.1;
+                //         }
+                //         if (this.getAvailableHousing() > 15) {
+                //             this.unmetdemand['Housing'] = 0;
+                //         }
+                //         continue;
+                //     }
 
-            //     let preCostAmount = this.preCostTickCurrencyValues[currency.Name]?.Amount;
+                //     let preCostAmount = this.preCostTickCurrencyValues[currency.Name]?.Amount;
                 let beginTickAmount = this.beginTickCurrencyValues[currency.Name]?.Amount;
                 let endAmount = this.endTickCurrencyValues[currency.Name]?.Amount;
 
-            //     let change = (preCostAmount - beginTickAmount);
+                //     let change = (preCostAmount - beginTickAmount);
                 let dailyChange = (endAmount - beginTickAmount);
                 this.currencyDailyChange[currency.Name] = dailyChange;
-            //     if (currency.Name == 'Space') {
-            //         continue;
-            //     }
-            //     if (change >= 0 && this.demand[currency.Name]) {
-            //         this.modifyDemand(currency.Name, -change, "Met by production ");
+                //     if (currency.Name == 'Space') {
+                //         continue;
+                //     }
+                //     if (change >= 0 && this.demand[currency.Name]) {
+                //         this.modifyDemand(currency.Name, -change, "Met by production ");
 
-            //         if (!this.unmetdemand[currency.Name]) {
-            //             this.unmetdemand[currency.Name] = -change;
-            //         }
-            //         else {
-            //             this.unmetdemand[currency.Name] -= change;
-            //         }
-            //         if (this.unmetdemand[currency.Name] < 0) {
-            //             this.unmetdemand[currency.Name] = 0;
-            //         }
-            //         if (this.demand[currency.Name] < 0) {
+                //         if (!this.unmetdemand[currency.Name]) {
+                //             this.unmetdemand[currency.Name] = -change;
+                //         }
+                //         else {
+                //             this.unmetdemand[currency.Name] -= change;
+                //         }
+                //         if (this.unmetdemand[currency.Name] < 0) {
+                //             this.unmetdemand[currency.Name] = 0;
+                //         }
+                //         if (this.demand[currency.Name] < 0) {
 
-            //             this.demand[currency.Name] = 0;
-            //         }
-                }
+                //             this.demand[currency.Name] = 0;
+                //         }
+            }
 
             //     if (endAmount < dailyChange) {
             //         this.modifyDemand(currency.Name, Math.abs(-change - endAmount), "Lowering stockpiles");
@@ -958,7 +965,7 @@ const gamevm = Vue.createApp({
         getDailyProduction(currencyName) {
             return (this.endTickCurrencyValues[currencyName]?.Amount - this.beginTickCurrencyValues[currencyName]?.Amount) * 24;
         },
-        getDailyChange(currencyName){
+        getDailyChange(currencyName) {
             return (this.endTickCurrencyValues[currencyName]?.Amount - this.beginTickCurrencyValues[currencyName]?.Amount) * 24;
         },
         processQOL() {
@@ -979,7 +986,7 @@ const gamevm = Vue.createApp({
 
             const needed = this.focusedTechnology.Complexity - this.focusedTechnology.Progress;
             const usable = Math.min(this.currencydata["Knowledge"].Amount, needed);
-            if(usable <= 0){
+            if (usable <= 0) {
                 return;
             }
             this.focusedTechnology.Progress += usable;
@@ -991,14 +998,14 @@ const gamevm = Vue.createApp({
 
             }
         },
-        processBuildings(){
-            for(let building of this.buildingdata){
+        processBuildings() {
+            for (let building of this.buildingdata) {
                 this.processBuildingConsumption(building.Name);
                 this.processBuildingProduction(building.Name);
             }
         },
-        toProperPluralize(word, number){
-            if(number == 1){
+        toProperPluralize(word, number) {
+            if (number == 1) {
                 return pluralize.singular(word);
             }
             return pluralize.plural(word);
@@ -1037,10 +1044,10 @@ const gamevm = Vue.createApp({
                 output += reason[2] + ': ' + reason[1] + '\n';
                 anyreason = true;
             }
-            if(currency.Name == 'Housing'){
+            if (currency.Name == 'Housing') {
                 return "Housing is a special resource. It is consumed by population, and created by specific buildings. If you run out of housing, your population will stop growing. If you destroy housing, your population might become homeless.";
             }
-            if(!anyreason){
+            if (!anyreason) {
                 return "This is neither currently produced nor consumed.";
             }
             return output;
@@ -1050,80 +1057,83 @@ const gamevm = Vue.createApp({
             for (let reason of this.currencyDemandDescriptions[currency.Name] ?? []) {
                 output += reason[2] + ': ' + reason[1] + '\n';
             }
-            if(output == ''){
+            if (output == '') {
                 return "There doesn't appear to be any reason for any demand here.";
             }
             return output;
         },
-        getDemolishInfo(housingType){
-            if(housingType.Name == 'Hut' && housingType.Count == 1){
+        getDemolishInfo(housingType) {
+            if (housingType.Name == 'Hut' && housingType.Count == 1) {
                 return "You can't demolish our last hut, even if you think it would be really funny.";
             }
             let spaceCost = this.getBuildingSpaceCost(housingType);
             return "Demolishing this building would free up " + spaceCost + " Space for our people. None of the costs of building would be returned.";
         },
-        getBuildingSpaceCost(housingType){
+        getBuildingSpaceCost(housingType) {
             let spaceCost = 0;
-            
-            for(let [c, price] of Object.entries(housingType.Cost)){
-                if(c == "Space"){
+
+            for (let [c, price] of Object.entries(housingType.Cost)) {
+                if (c == "Space") {
                     spaceCost = price;
                     break;
                 }
             }
             return spaceCost;
         },
-        getTechnologyProgressDescription(technology){
+        getTechnologyProgressDescription(technology) {
             let output = 'We have researched ' + this.formatNumber(technology.Progress) + ' of ' + this.formatNumber(technology.Complexity) + ' so far.';
             let knowledgeSpeed = this.tickProductionValues['Knowledge'];
             let currentKnowledge = this.currencydata['Knowledge'].Amount ?? 0;
-            if(knowledgeSpeed <= 0){
+            if (knowledgeSpeed <= 0) {
                 return output + '\n' + "We will never finish researching this.";
             }
             let timeRequired = (technology.Complexity - technology.Progress - currentKnowledge) / knowledgeSpeed;
             let t = this.ticksToTime(timeRequired);
-            if(this.focusedTechnology == technology){
+            if (this.focusedTechnology == technology) {
                 return output + '\n' + 'This will be completed in ' + t;
             }
 
             return output + '\n' + 'This could be completed in ' + t;
         },
-        addCurrency(currencyName, amount, reason){
-            if(amount == 0){
+        addCurrency(currencyName, amount, reason) {
+            if (amount == 0) {
                 return;
             }
             let storage = this.getCurrencyStorage(currencyName);
-            if(this.currencydata[currencyName].Amount + amount > storage && storage != -1){
+            this.currencyPotentialChange[currencyName] = (this.currencyPotentialChange[currencyName] ?? 0) + amount;
+
+            if (this.currencydata[currencyName].Amount + amount > storage && storage != -1) {
                 amount = this.getCurrencyStorage(currencyName) - this.currencydata[currencyName].Amount;
                 reason += " (Capped by Storage)";
             }
 
-            if(this.currencyProductionDescriptions[currencyName]){
+            if (this.currencyProductionDescriptions[currencyName]) {
                 this.currencyProductionDescriptions[currencyName].push([currencyName, this.formatNumber(amount), reason]);
             }
-            else{
+            else {
                 this.currencyProductionDescriptions[currencyName] = [[currencyName, this.formatNumber(amount), reason]];
             }
             this.tickProductionValues[currencyName] += amount;
             this.currencydata[currencyName].Amount += amount;
         },
-        payCurrency(currencyName, amount, reason){
-             if(amount == 0){
+        payCurrency(currencyName, amount, reason) {
+            if (amount == 0) {
                 return;
             }
-            if(this.currencydata[currencyName].Amount < amount){
+            this.currencyPotentialChange[currencyName] = (this.currencyPotentialChange[currencyName] ?? 0) - amount;
+            if (this.currencydata[currencyName].Amount < amount) {
                 return;
             }
-            if(this.currencyConsumptionDescriptions[currencyName]){
+            if (this.currencyConsumptionDescriptions[currencyName]) {
                 this.currencyConsumptionDescriptions[currencyName].push([currencyName, this.formatNumber(amount), reason]);
             }
-            else{
+            else {
                 this.currencyConsumptionDescriptions[currencyName] = [[currencyName, this.formatNumber(amount), reason]];
             }
             this.currencydata[currencyName].Amount -= amount;
         },
         processBaseGrowth() {
-            if(this.getPopulation() == 0){
+            if (this.getPopulation() == 0) {
                 this.logit("Despite extreme mismanagement of your state, a wanderer has joined your civilization as the sole member.");
                 this.professions.find(x => x.Name == "Unemployed").Count = 1;
             }
@@ -1160,10 +1170,10 @@ const gamevm = Vue.createApp({
                 }
             }
         },
-        setTooltipData(text, isHtml, eventData, calcfrom){
-            this.activeTooltipData = {text: text, isHtml:isHtml, visible:true, data:eventData, calcfrom};
+        setTooltipData(text, isHtml, eventData, calcfrom) {
+            this.activeTooltipData = { text: text, isHtml: isHtml, visible: true, data: eventData, calcfrom };
         },
-        clearTooltipData(){
+        clearTooltipData() {
             this.activeTooltipData = {};
         },
         processCosts() {
@@ -1180,8 +1190,8 @@ const gamevm = Vue.createApp({
                         }
                     }
                 }
-                else{
-                    
+                else {
+
                 }
             }
             for (let [good, demand] of Object.entries(this.demand)) {
@@ -1271,13 +1281,13 @@ const gamevm = Vue.createApp({
             if (!this.canAfford(worker.Cost)) {
                 return;
             }
-            for(let [currency, production] of this.getActualProduction(worker)){
+            for (let [currency, production] of this.getActualProduction(worker)) {
                 this.addCurrency(currency, production, "Produced by " + name);
             }
         },
-        processBuildingConsumption(name){
+        processBuildingConsumption(name) {
             const building = this.buildingdata.find(x => x.Name == name);
-            if(!building.Consumes){
+            if (!building.Consumes) {
                 return;
             }
 
@@ -1287,31 +1297,38 @@ const gamevm = Vue.createApp({
                 this.payCurrency(currency, produced, "Consumed by " + name);
             }
         },
-        processBuildingProduction(name){
+        processBuildingProduction(name) {
             const building = this.buildingdata.find(x => x.Name == name);
-            if(!building.Produces){
+            if (!building.Produces) {
                 return;
             }
 
-            for(let [currency, production] of this.getActualProduction(building)){
+            for (let [currency, production] of this.getActualProduction(building)) {
                 this.addCurrency(currency, production, "Produced by " + name);
             }
         },
-        getActualProduction(producer, customAmount = -1){
+        getActualProduction(producer, customAmount = -1) {
             let output = [];
             let count = producer.Count;
-            if(customAmount != -1){
+            if (customAmount != -1) {
                 count = customAmount;
             }
             const [additiveModifiers, multModifiers] = this.getProductionModifiers(producer.Name);
-            for (let [currency, amount] of Object.entries(producer.Produces)) {
-                let baseProduction = amount + (additiveModifiers[currency] || 0);
+            const allKeys = new Set([
+                ...Object.keys(producer.Produces),
+                ...Object.keys(additiveModifiers)
+            ]);
+            for (const currency of allKeys) {
+                const producedAmount = producer.Produces[currency] ?? 0;
+                const additive = additiveModifiers[currency] ?? 0;
+                let baseProduction = producedAmount + additive;
                 let totalBase = baseProduction * count;
                 let withRatio = totalBase * this.getWorkRatio();
                 let withMult = withRatio * (multModifiers[currency] || 1);
                 let produced = withMult;
                 output.push([currency, produced]);
             }
+
             return output;
         },
         getProductionModifiers(name) {
@@ -1349,13 +1366,21 @@ const gamevm = Vue.createApp({
                 return {};
             }
             const [additiveModifiers, multModifiers] = this.getProductionModifiers(profession.Name);
-            let o = Object.entries(profession.Produces)
-                .map(([currency, baseAmount]) => {
-                    const additive = additiveModifiers[currency] || 0;
-                    const multiplier = multModifiers[currency] || 1;
-                    const total = (baseAmount + additive) * this.getWorkRatio() * multiplier;
-                    return [currency, this.formatNumber(total)]
-                });
+            const allKeys = new Set([
+                ...Object.keys(profession.Produces),
+                ...Object.keys(additiveModifiers)
+            ]);
+            let o = [];
+            for (const currency of allKeys) {
+                const producedAmount = profession.Produces[currency] ?? 0;
+                const additive = additiveModifiers[currency] ?? 0;
+                let baseProduction = producedAmount + additive;
+                let withRatio = baseProduction * this.getWorkRatio();
+                let withMult = withRatio * (multModifiers[currency] || 1);
+                let produced = withMult;
+                o.push([currency, this.formatNumber(produced)]);
+            }
+
             let output = {};
             for (let [k, v] of o) {
                 output[k] = v;
@@ -1400,7 +1425,7 @@ const gamevm = Vue.createApp({
                 }
             }
         },
-        dehydratePeople(){
+        dehydratePeople() {
             let waterDebt = -this.currencydata.Water.Amount;
             if (waterDebt < 0) {
                 return;
@@ -1438,14 +1463,14 @@ const gamevm = Vue.createApp({
         },
         hire(profession, amount = 1) {
             let maxPossible = Math.min(amount, this.getAvailableWorkers());
-            if(profession.RequiredBuilding){
+            if (profession.RequiredBuilding) {
                 let building = this.buildingdata.find(x => x.Name == profession.RequiredBuilding);
-                if(!building){
+                if (!building) {
                     console.error("Invalid building name for required building for " + profession.Name);
                 }
-                else{
+                else {
                     let available = (profession.Count + amount) - building.Count;
-                    if(available < 0){
+                    if (available < 0) {
                         return;
                     }
                     maxPossible = Math.min(maxPossible, available);
@@ -1457,32 +1482,33 @@ const gamevm = Vue.createApp({
 
             return actual;
         },
-        hireInfo(profession, amount = 1){
+        hireInfo(profession, amount = 1) {
             let maxPossible = Math.min(amount, this.getAvailableWorkers());
-            if(profession.RequiredBuilding){
+            if (profession.RequiredBuilding) {
                 let building = this.buildingdata.find(x => x.Name == profession.RequiredBuilding);
-                if(!building){
+                if (!building) {
                     console.error("Invalid building name for required building for " + profession.Name);
                 }
-                else{
+                else {
                     let available = (profession.Count + amount) - building.Count;
-                    if(available < 0){
+                    if (available < 0) {
                         available = 1;
                     }
                     maxPossible = Math.min(maxPossible, available);
                 }
             }
             let minimumForUsefulInfo = maxPossible;
-            if(maxPossible == 0){
+            if (maxPossible == 0) {
                 minimumForUsefulInfo = 1;
             }
             let prodDict = {};
             let actualProd = this.getActualProduction(profession, minimumForUsefulInfo).map(x => prodDict[x[0]] = x[1]);
-            let modified = this.relativeProductionChangeToString(profession, prodDict);
-            if(maxPossible == amount){
-                return `Hiring ${amount} ${this.toProperPluralize(profession.Name, maxPossible)} will result in:<br/><br/>${modified}`;
+            let modified = this.riskyRelativeProductionChangeToString(profession, prodDict);
+
+            if (maxPossible == amount) {
+                return `Hiring ${amount} ${this.toProperPluralize(profession.Name, maxPossible)} will result in:${modified}`;
             }
-            return `Hiring ${amount} (Can afford ${maxPossible}) ${this.toProperPluralize(profession.Name, maxPossible)} will result in:<br/><br/>${modified}`;
+            return `Hiring ${amount} (Can afford ${maxPossible}) ${this.toProperPluralize(profession.Name, maxPossible)} will result in:${modified}`;
 
         },
         fire(profession, amount = 1) {
@@ -1492,12 +1518,12 @@ const gamevm = Vue.createApp({
 
             return maxPossible;
         },
-        fireInfo(profession, amount = 1){
+        fireInfo(profession, amount = 1) {
             let maxPossible = Math.min(amount, profession.Count);
             let prodDict = {};
             let actualProd = this.getActualProduction(profession, maxPossible).map(x => prodDict[x[0]] = x[1]);
             let modified = this.relativeProductionChangeToString(profession, prodDict, -1);
-            console.log(modified);
+            // console.log(modified);
 
             return `Firing ${maxPossible} ${this.toProperPluralize(profession.Name, maxPossible)} will result in:<br/><br/>${modified}`;
 
@@ -1508,10 +1534,10 @@ const gamevm = Vue.createApp({
             }
             return false;
         },
-        canHire(profession){
-            return profession.Unlocked == true 
-            && this.getAvailableWorkers() > 0
-            && this.canAfford(profession.Cost);
+        canHire(profession) {
+            return profession.Unlocked == true
+                && this.getAvailableWorkers() > 0
+                && this.canAfford(profession.Cost);
         },
         canAfford(cost, amount = 1) {
             return Object.entries(cost).every(([k, v]) =>
@@ -1527,8 +1553,8 @@ const gamevm = Vue.createApp({
         getAvailableWorkers() {
             return this.professions.find(x => x.Name == 'Unemployed').Count;
         },
-        buy(cost, amount = 1, reason="Lazy Developer") {
-            if(this.objectIsEmpty(cost)){
+        buy(cost, amount = 1, reason = "Lazy Developer") {
+            if (this.objectIsEmpty(cost)) {
                 return amount;
             }
             if (!this.canAfford(cost, amount)) {
@@ -1554,36 +1580,36 @@ const gamevm = Vue.createApp({
         getVisibleProfessions() {
             return this.professions.filter(x => x.Visible);
         },
-        getBuildingCostTooltip(houseType){
-            if(this.canAfford(houseType.Cost)){
+        getBuildingCostTooltip(houseType) {
+            if (this.canAfford(houseType.Cost)) {
                 return 'You can afford this building.';
             }
 
             let output = this.playerCantAffordCostToString(houseType.Cost, 1);
             output += '<br/><br/>';
             let timeToCompletion = this.getTimeToAffordCost(houseType.Cost);
-            if(timeToCompletion == 'Never'){
-               return output + 'Time to afford: Never'; 
+            if (timeToCompletion == 'Never') {
+                return output + 'Time to afford: Never';
             }
 
             output += '<span style="color:white;"> Time to afford: ' + timeToCompletion + '</span>';
             return output;
         },
-        getTimeToAffordCost(cost, amount = 1){
+        getTimeToAffordCost(cost, amount = 1) {
             let maxTime = 0;
 
-            for(let [key, value] of Object.entries(cost)){
-                if(this.currencydata[key].Amount > value * amount){
+            for (let [key, value] of Object.entries(cost)) {
+                if (this.currencydata[key].Amount > value * amount) {
                     continue;
                 }
-                
+
                 let change = this.currencyDailyChange[key];
-                if(change <= 0){
+                if (change <= 0) {
                     return "Never";
                 }
                 let missing = (value * amount) - this.currencydata[key].Amount;
                 let ticks = missing / change;
-                if(ticks > maxTime){
+                if (ticks > maxTime) {
                     maxTime = ticks;
                 }
 
@@ -1592,19 +1618,19 @@ const gamevm = Vue.createApp({
             return this.ticksToTime(maxTime);
 
         },
-        ticksToTime(ticks){
+        ticksToTime(ticks) {
             let seconds = ticks * (this.tickspeed / 1000);
-            if(seconds <= 60){
+            if (seconds <= 60) {
                 let rounded = Math.floor(seconds);
                 return this.formatNumber(rounded) + ' ' + this.toProperPluralize('second', rounded) + '.';
             }
             let minutes = Math.floor(seconds / 60);
-            if(minutes <= 60){
+            if (minutes <= 60) {
                 return this.formatNumber(minutes) + ' ' + this.toProperPluralize('minute', minutes) + ' ' + this.formatNumber(Math.round(seconds % 60)) + ' ' + this.toProperPluralize('second', Math.round(seconds % 60)) + '.';
             }
             let hours = Math.floor(seconds / 60 / 60);
 
-            return this.formatNumber(hours) + ' ' + this.toProperPluralize('hour', hours) + ' ' + this.formatNumber(Math.round(minutes % 60)) + ' ' + this.toProperPluralize('minute', minutes) + '.'; 
+            return this.formatNumber(hours) + ' ' + this.toProperPluralize('hour', hours) + ' ' + this.formatNumber(Math.round(minutes % 60)) + ' ' + this.toProperPluralize('minute', minutes) + '.';
         },
         playerCantAffordCostToString(cost, amount = 1) {
             return Object.entries(cost).map(([key, value]) => [key, value])
@@ -1619,38 +1645,173 @@ const gamevm = Vue.createApp({
                 .map(([key, value]) => `<img class="image-icon" src="${this.currencydata[key].Icon}" /> ${this.formatNumber(value * amount)}`)
                 .join(', ');
         },
+        riskyRelativeProductionChangeToString(profession, produced, amount = 1) {
+            if (!produced) { return ''; }
+
+            const unemployed = this.professions.find(x => x.Name === 'Unemployed');
+            const unemployedProdDict = {};
+            for (const [k, v] of (this.getActualProduction(unemployed, amount) || [])) {
+                unemployedProdDict[k] = v;
+            }
+
+            const keys = new Set([
+                ...Object.keys(this.currencyDailyChange || {}),
+                ...Object.keys(produced || {}),
+                ...Object.keys(profession.BaseDemand || {}),
+                ...Object.keys(unemployedProdDict || {})
+            ]);
+
+            const row = (icon, current, op, change, result, reason, extraClass = '') =>
+                `<tr class="${extraClass}"><td>${icon}</td><td style="text-align:left">${reason}</td><td>${current}</td><td>${op}</td><td>${change}</td><td>=</td><td>${result}</td></tr>`;
+
+            const sectionHeader = (label, initialValue) =>
+                `<tr style="text-align:left;"><td colspan="6">${label}</td><td style="text-align:right">${initialValue}</td></tr>`;
+
+            let tableRows = [];
+            tableRows.push(`<table style="text-align:right">`);
+
+            for (const key of keys) {
+                const icon = `<img class="image-icon" src="${this.currencydata[key]?.Icon || ''}" />`;
+
+                let currentVal = this.currencyDailyChange[key] || 0;
+                let sectionsToAdd = [];
+
+                const prodDelta = (produced[key] || 0) * amount;
+                if (prodDelta !== 0) {
+                    const op = prodDelta >= 0 ? '+' : '-';
+                    const changeAbs = this.formatNumber(Math.abs(prodDelta));
+                    let newOutputTxt = this.formatNumber(currentVal + prodDelta);
+
+                    const pot = this.currencyPotentialChange[key] || 0;
+                    const real = this.currencyDailyChange[key] || 0;
+                    if (pot > 0 && real === 0 && Math.abs(prodDelta) > 0) {
+                        newOutputTxt += ' (Capped)';
+                    }
+
+                    currentVal += prodDelta;
+                    if (prodDelta != 0) {
+                        sectionsToAdd.push(row(icon, '', op, changeAbs, newOutputTxt, 'Produced'));
+                    }
+
+                }
+
+                const consDeltaRaw = (profession.BaseDemand?.[key] || 0) * amount;
+                if (consDeltaRaw !== 0) {
+                    const consDelta = -consDeltaRaw;
+                    const op = consDelta >= 0 ? '+' : '-';
+                    const changeAbs = this.formatNumber(Math.abs(consDelta));
+                    const newOutputTxt = this.formatNumber(currentVal + consDelta);
+
+                    currentVal += consDelta;
+                    if (consDelta != 0) {
+                        sectionsToAdd.push(row(icon, '', op, changeAbs, newOutputTxt, 'Consumed'));
+                    }
+
+                }
+
+                const lostUnempRaw = (unemployedProdDict[key] || 0) * amount;
+                if (lostUnempRaw !== 0) {
+                    const lostDelta = -lostUnempRaw;
+                    const op = lostDelta >= 0 ? '+' : '-';
+                    const changeAbs = this.formatNumber(Math.abs(lostDelta));
+                    const newOutputTxt = this.formatNumber(currentVal + lostDelta);
+
+                    currentVal += lostDelta;
+                    if (lostDelta != 0) {
+                        sectionsToAdd.push(row(icon, '', op, changeAbs, newOutputTxt, 'Lost Unemployed Production'));
+                    }
+
+                }
+                if (sectionsToAdd.length == 0) {
+                    continue;
+                }
+                tableRows.push(sectionHeader(`${icon} ${key}`.trim(), this.formatNumber(this.currencyDailyChange[key] || 0)));
+                for (let section of sectionsToAdd) {
+                    tableRows.push(section);
+                }
+
+                const netSpan = `<span style="${currentVal < 0 ? 'color:red' : ''}">${this.formatNumber(currentVal)}</span>`;
+
+                tableRows.push(
+                    `<tr class="net border-top"><td>${icon}</td><td colspan="4" style="text-align:left">Net</td><td>=</td><td>${netSpan}</td></tr>`
+                );
+            }
+
+            tableRows.push(`</table>`);
+            return tableRows.join('');
+
+        },
         relativeProductionChangeToString(profession, produced, amount = 1) {
-            if(!produced){
+            if (!produced) {
                 return '';
             }
-            let productionOutput = Object.entries(profession.Produces)
-                .map(([key, value]) => 
-                    { 
-                        let icon = `<img class="image-icon" src="${this.currencydata[key].Icon}" />`;
-                        let current = `<span style="${this.currencyDailyChange[key] < 0 ? 'color:red' : ''}">${this.formatNumber(this.currencyDailyChange[key])}</span>`;
-                        let change = `${amount >= 0 ? ' + ' : ' '}${this.formatNumber(produced[key] * amount)}`;
-                        let newOutput = `${this.formatNumber(this.currencyDailyChange[key] + (produced[key] * amount))}`;
-                        return icon + current + change + ' = ' + newOutput;
-                    }
-                )
-                .join('<br/>');
-            let consumptionOutput = Object.entries(profession.BaseDemand)
-            .map(([key, value]) => 
-                { 
+            let running = {};
+            let productionOutput = Object.entries(produced)
+                .map(([key, value]) => {
                     let icon = `<img class="image-icon" src="${this.currencydata[key].Icon}" />`;
+                    let currentPotential = this.currencyPotentialChange[key];
+                    let currentRealChange = this.currencyDailyChange[key];
                     let current = `<span style="${this.currencyDailyChange[key] < 0 ? 'color:red' : ''}">${this.formatNumber(this.currencyDailyChange[key])}</span>`;
-                    let change = `${amount >= 0 ? ' - ' : ' '}${this.formatNumber(produced[key] * amount)}`;
-                    let newOutput = `${this.formatNumber(this.currencyDailyChange[key] - (produced[key] * amount))}`;
-                    return icon + current + change + ' = ' + newOutput;
+                    let operator = `${amount >= 0 ? '+' : '-'}`;
+                    let change = `${this.formatNumber(Math.abs(produced[key] * amount))}`;
+                    let newOutput = `${this.formatNumber(this.currencyDailyChange[key] + (produced[key] * amount))}`;
+
+                    let capWarning = '(Capped by Storage)';
+                    if (currentPotential > 0 && currentRealChange == 0 && change > 0) {
+                        newOutput += capWarning;
+                    }
+                    running[key] = this.currencyDailyChange[key] + (produced[key] * amount);
+                    let output = `<td>${icon}</td><td>${current}</td><td>${operator}</td><td>${change}</td><td>=</td><td>${newOutput}</td>`;
+                    return `<tr>${output}</tr>`;
                 }
-            )
-            .join('<br/>');
-            return productionOutput + '<br/>' + consumptionOutput;
+                ).join('');
+
+            let consumptionOutput = Object.entries(profession.BaseDemand)
+                .map(([key, value]) => {
+                    let icon = `<img class="image-icon" src="${this.currencydata[key].Icon}" />`;
+
+                    let currentRealChange = this.currencyDailyChange[key];
+                    let newPotential = currentRealChange + (produced[key] ?? 0);
+                    let current = `<span style="${newPotential < 0 ? 'color:red' : ''}">${this.formatNumber(newPotential)}</span>`;
+                    let operator = `${amount >= 0 ? '+' : '-'}`;
+                    let change = `${this.formatNumber(Math.abs(value * amount))}`;
+                    let newOutput = `${this.formatNumber(newPotential - (value * amount))}`;
+                    let output = `<td>${icon}</td><td>${current}</td><td>${operator}</td><td>${change}</td><td>=</td><td>${newOutput}</td>`;
+                    return `<tr>${output}</tr>`;
+                }
+                ).join('');
+
+            let unemployed = this.professions.find(x => x.Name == 'Unemployed');
+            let unemployedProdDict = {};
+            let actualProd = this.getActualProduction(unemployed, amount).map(x => unemployedProdDict[x[0]] = x[1]);
+            let reductionOutput = Object.entries(unemployedProdDict)
+                .map(([key, value]) => {
+                    let icon = `<img class="image-icon" src="${this.currencydata[key].Icon}" />`;
+
+                    let currentRealChange = running[key];
+                    let newPotential = currentRealChange;
+                    let current = `<span style="${newPotential < 0 ? 'color:red' : ''}">${this.formatNumber(newPotential)}</span>`;
+                    let operator = `${amount >= 0 ? '-' : '+'}`;
+                    let change = `${this.formatNumber(Math.abs(value * amount))}`;
+                    let newOutput = `${this.formatNumber(newPotential - (value * amount))}`;
+                    let output = `<td>${icon}</td><td>${current}</td><td>${operator}</td><td>${change}</td><td>=</td><td>${newOutput}</td>`;
+                    return `<tr>${output}</tr>`;
+                }
+                ).join('');
+            let table = `<table style="text-align:right">
+            <tr style="text-align:left"><td colspan="100">Production</td></tr>
+            ${productionOutput}
+            <tr style="text-align:left"><td colspan="100">Consumption</td></tr>
+            ${consumptionOutput}
+            <tr style="text-align:left"><td colspan="100">Lost Unemployed Output</td></tr>
+            ${reductionOutput}
+            </table>`;
+            return table;
         },
-        costToText(cost, amount = 1){
+        costToText(cost, amount = 1) {
             return Object.entries(cost)
                 .map(([key, value]) => `${key}: ${this.formatNumber(value * amount)}`)
-            .join(', ');
+                .join(', ');
         },
         getProduction(profession) {
             return this.professions.find(x => x.Name == profession).Produces;
@@ -1714,9 +1875,9 @@ const gamevm = Vue.createApp({
                 return 'The night is ' + nightLength + '.';
             }
             return 'The day is ' + sunLength + ".";
-            
+
         },
-        getWeatherForDate(date){
+        getWeatherForDate(date) {
             const timeOfDay = date.getHours() % 24;
             let startOfYear = new Date(date.getFullYear(), 0, 0);
             let diff = date - startOfYear;
@@ -1777,7 +1938,7 @@ const gamevm = Vue.createApp({
             if (n <= 0) {
                 return "None";
             }
-            if(n < 1){
+            if (n < 1) {
                 return "Not Even One";
             }
             if (n == 1) {
@@ -1952,7 +2113,7 @@ const gamevm = Vue.createApp({
                         init: { type: 'Identifier', name: valueToken.value }
                     };
                 }
-                else{
+                else {
                     //Not a number or ident
                     //x is .
                     //x is if
@@ -1961,14 +2122,14 @@ const gamevm = Vue.createApp({
                 }
 
             }
-            else{
+            else {
                 //Not assigning a value.
                 //x greater than 7.
                 return this.throwSyntaxError('Identifier', name, this.getSyntaxErrorFromToken(this.peek()));
             }
 
         },
-        throwSyntaxError(id, name, message){
+        throwSyntaxError(id, name, message) {
             this.parser.i += 10000;
             return {
                 type: 'SyntaxError',
@@ -1977,7 +2138,7 @@ const gamevm = Vue.createApp({
                     name,
                     message: message
                 }
-                
+
             };
         },
         parseEvaluatable(actionTarget) {
@@ -1991,7 +2152,7 @@ const gamevm = Vue.createApp({
 
             //there are more than 5 unemployed
             let next = this.peek();
-            
+
             if (next.type == 'THERE_ARE') {
                 this.consume();
                 operator = {
@@ -2037,17 +2198,17 @@ const gamevm = Vue.createApp({
                     this.consume();
                 }
                 operator = this.next();
-                if(operator.type == 'ASSIGN'){
+                if (operator.type == 'ASSIGN') {
                     //Convert is in any evaluatable to comparison.
                     operator.type = 'OPERATOR';
                 }
-                if(operator.type != 'OPERATOR' ){
+                if (operator.type != 'OPERATOR') {
                     return this.throwSyntaxError('Evaluatable', operator, `Our scribes are confused by your law. On line ${operator.line} we expected a word to compare values instead of the word ${operator.value}`);
 
                 }
-                
+
                 rhs = this.next();
-                if(rhs.type != 'IDENT' && rhs.type != 'NUMBER'){
+                if (rhs.type != 'IDENT' && rhs.type != 'NUMBER') {
                     return this.throwSyntaxError('Evaluatable', rhs, `Our scribes are confused by your law. On line ${rhs.line} we expected a counting of something or a number, instead of the word ${rhs.value}`);
 
                 }
@@ -2058,13 +2219,13 @@ const gamevm = Vue.createApp({
                     this.consume();
                 }
 
-                
+
             }
             else if (next.type == 'NUMBER') {
                 lhs = this.next();
                 rhs = this.next();
             }
-            else{
+            else {
                 //None of the valid inputs:
                 //more than 5 unemployed
                 //food production is greater than 10
@@ -2128,13 +2289,13 @@ const gamevm = Vue.createApp({
 
             if (condition.type == 'CONDITIONAL') {
                 let next = this.peek();
-                if(next.type == 'NUMBER'){
+                if (next.type == 'NUMBER') {
                     return this.throwSyntaxError('Conditional', next, `Our scribes are confused by your law. On line ${next.line} we expected a word to begin a check of truth, instead of the number ${next.value}.`);
                 }
-                else{
+                else {
                     output = this.parseEvaluatable(actionTarget);
                 }
-                
+
             }
             else if (condition.type == 'UNTIL') {
                 output = this.parseUntil(actionTarget);
@@ -2194,26 +2355,26 @@ const gamevm = Vue.createApp({
             else if (token.type == 'DOT') {
                 return this.parseDot();
             }
-            else{
+            else {
                 //Always advance on syntax errors.
                 this.parser.i++;
             }
         },
-        parseDot(){
+        parseDot() {
             this.parser.i++;
         },
         parse(tokens) {
             const ast = [];
             this.parser.tokens = tokens.filter(x => x.type != 'NEWLINE');
             this.parser.i = 0;
-            
+
             while (this.parser.i < this.parser.tokens.length) {
                 ast.push(this.parsePrimary())
 
-                if(this.peek().type == 'DOT'){
+                if (this.peek().type == 'DOT') {
                     this.parser.i++;
                 }
-                if(this.peek().type == 'EOF'){
+                if (this.peek().type == 'EOF') {
                     this.parser.i++;
                 }
             }
@@ -2370,10 +2531,10 @@ const gamevm = Vue.createApp({
                 case 'Print':
                     let num = parseInt(node.output);
 
-                    if(num){
+                    if (num) {
                         this.consoleOutputs.push('Line ' + node.line + ': ' + num);
                     }
-                    else{
+                    else {
                         if (env[node.output] == 1) {
                             var isword = 'is';
                             var outword = pluralize.singular(node.output);
@@ -2386,7 +2547,7 @@ const gamevm = Vue.createApp({
                         this.consoleOutputs.push('Line ' + node.line + ': There ' + isword + ' ' + env[node.output] + ' ' + outword);
                         console.log(env[node.output], env);
                     }
-                    
+
                     break;
 
                 case 'Identifier':
@@ -2416,7 +2577,7 @@ const gamevm = Vue.createApp({
                         truthiness = (leftHand == true && rightHand == false) || (leftHand == false && rightHand == true);
                     }
                     if (truthiness) {
-                        if(node.action){
+                        if (node.action) {
                             return this.evalNode(node.action, env);
                         }
                         return true;
@@ -2602,14 +2763,14 @@ const gamevm = Vue.createApp({
             else if (this.currencyReservedNames.has(name)) {
                 return `Our scribes are confused by your law. On line ${token.line} we wonder if you forgot an 'if' by the word '${name}'? ${name.charAt(0).toUpperCase() + name.slice(1)} is a special word that always refers to our people's ${name}.`;
             }
-            else if(this.isReservedName(name)){
+            else if (this.isReservedName(name)) {
                 return `
                 Our scribes fear your law may be difficult to understand. 
                 On line ${token.line} your reference to '${name}' makes us think of something else. 
                 Trying to say it is something else is unclear. 
                 It may need a different name.`;
             }
-            
+
         },
         sanitizeProfName(name) {
             if (!name) {
@@ -2622,7 +2783,7 @@ const gamevm = Vue.createApp({
             let prof = this.professions.find(x => pluralize.singular(x.Name.toLowerCase()) == lower);
             return prof;
         },
-        formatNumber(n) {
+        formatNumber(n, isInteger = false) {
             if (this.hasNumbers() == false) {
                 return this.getRelativeNumber(n);
             }
@@ -2655,7 +2816,10 @@ const gamevm = Vue.createApp({
 
             const scale = Math.pow(10, tier * 3);
             const scaled = n / scale;
-            return scaled.toFixed(2).replace(/\.?0+$/, '') + units[tier];
+            if (isInteger) {
+                return scaled.toFixed(2).replace(/\.?0+$/, '') + units[tier];
+            }
+            return scaled.toFixed(2) + units[tier];
         }
     }
 });
