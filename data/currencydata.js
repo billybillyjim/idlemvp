@@ -99,6 +99,15 @@ export default
             Icon:'./icons/house.svg',
             Unlocked:false,
         },
+        Rope:{
+            Name:'Rope',
+            Value:1,
+            Amount:0,
+            Type:'Processed Material',
+            Description:"Rope is useful for attaching things together.",
+            Icon:'./icons/rope.svg',
+            Unlocked:false,
+        },
         Ore:{
             Name:'Ore',
             Type:'Raw Material',
