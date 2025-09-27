@@ -159,6 +159,7 @@ body {
   position: relative;
   opacity:1;
   max-width:500px;
+  border-radius:0.375rem;
 }
 
 
