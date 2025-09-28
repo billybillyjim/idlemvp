@@ -1572,7 +1572,7 @@ const gamevm = Vue.createApp({
             }
             let prodDict = {};
             let actualProd = this.getActualProduction(profession, minimumForUsefulInfo).map(x => prodDict[x[0]] = x[1]);
-            let modified = this.riskyRelativeProductionChangeToString(profession, prodDict, maxPossible);
+            let modified = this.relativeProductionChangeToString(profession, prodDict, maxPossible);
 
             if(this.hasNumbers() == false){
                 return modified;
@@ -1595,7 +1595,7 @@ const gamevm = Vue.createApp({
             let maxPossible = Math.min(amount, profession.Count);
             let prodDict = {};
             let actualProd = this.getActualProduction(profession, maxPossible).map(x => prodDict[x[0]] = x[1]);
-            let modified = this.riskyRelativeProductionChangeToString(profession, prodDict, -amount);
+            let modified = this.relativeProductionChangeToString(profession, prodDict, -amount);
 
             if(this.hasNumbers() == false){
                 return modified;
@@ -1726,7 +1726,7 @@ const gamevm = Vue.createApp({
                 .map(([key, value]) => `<img class="image-icon" src="${this.currencydata[key].Icon}" /> ${this.formatNumber(value * amount)}`)
                 .join(', ');
         },
-        riskyRelativeProductionChangeToString(profession, produced, amount = 1) {
+        relativeProductionChangeToString(profession, produced, amount = 1) {
             if (!produced) { return ''; }
             if(this.hasNumbers() == false){
                 return "If we had a better way of keeping track of how many things there are, we could know more about what doing this would do.";
@@ -1822,73 +1822,6 @@ const gamevm = Vue.createApp({
             tableRows.push(`</table>`);
             return tableRows.join('');
 
-        },
-        relativeProductionChangeToString(profession, produced, amount = 1) {
-            if (!produced) {
-                return '';
-            }
-            let running = {};
-            let productionOutput = Object.entries(produced)
-                .map(([key, value]) => {
-                    let icon = `<img class="image-icon" src="${this.currencydata[key].Icon}" />`;
-                    let currentPotential = this.currencyPotentialChange[key];
-                    let currentRealChange = this.currencyDailyChange[key];
-                    let current = `<span style="${this.currencyDailyChange[key] < 0 ? 'color:red' : ''}">${this.formatNumber(this.currencyDailyChange[key])}</span>`;
-                    let operator = `${amount >= 0 ? '+' : '-'}`;
-                    let change = `${this.formatNumber(Math.abs(produced[key] * amount))}`;
-                    let newOutput = `${this.formatNumber(this.currencyDailyChange[key] + (produced[key] * amount))}`;
-
-                    let capWarning = '(Capped by Storage)';
-                    if (currentPotential > 0 && currentRealChange == 0 && change > 0) {
-                        newOutput += capWarning;
-                    }
-                    running[key] = this.currencyDailyChange[key] + (produced[key] * amount);
-                    let output = `<td>${icon}</td><td>${current}</td><td>${operator}</td><td>${change}</td><td>=</td><td>${newOutput}</td>`;
-                    return `<tr>${output}</tr>`;
-                }
-                ).join('');
-
-            let consumptionOutput = Object.entries(profession.BaseDemand)
-                .map(([key, value]) => {
-                    let icon = `<img class="image-icon" src="${this.currencydata[key].Icon}" />`;
-
-                    let currentRealChange = this.currencyDailyChange[key];
-                    let newPotential = currentRealChange + (produced[key] ?? 0);
-                    let current = `<span style="${newPotential < 0 ? 'color:red' : ''}">${this.formatNumber(newPotential)}</span>`;
-                    let operator = `${amount >= 0 ? '+' : '-'}`;
-                    let change = `${this.formatNumber(Math.abs(value * amount))}`;
-                    let newOutput = `${this.formatNumber(newPotential - (value * amount))}`;
-                    let output = `<td>${icon}</td><td>${current}</td><td>${operator}</td><td>${change}</td><td>=</td><td>${newOutput}</td>`;
-                    return `<tr>${output}</tr>`;
-                }
-                ).join('');
-
-            let unemployed = this.professions.find(x => x.Name == 'Unemployed');
-            let unemployedProdDict = {};
-            let actualProd = this.getActualProduction(unemployed, amount).map(x => unemployedProdDict[x[0]] = x[1]);
-            let reductionOutput = Object.entries(unemployedProdDict)
-                .map(([key, value]) => {
-                    let icon = `<img class="image-icon" src="${this.currencydata[key].Icon}" />`;
-
-                    let currentRealChange = running[key];
-                    let newPotential = currentRealChange;
-                    let current = `<span style="${newPotential < 0 ? 'color:red' : ''}">${this.formatNumber(newPotential)}</span>`;
-                    let operator = `${amount >= 0 ? '-' : '+'}`;
-                    let change = `${this.formatNumber(Math.abs(value * amount))}`;
-                    let newOutput = `${this.formatNumber(newPotential - (value * amount))}`;
-                    let output = `<td>${icon}</td><td>${current}</td><td>${operator}</td><td>${change}</td><td>=</td><td>${newOutput}</td>`;
-                    return `<tr>${output}</tr>`;
-                }
-                ).join('');
-            let table = `<table style="text-align:right">
-            <tr style="text-align:left"><td colspan="100">Production</td></tr>
-            ${productionOutput}
-            <tr style="text-align:left"><td colspan="100">Consumption</td></tr>
-            ${consumptionOutput}
-            <tr style="text-align:left"><td colspan="100">Lost Unemployed Output</td></tr>
-            ${reductionOutput}
-            </table>`;
-            return table;
         },
         costToText(cost, amount = 1) {
             return Object.entries(cost)
