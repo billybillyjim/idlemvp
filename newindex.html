@@ -114,9 +114,22 @@
                         <li class="nav-item" v-for="menu in getAvailableMenus()">
                             <button @click="setMenu(menu)" :class="currentMenu == menu ? 'active' : ''" class="btn-link nav-link ps-2 w-100" style="text-align: left;" data-bs-dismiss="offcanvas"
                                 aria-current="page">[[menu]]</a>
-                                <span v-if="menu == 'Technology' && getTechnologies(true).length > 0" class="badge bg-danger rounded-pill">[[formatNumber(getTechnologies(false,
-                                    false).length, true)]]</span>
-                                <span v-if="menu == 'Population' && getAvailableWorkers() > 0" class="badge bg-danger rounded-pill">[[formatNumber(getAvailableWorkers(),true)]]</span>
+                                <span v-if="menu == 'Technology' && getTechnologies(true).length > 0" class="badge bg-danger rounded-pill">
+                                    <span v-if="hasTechnology('Numbers')">
+                                        [[formatNumber(getTechnologies(false, false).length, true)]]
+                                    </span>
+                                    <span v-else>
+                                        !
+                                    </span>
+                                </span>
+                                <span v-if="menu == 'Population' && getAvailableWorkers() > 0" class="badge bg-danger rounded-pill">
+                                    <span v-if="hasTechnology('Numbers')">
+                                        [[formatNumber(getAvailableWorkers(),true)]]
+                                    </span>
+                                    <span v-else>
+                                        !
+                                    </span>
+                                </span>
                         </li>
                     </ul>
                     <hr />
