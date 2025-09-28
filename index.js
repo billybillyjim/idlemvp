@@ -488,7 +488,8 @@ const gamevm = Vue.createApp({
                         }
                     }
                     else {
-                        let enough = this.professions[population] >= count;
+                        const prof = this.professions.find(p => p.Name == population);
+                        let enough = prof.Count >= count;
                         if (!enough) {
                             return false;
                         }
