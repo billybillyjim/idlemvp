@@ -1058,6 +1058,27 @@ const gamevm = Vue.createApp({
 
             if (this.focusedTechnology.Progress >= this.focusedTechnology.Complexity) {
                 this.focusedTechnology.Unlock(this);
+                if(this.focusedTechnology.Name == "Firemaking"){
+                    this.currentGoalLevel = 1;
+                }
+                else if(this.focusedTechnology.Name == "Pottery"){
+                    this.currentGoalLevel = 2;
+                }
+                else if(this.focusedTechnology.Name == "Clay Bullae"){
+                    this.currentGoalLevel = 3;
+                }
+                else if(this.focusedTechnology.Name == "Writing"){
+                    this.currentGoalLevel = 4;
+                }
+                else if(this.focusedTechnology.Name == "Numbers"){
+                    this.currentGoalLevel = 5;
+                }
+                else if(this.focusedTechnology.Name == "Taxation"){
+                    this.currentGoalLevel = 6;
+                }
+                else if(this.currentGoalLevel == 6){
+                    this.currentGoalLevel = 7;
+                }
                 this.focusedTechnology = null;
 
             }
