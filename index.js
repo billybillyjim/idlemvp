@@ -860,13 +860,14 @@ const gamevm = Vue.createApp({
             this.modifyDemand('Furniture', baseFurnitureDemand * totalPop, 'Global Demand');
         },
         processTechnologyDemand() {
+            let population = this.getPopulation();
             for (let tech of this.technologies) {
                 if (tech.isLocked == false) {
                     for (let [good, mod] of Object.entries(tech.demandModifiers.Global)) {
                         this.modifyDemand(good, mod, "From " + tech.Name);
                     }
                     for (let [good, mod] of Object.entries(tech.demandModifiers.PerCapita)) {
-                        this.modifyDemand(good, mod * this.getPopulation(), "Per Capita from " + tech.Name);
+                        this.modifyDemand(good, mod * population, "Per Capita from " + tech.Name);
                     }
                     for (let prof of this.professions) {
                         if (tech.demandModifiers[prof.Name]) {
