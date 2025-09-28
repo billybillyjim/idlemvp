@@ -198,6 +198,24 @@ const gamevm = Vue.createApp({
                 this.currentGoalLevel = newValue;
             }
         },
+        getAvailableMenus(){
+            let alwaysAvailable= ["Main", "Population", "Technology"];
+            if(this.hasTechnology('Firemaking')){
+                alwaysAvailable.push("Buildings");
+            }
+            if(this.hasTechnology('Pottery')){
+                alwaysAvailable.push('Stockpiles');
+            }
+            if(this.hasTechnology('Basic Societal Structure')){
+                alwaysAvailable.push('Laws');   
+            }
+            if(this.hasTechnology('Numbers')){
+                alwaysAvailable.push('Modifiers');
+            }
+            alwaysAvailable.push("Log");
+            alwaysAvailable.push("Settings");
+            return alwaysAvailable;
+        },
         confirmCivName() {
             this.civNameConfirmed = true;
         },
