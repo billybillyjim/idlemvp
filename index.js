@@ -38,6 +38,7 @@ const gamevm = Vue.createApp({
         return {
             Verbose: true,
             gravity:9.81,
+            sunlight:1,
             civilizationName: "",
             currentMenu: "Main",
             menus: ["Main", "Population", "Stockpiles", "Buildings", "Technology", "Laws", "Modifiers", "Log", "Settings"],
@@ -75,6 +76,18 @@ const gamevm = Vue.createApp({
             showSidebar: false,
             focusedTechnology: null,
             currencyDailyChange: {},
+            tutorialStage:0,
+            currentGoalLevel:0,
+            goalLevelHints:[
+                "Your people are cold at night. There must be something we can do.",
+                "Your people want something to drink water out of aside from their hands.",
+                "Your people have many arguments about who owes who what.",
+                "Your people wish they could communicate without repeating themselves.",
+                "Your people desire a way to show how many things there are.",
+                "You've done so much for your people. Maybe you deserve some of their work.",
+                "You seem to have this ruling thing figured out.",
+                ""
+            ],
             currencyPotentialChange: {},
             activeComponents: [
                 { Name: 'CodeTester', component: 'codetester', isActive: true, },
@@ -160,6 +173,7 @@ const gamevm = Vue.createApp({
                 tokens: [],
             },
             pluralizer: pluralize,
+            previousWeather:null,
         }
     },
     created() {
@@ -167,7 +181,7 @@ const gamevm = Vue.createApp({
         this.beginTickCurrencyValues = JSON.parse(JSON.stringify(this.currencydata));
         for (let tech of this.technologies) {
             this.techDict[tech.Name] = tech;
-            //  tech.Unlock(this);
+             tech.Unlock(this);
         }
         const input = `
                 if Wood >= 0 then hire Test until there are 10.
@@ -179,6 +193,11 @@ const gamevm = Vue.createApp({
         this.gameProcess = setInterval(this.gameTick, this.tickspeed);
     },
     methods: {
+        incrementGoalLevel(newValue){
+            if(newValue > this.currentGoalLevel){
+                this.currentGoalLevel = newValue;
+            }
+        },
         confirmCivName() {
             this.civNameConfirmed = true;
         },
@@ -654,29 +673,39 @@ const gamevm = Vue.createApp({
         processDeaths() {
             let deathOdds = 0.01;
             let homelessRate = this.getHomelessnessRatio();
+            let possibleCauses = {
+                "Natural Causes":"has died of natural causes.",
+            };
+
+            if(homelessRate > 0){
+                deathOdds += homelessRate;
+                possibleCauses["Homelessness"] = "has died homeless.";
+            }
             if(this.gravity == 0){
                 deathOdds = 1;
+                possibleCauses["No Gravity"] = "has floated off into space.";
             }
             if(this.gravity > 25){
                 deathOdds *= this.gravity;
+                possibleCauses["High Gravity"] = "has been crushed by extreme gravity.";
+            }
+            if(this.previousWeather?.temp < -40){
+                deathOdds += (Math.abs(this.previousWeather?.temp) - 40) / 100;
+                possibleCauses["Low Sun"] = "has frozen in the low sunlight.";
+            }
+            else if(this.previousWeather?.temp > 120){
+                deathOdds += (this.previousWeather?.temp - 120) / 100;
+                possibleCauses["Extreme Sun"] = "has fried in the sun.";
             }
 
-            deathOdds += homelessRate;
             for (let prof of this.professions) {
                 let rand = Math.random();
                 if (rand < deathOdds) {
-                    let reason = "has died of natural causes.";
-                    if(this.gravity == 0){
-                        reason = "has floated off into space.";
-                    }
-                    else if(this.gravity > 25){
-                        reason = "has been crushed by extreme gravity.";
-                    }
-                    else if (homelessRate > rand) {
-                        reason = "has died homeless.";
-                    }
+                    //https://stackoverflow.com/questions/2532218/pick-random-property-from-a-javascript-object
+                    let keys = Object.keys(possibleCauses);
+                    let reason = [keys[ keys.length * Math.random() << 0]];
 
-                    this.die(prof, 1, reason);
+                    this.die(prof, Math.max(deathOdds - 1, 1), reason);
                 }
             }
             if (this.getPopulation() == 0) {
@@ -1153,7 +1182,13 @@ const gamevm = Vue.createApp({
                     this.logit("There isn't enough gravity for anyone to join your civilization.");
                 }
                 else if(this.gravity > 25){
-                    this.logit("There's way too much gravity for someone to join your civilization.");
+                    this.logit("There's way too much gravity for anyone to join your civilization.");
+                }
+                else if(this.sunlight > 1.5){
+                    this.logit("There's way too much sunlight for anyone to join your civilization.");
+                }
+                else if(this.sunlight < 0.8){
+                    this.logit("There's not enough sunlight for anyone to join your civilization.");
                 }
                 else{
                     this.logit("Despite extreme mismanagement of your state, a wanderer has joined your civilization as the sole member.");
@@ -1741,7 +1776,6 @@ const gamevm = Vue.createApp({
                     if (prodDelta != 0) {
                         sectionsToAdd.push(row(icon, '', op, changeAbs, newOutputTxt, 'Will Produce'));
                     }
-
                 }
 
                 const consDeltaRaw = (profession.BaseDemand?.[key] || 0) * amount;
@@ -1755,7 +1789,6 @@ const gamevm = Vue.createApp({
                     if (consDelta != 0) {
                         sectionsToAdd.push(row(icon, '', op, changeAbs, newOutputTxt, 'Will Consume'));
                     }
-
                 }
 
                 const lostUnempRaw = (unemployedProdDict[key] || 0) * amount;
@@ -1934,23 +1967,35 @@ const gamevm = Vue.createApp({
             let currentDay = Math.floor(diff / oneDay);
             let hourInYear = currentDay * 24 + timeOfDay;
             let quantizedHour = Math.floor(hourInYear / 12) * 12;
+            let currentWeatherTemp = weather.Weathers[hourInYear % weather.Weathers.length];
             let currentWeather = weather.Weathers[quantizedHour % weather.Weathers.length];
-            let weatherDescription = this.getWeatherDescription(currentWeather);
+            
+            let weatherDescription = this.getWeatherDescription(currentWeatherTemp.temp, currentWeather);
+            
             return 'The weather is ' + weatherDescription + '.';
         },
-        getWeatherDescription(weatherData) {
-            const { temp, rain, humid, wind, cloud } = weatherData;
+        getWeatherDescription(temp, weatherData) {
+            let { _, rain, humid, wind, cloud } = weatherData;
+            
             let description = [];
+            if(this.sunlight != 1){
+                let K = (temp - 32) * (5/9) + 273.15;
+                K *= this.sunlight;
+                temp = (K - 273.15) * (9/5) + 32;
+            }
+            if(this.hasTechnology('Temperature')){
+                description.push(this.formatNumber(temp) + " degrees");
+            }
+            else{
 
-            // Temperature description
-            if (temp <= -10) description.push("freezing cold");
-            else if (temp <= 0) description.push("very cold");
-            else if (temp <= 10) description.push("chilly");
-            else if (temp <= 20) description.push("cool");
-            else if (temp <= 30) description.push("warm");
-            else description.push("hot");
+                if (temp <= -10) description.push("freezing cold");
+                else if (temp <= 0) description.push("very cold");
+                else if (temp <= 10) description.push("chilly");
+                else if (temp <= 20) description.push("cool");
+                else if (temp <= 30) description.push("warm");
+                else description.push("hot");
+            }
 
-            // Precipitation
             if (rain > 0) {
                 let state = 'rain';
                 let minimal = 'drizzling';
@@ -1963,24 +2008,20 @@ const gamevm = Vue.createApp({
                 else description.unshift(minimal);
             }
             else {
-                // Clouds
                 if (cloud > 75) description.push("overcast");
                 else if (cloud > 40) description.push("partly cloudy");
                 else if (cloud > 0) description.push("mostly clear");
                 else description.push("clear skies");
             }
 
-            // Wind
             if (wind > 30) description.push("very windy");
             else if (wind > 10) description.push("windy");
 
-
-
-            // Humidity extremes
             if (humid >= 90) description.push("humid");
             else if (humid < 25) description.push("dry");
 
-            // Return a nice sentence
+            this.previousWeather = weatherData;
+            this.previousWeather.temp = temp;
             return description.join(", ");
         },
         getRelativeNumber(n) {

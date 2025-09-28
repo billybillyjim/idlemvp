@@ -2,7 +2,7 @@ export default [
     {
         Name: "Stone Tools",
         Description: "Other nations seem to have figured this out ages ago. But not to worry, we will catch up!",
-        Cost: { "Food": 100 },
+        Cost: { "Food": 150 },
         Requirements: {Populations:{Global:5}},
         Progress: 0,
         Visible: false,
@@ -38,8 +38,8 @@ export default [
     {
         Name: "Firemaking",
         Description: "All the best games have firemaking.",
-        Cost: { "Food": 150 },
-        Requirements: {Populations:{Global:6}},
+        Cost: { "Food": 100 },
+        Requirements: {Populations:{Global:5}},
         Progress: 0,
         Visible: false,
         Complexity: 15,

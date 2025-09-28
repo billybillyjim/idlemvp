@@ -162,6 +162,9 @@ body {
   border-radius:0.375rem;
 }
 
+.hide-on-mobile{
+    display:inherit;
+}
 
 .tooltip-box {
   position: fixed;
@@ -309,4 +312,10 @@ td {
     border:solid 1px gray;
     border-radius:.25rem;
     width:105px;
+}
+
+@media(max-width:800px){
+    .hide-on-mobile{
+        display:none;
+    }
 }
