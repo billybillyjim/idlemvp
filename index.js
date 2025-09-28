@@ -869,11 +869,14 @@ const gamevm = Vue.createApp({
                     for (let [good, mod] of Object.entries(tech.demandModifiers.PerCapita)) {
                         this.modifyDemand(good, mod * population, "Per Capita from " + tech.Name);
                     }
-                    for (let prof of this.professions) {
-                        if (tech.demandModifiers[prof.Name]) {
-                            for (let [good, mod] of Object.entries(tech.demandModifiers[prof.Name])) {
-                                this.modifyDemand(good, mod * prof.Count, "From " + prof.Name + " and tech " + tech.Name);
-                            }
+                    for (let [profName, goods] of Object.entries(tech.demandModifiers)) {
+                        if(profName == 'Global' || profName == 'PerCapita'){
+                            continue;
+                        }
+                        const prof = this.professions.find(p => p.Name == profName);
+                        
+                        for (let [good, mod] of Object.entries(goods)) {
+                            this.modifyDemand(good, mod * prof.Count, `From ${prof.Name} and tech ${tech.Name}`);
                         }
                     }
                 }
