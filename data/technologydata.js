@@ -2,11 +2,11 @@ export default [
     {
         Name: "Stone Tools",
         Description: "Other nations seem to have figured this out ages ago. But not to worry, we will catch up!",
-        Cost: { "Food": 150 },
+        Cost: { "Food": 50 },
         Requirements: {Populations:{Farmer:1}},
         Progress: 0,
         Visible: false,
-        Complexity: 5,
+        Complexity: 1,
         isLocked: true,
         demandModifiers: {
             Global: {"Wood":0.5},
@@ -38,11 +38,11 @@ export default [
     {
         Name: "Firemaking",
         Description: "All the best games have firemaking.",
-        Cost: { "Food": 100 },
+        Cost: { "Food": 10 },
         Requirements: {Populations:{Farmer:1}},
         Progress: 0,
         Visible: false,
-        Complexity: 15,
+        Complexity: 2,
         isLocked: true,
         QualityOfLifeBoost:0.2,
         demandModifiers: {
