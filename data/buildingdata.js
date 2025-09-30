@@ -62,7 +62,7 @@ export default[
             Water: 5000 
         },
         Produces:{
-            Water:3,
+            Water:300,
         },
         Unlocked: true, 
         Visible: true, 

@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Yasignal Documentation</title>
+    <title>Mori Documentation</title>
 
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet" />
     <link rel="stylesheet" href="./main.css" />
@@ -21,7 +21,7 @@
                     <span class="navbar-toggler-icon"></span>
                 </button>
 
-                <a class="navbar-brand" href="">Yasignal Documentation</a>
+                <a class="navbar-brand" href="">Mori Documentation</a>
 
                 <ul class="navbar-nav w-100 justify-content-between gap-2">
                     <li class="nav-item my-3" style="color:white">
@@ -32,20 +32,21 @@
         </nav>
         <main class="container-fluid py-4">
             <div class="mt-5">
-                    <h1>Welcome to Yasignal</h1>
-                    <div>What is Yasignal? It's a programming language written to allow players to automatic decisionmaking for the game Yasig, which is Yet Another Civilization Idle Game.</div>
-
-                    <div>What does Yasignal look like? Here are some examples:</div>
+                    <h1>Welcome to Mori</h1>
+                    <div>What is Mori? It's a programming language written to allow players to automatic decisionmaking for the game Vanitasia, which is the idle game hosted here.</div>
+                    <div>Why is it called Mori?</div>
+                    <div>Well the game is called Vanitasia, which is named after an art style called Vanitas which is about the inevitability of death. Memento Mori is a artistic trope about death along the same lines, but it also means "forest" in Japanese, which makes it a cool name.</div>
+                    <div>What does Mori look like? Here are some examples:</div>
                     <pre class="documentation-code-block mx-2">x is 7.</pre>
                     <pre class="documentation-code-block mx-2">if there are 0 farmers, hire 1.</pre>
                     <pre class="documentation-code-block mx-2">if food production is less than food consumption and there are more than 5 unemployed people, hire a farmer.</pre>
-                    <div>How does Yasignal work?</div>
+                    <div>How does Mori work?</div>
                     <div>It's just a simple parser I wrote in Javascript. The main goal is to be as forgiving and accepting as possible. As much as possible syntax errors should be clear as to what word caused the error and what kinds of words the parser was expecting.</div>
 
                     <div class="my-3">
                         <h3>Basic Syntax</h3>
                         <div class="mx-2">
-                            Every Yasignal command consists of some kind of identification or some kind of action, followed by a period.
+                            Every Mori command consists of some kind of identification or some kind of action, followed by a period.
                             The goal is to closely mimic actual human speech so that it is easy to figure out and easy to use.
 
                         </div>
@@ -53,7 +54,7 @@
                     <div class="my-3">
                        <h2>Actions</h2>
                        <div class="mx-2">
-                            As of the time of writing this, the only actions Yasignal can perform are to hire and fire workers, and to build buildings. I'd like to add more.
+                            As of the time of writing this, the only actions Mori can perform are to hire and fire workers, and to build buildings. I'd like to add more.
                         
                             <h3 class="mt-2">Hire</h3>
                             <div>
@@ -67,7 +68,7 @@
                                 <hr>
                                 <div class="px-3 m-3">
                                     <pre class="documentation-code-block">If unemployed people > 1, then hire a farmer.</pre>
-                                    <div>This will hire a farmer if there are 2 or more unemployed people. Yasignal will ignore commas, indefinite articles, and some unnecessary words like 'then' in the example above.</div>
+                                    <div>This will hire a farmer if there are 2 or more unemployed people. Mori will ignore commas, indefinite articles, and some unnecessary words like 'then' in the example above.</div>
                                 </div>
                                 <hr>
                                 <div class="px-3 m-3">
@@ -88,8 +89,8 @@
                                 <hr>
                                 <div class="px-3 m-3">
                                     <pre class="documentation-code-block">If farmers > 15, then fire 1.</pre>
-                                    <div>This will fire a farmer if there are 16 or more farmers. Yasignal will ignore commas, indefinite articles, and some unnecessary words like 'then' in the example above. 
-                                        Since there is no argument supplied for who to fire, yasignal will assume (just like we do in regular speech) that the firing is referring to the previously mentioned farmer.
+                                    <div>This will fire a farmer if there are 16 or more farmers. Mori will ignore commas, indefinite articles, and some unnecessary words like 'then' in the example above. 
+                                        Since there is no argument supplied for who to fire, Mori will assume (just like we do in regular speech) that the firing is referring to the previously mentioned farmer.
                                     </div>
                                 </div>
                                 <hr>

@@ -42,7 +42,7 @@ export default [
         Requirements: {Populations:{Farmer:1}},
         Progress: 0,
         Visible: false,
-        Complexity: 2,
+        Complexity: 1.5,
         isLocked: true,
         QualityOfLifeBoost:0.2,
         demandModifiers: {
@@ -130,11 +130,11 @@ export default [
     {
         Name: "Pottery",
         Description: "This smooth dirt all around us could have some kind of use.",
-        Cost: { "Food": 1000 },
+        Cost: { "Food": 300 },
         Requirements: { Technologies: ["Firemaking"] },
         Progress: 0,
         Visible: false,
-        Complexity: 300,
+        Complexity: 20,
         isLocked: true,
         demandModifiers: {
             Global: {},
@@ -584,11 +584,11 @@ export default [
     {
         Name: "Clay Bullae",
         Description: "A token to represent a thing or things.",
-        Cost: { "Clay": 2000 },
+        Cost: { "Clay": 200 },
         Requirements: { Technologies:["Pottery"]},
         Progress: 0,
         Visible: false,
-        Complexity: 3000,
+        Complexity: 100,
         isLocked: true,
         demandModifiers: {
             Global: {},
@@ -606,7 +606,7 @@ export default [
         Requirements: { Technologies: ["Measuring Sticks", "Clay Bullae"] },
         Progress: 0,
         Visible: false,
-        Complexity: 9000,
+        Complexity: 900,
         isLocked: true,
         demandModifiers: {
             Global: {},
