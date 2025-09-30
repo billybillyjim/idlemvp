@@ -118,7 +118,7 @@
                                     <span v-if="hasTechnology('Numbers')">
                                         [[formatNumber(getTechnologies(false, false).length, true)]]
                                     </span>
-                                    <span v-else>
+                                    <span v-else-if="focusedTechnology == null">
                                         !
                                     </span>
                                 </span>
@@ -186,12 +186,24 @@
 
                                             </td>
                                             <td>
-                                                <tooltipwrapper
-                                                    :text="(missingProfessionCounts[profession.Name]) > 0 ? 'The number in parentheses is how many people used to be working this profession but died and have not been replaced yet.' : 'The current number of ' + pluralizer.plural(profession.Name)">
-                                                    [[formatNumber(profession.Count, true)]]
-                                                    <span v-if="missingProfessionCounts[profession.Name]">+
-                                                        ([[(missingProfessionCounts[profession.Name])]])</span>
-                                                </tooltipwrapper>
+                                                <template v-if="hasNumbers()">
+                                                    <tooltipwrapper
+                                                        :text="(missingProfessionCounts[profession.Name]) > 0 ? 'The number in parentheses is how many people used to be working this profession but died and have not been replaced yet.' : 'The current number of ' + pluralizer.plural(profession.Name)">
+                                                        [[formatNumber(profession.Count, true)]]
+                                                        <span v-if="missingProfessionCounts[profession.Name]">+
+                                                            ([[(missingProfessionCounts[profession.Name])]])</span>
+                                                    </tooltipwrapper>
+                                                </template>
+                                                <template v-else>
+                                                    <tooltipwrapper :calcfrom="() => formatNumber(profession.Count)">
+                                                        <div style="position:relative; max-width:100px;white-space: nowrap;">
+                                                            <div v-for="n, index in profession.Count" style="position:absolute;top:-16px;" :style="'left:' + (((index + 1) * (100 / (profession.Count + 1))) - 16) + 'px'">
+                                                                <img src="icons/guy.png" width="32" height="32">
+                                                            </div>
+                                                        </div>
+                                                    </tooltipwrapper>
+                                                    
+                                                </template>
                                             </td>
                                             <td>
 
@@ -248,8 +260,8 @@
                         <table class="table table-striped" style="table-layout: fixed; width: 100%;">
                             <thead>
                                 <tr>
-                                    <th style="width: 25%;">Stockpile</th>
-                                    <th style="width: 25%;">Amount</th>
+                                    <th style="width: 15%;">Stockpile</th>
+                                    <th style="width: 35%;">Amount</th>
                                     <th style="width: 25%;">Hourly Change</th>
                                     <th style="width: 25%;">Demand</th>
                                 </tr>
@@ -264,12 +276,19 @@
                                             </tooltipwrapper>
                                         </td>
                                         <td>
-                                            <tooltipwrapper :calcfrom="() => getTimeToFullStockpile(currency)">
-                                                [[formatNumber(currency.Amount)]]
-                                            </tooltipwrapper>
-
-                                            <span v-if="currency.Type != 'Nonphysical Good'">/
+                                            <template v-if="hasNumbers()">
+                                                <tooltipwrapper :calcfrom="() => getTimeToFullStockpile(currency)">
+                                                    [[formatNumber(currency.Amount)]]
+                                                </tooltipwrapper>
+                                                <span v-if="currency.Type != 'Nonphysical Good'">/
                                                 [[formatNumber(getCurrencyStorage(currency.Name))]] </span>
+                                            </template>
+                                            <div>
+                                                <div class="progress" style="height: 24px;">
+                                                    <div class="progress-bar" :class="currencyDailyChange[currency.Name] < 0 ? 'bg-danger' : 'bg-success'" role="progressbar" :style="{ width: (currency.Amount / getCurrencyStorage(currency.Name) * 100) + '%' }">
+                                                    </div>
+                                                </div>
+                                            </div>
                                         </td>
                                         <td>
                                             <tooltipwrapper :calcfrom="() => getDailyChangeDescription(currency)">
@@ -306,12 +325,9 @@
                                 <template v-for="technology in getTechnologies(true, true)">
                                     <tr v-if="technology.isLocked || technologyMenu.showCompleted">
                                         <td>
-
                                             <tooltipwrapper :text="technology.Description">
                                                 [[technology.Name]]
                                             </tooltipwrapper>
-
-
                                         </td>
                                         <td>
                                             <tooltipwrapper :calcfrom="() => getTechnologyProgressDescription(technology)">
@@ -344,19 +360,21 @@
                 <template v-else-if="currentMenu == 'Buildings'">
                     <h1 class="display-6 mb-4">The Buildings of [[civilizationName]]</h1>
                     <div>There is enough housing for [[formatNumber(getTotalHousing())]] people.
-                        [[formatNumber(getAvailableHousing())]] room<span v-if="getAvailableHousing() != 1">s
-                            are</span><span v-else> is</span> still open.</div>
-                    <div>The homelessness rate is [[getHomelessnessRatio() * 100]]%</div>
+                        [[formatNumber(getAvailableHousing())]] room<span v-if="getAvailableHousing() != 1">s are</span>
+                        <span v-else> is</span> 
+                        still open.</div>
+                    <div v-if="hasNumbers()">The homelessness rate is [[formatNumber(getHomelessnessRatio() * 100)]]%</div>
+                    <div v-else>There are [[formatNumber(getHomelessnessRatio() * 100)]] homeless people.</div>
                     <div>
                         <table class="table table-striped">
                             <thead>
                                 <tr>
-                                    <th>Housing Type</th>
-                                    <th>Count</th>
-                                    <th>Supports</th>
-                                    <th>Current</th>
-                                    <th>Cost</th>
-                                    <th>Actions</th>
+                                    <th style="width: 10%;">Housing Type</th>
+                                    <th style="width: 10%;">Count</th>
+                                    <th style="width: 20%;">Supports</th>
+                                    <th style="width: 20%;">Current</th>
+                                    <th style="width: 20%;">Cost</th>
+                                    <th style="width: 20%;">Actions</th>
                                 </tr>
                             </thead>
                             <tbody>
@@ -407,12 +425,12 @@
                         <table class="table table-striped">
                             <thead>
                                 <tr>
-                                    <th>Building Type</th>
-                                    <th>Count</th>
-                                    <th>Description</th>
-                                    <th>Current</th>
-                                    <th>Cost</th>
-                                    <th>Actions</th>
+                                    <th style="width: 10%;">Building Type</th>
+                                    <th style="width: 10%;">Count</th>
+                                    <th style="width: 20%;">Description</th>
+                                    <th style="width: 20%;">Current</th>
+                                    <th style="width: 20%;">Cost</th>
+                                    <th style="width: 20%;">Actions</th>
                                 </tr>
                             </thead>
                             <tbody>

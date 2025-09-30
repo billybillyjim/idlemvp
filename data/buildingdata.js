@@ -17,7 +17,7 @@ export default[
         Name: 'Granary', 
         Description:"A dry place to store a lot of grain.", 
         Type: "Storage", 
-        Count: 1, 
+        Count: 0, 
         Cost: 
         { 
             Bricks: 300, 
@@ -27,14 +27,14 @@ export default[
         { 
             Food: 1000 
         }, 
-        Unlocked: true, 
-        Visible: true, 
+        Unlocked: false, 
+        Visible: false, 
     },
     { 
         Name: 'Lumber Storeyards', 
         Description:"A safe place to store wood.", 
         Type: "Storage", 
-        Count: 1, 
+        Count: 0, 
         Cost: 
         { 
             Wood: 80, 
@@ -44,8 +44,8 @@ export default[
         { 
             Wood: 5000 
         }, 
-        Unlocked: true, 
-        Visible: true, 
+        Unlocked: false, 
+        Visible: false, 
     },
     { 
         Name: 'Well', 
@@ -92,7 +92,7 @@ export default[
             Space: 15 
         }, 
         Unlocked: false, 
-        Visible: true, 
+        Visible: false, 
     },
         { 
         Name: 'Mill', 
@@ -105,6 +105,6 @@ export default[
             Space: 15 
         }, 
         Unlocked: false, 
-        Visible: true, 
+        Visible: false, 
     },
 ]

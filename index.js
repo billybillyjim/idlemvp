@@ -174,6 +174,7 @@ const gamevm = Vue.createApp({
             },
             pluralizer: pluralize,
             previousWeather:null,
+            overcrowdspacing:1,
         }
     },
     created() {
@@ -199,6 +200,9 @@ const gamevm = Vue.createApp({
             }
         },
         getAvailableMenus(){
+            if(true){
+                return ["Main", "Population", "Technology", "Buildings", "Stockpiles", "Laws", "Modifiers", "Log", "Settings"];
+            }
             let alwaysAvailable= ["Main", "Population", "Technology"];
             if(this.hasTechnology('Firemaking')){
                 alwaysAvailable.push("Buildings");
@@ -724,7 +728,7 @@ const gamevm = Vue.createApp({
                     let keys = Object.keys(possibleCauses);
                     let reason = [keys[ keys.length * Math.random() << 0]];
 
-                    this.die(prof, Math.max(deathOdds - 1, 1), reason);
+                    this.die(prof, Math.max(deathOdds - 1, 1), possibleCauses[reason]);
                 }
             }
             if (this.getPopulation() == 0) {

@@ -11,3 +11,32 @@ Production – "control of the creation and transformation of goods and services
 Buildings should supply value to a certain amount of population. High value when you have enough, low value if you overbuild or underbuild.
 Production and consumption need to be simplified, right now it isn't clear how you get 1 from the other. Maybe describe it as hourly production and daily consumption?
 
+Pretend blind playthrough notes 1:
+1. Main screen is empty and should have something in it.
+2. It is hard to tell what the effect of hiring or firing someone is.
+3. It is hard to tell when your people are not producing enough of something.
+4. If there aren't going to be numbers there needs to be some other indicator until numbers are invented. Clay bullae could supply some kind of replacement?
+
+Notes 2.
+1. Too many buildings available at the start. -- DONE
+2. Lack of numbers makes all the information hard to follow -- MAYBE DONE?
+3. Current hint is not prominent enough
+4. too hard to tell what is going on.
+5. Homelessness rate is  still a number -- DONE
+6. Hide Stockpiles, Buildings, Technology, Laws, Modifiers at the start. Maybe have a tutorial menu that only includes some things to start out --DONE
+7. Death causes show up wrong. -- DONE
+8. Initial tech is too slow.
+9. Menu order is bad -- DONE
+10. Tech reqs are too loose
+11. missing workers are not using formatNumber -- DONE
+12. Tech alert should probably only show if there is no focustech -- DONE
+13. building menu buttons can jump around as you click -- DONE
+14. Hold to spam for buttons would be good. --Just make it not annoying to click
+15. It needs to be clearer if you have enough food, etc. -- DONE
+16. Wells need to supply more initial water, shouldn't be an issue until you have Numbers unlocked. -- DONE?
+17. Use actual units somewhere until numbers are available. -- DONE
+18. Clay bullae need clay but its consumed too fast. --Maybe Done
+19. Hard to see progress without numbers. --Maybe Done
+
+Ideas:
+Main screen should be a shortcut for the specific tasks required in the "tutorial" up to numbers.
