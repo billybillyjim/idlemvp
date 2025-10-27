@@ -1430,7 +1430,7 @@ const gamevm = Vue.createApp({
                 }
                 let obj = {}
                 obj[good] = demand;
-                this.buy(obj, demand, "Demand for " + good);
+                this.buy(obj, 1, "Demand for " + good);
                 this.unmetdemand[good] -= demand;
             }
             if (this.currencydata.Food.Amount < 0) {
