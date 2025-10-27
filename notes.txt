@@ -40,3 +40,12 @@ Notes 2.
 
 Ideas:
 Main screen should be a shortcut for the specific tasks required in the "tutorial" up to numbers.
+
+Notes 3.
+1. If you take too long for the first tech, it instantly completes and feels bad. Min tech time? -- DONE
+2. Move the hint to somewhere else
+3. Add a notice to Stockpiles if something is going down (Maybe just food or water)
+4. There is obviously something wrong with stone and clay production/consumption.
+5. The route to unlock clay bullae is impossible with the current setup
+6. There should be one or two more good farming techs early on.
+7. If writing takes food for example, the hint should include storehouses.

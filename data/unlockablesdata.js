@@ -213,7 +213,7 @@ export default [
                     Name: 'Miner',
                     Count: 0,
                     Cost: { 'Food': 3.45 },
-                    Produces: { 'Ore': 2, 'Clay': 3, 'Stone':3 },
+                    Produces: { 'Ore': 2, 'Clay': 10, 'Stone':3 },
                     Unlocked: true,
                     Visible: true,
                     "BaseDemand": { 'Food': 2, 'Stone': 0.1 },

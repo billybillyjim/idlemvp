@@ -37,11 +37,11 @@ const gamevm = Vue.createApp({
     data: function () {
         return {
             Verbose: true,
-            gravity:9.81,
-            sunlight:1,
+            gravity: 9.81,
+            sunlight: 1,
             civilizationName: "",
             currentMenu: "Main",
-            menus: ["Main", "Population", "Stockpiles", "Buildings", "Technology", "Laws", "Modifiers", "Log", "Settings"],
+            menus: ["Main", "Population", "Stockpiles", "Buildings", "Technology", "Laws", "Modifiers", "Log", "Charts", "Settings"],
             currentDate: new Date(2000, 0, 1),
             populationMenu: {
                 amount: 1,
@@ -52,6 +52,9 @@ const gamevm = Vue.createApp({
             },
             buildingMenu: {
                 hoverIndex: -1,
+            },
+            chartMenu: {
+                currentChart: '',
             },
             log: [],
             consoleOutputs: [],
@@ -76,9 +79,9 @@ const gamevm = Vue.createApp({
             showSidebar: false,
             focusedTechnology: null,
             currencyDailyChange: {},
-            tutorialStage:0,
-            currentGoalLevel:0,
-            goalLevelHints:[
+            tutorialStage: 0,
+            currentGoalLevel: 0,
+            goalLevelHints: [
                 "Your people are cold at night. There must be something we can do.",
                 "Your people want something to drink water out of aside from their hands.",
                 "Your people have many arguments about who owes who what.",
@@ -173,8 +176,12 @@ const gamevm = Vue.createApp({
                 tokens: [],
             },
             pluralizer: pluralize,
-            previousWeather:null,
-            overcrowdspacing:1,
+            previousWeather: null,
+            overcrowdspacing: 1,
+            checkHistoricalValues: true,
+            historicalValues: {},
+            maxHistory: 1000,
+            charts:[{Name:'UnmetDemands'},{Name:'Currencies'}],
         }
     },
     created() {
@@ -182,7 +189,7 @@ const gamevm = Vue.createApp({
         this.beginTickCurrencyValues = JSON.parse(JSON.stringify(this.currencydata));
         for (let tech of this.technologies) {
             this.techDict[tech.Name] = tech;
-            //  tech.Unlock(this);
+            tech.Unlock(this);
         }
         const input = `
                 if Wood >= 0 then hire Test until there are 10.
@@ -194,26 +201,30 @@ const gamevm = Vue.createApp({
         this.gameProcess = setInterval(this.gameTick, this.tickspeed);
     },
     methods: {
-        incrementGoalLevel(newValue){
-            if(newValue > this.currentGoalLevel){
+        setCurrentChart(menuName) {
+            this.chartMenu.currentChart = menuName;
+            this.generateChart(this.historicalValues[menuName], menuName);
+        },
+        incrementGoalLevel(newValue) {
+            if (newValue > this.currentGoalLevel) {
                 this.currentGoalLevel = newValue;
             }
         },
-        getAvailableMenus(){
-            if(true){
-                return ["Main", "Population", "Technology", "Buildings", "Stockpiles", "Laws", "Modifiers", "Log", "Settings"];
+        getAvailableMenus() {
+            if (true) {
+                return this.menus;
             }
-            let alwaysAvailable= ["Main", "Population", "Technology"];
-            if(this.hasTechnology('Firemaking')){
+            let alwaysAvailable = ["Main", "Population", "Technology"];
+            if (this.hasTechnology('Firemaking')) {
                 alwaysAvailable.push("Buildings");
             }
-            if(this.hasTechnology('Pottery')){
+            if (this.hasTechnology('Pottery')) {
                 alwaysAvailable.push('Stockpiles');
             }
-            if(this.hasTechnology('Basic Societal Structure')){
-                alwaysAvailable.push('Laws');   
+            if (this.hasTechnology('Basic Societal Structure')) {
+                alwaysAvailable.push('Laws');
             }
-            if(this.hasTechnology('Numbers')){
+            if (this.hasTechnology('Numbers')) {
                 alwaysAvailable.push('Modifiers');
             }
             alwaysAvailable.push("Log");
@@ -597,6 +608,117 @@ const gamevm = Vue.createApp({
             if (this.currentTick % 100 == 0) {
                 this.saveState(this.$data);
             }
+            if (this.checkHistoricalValues) {
+                this.processHistoricalValues();
+                if (this.chartMenu.currentChart) {
+                    this.setCurrentChart(this.chartMenu.currentChart);
+                }
+            }
+        },
+        processHistoricalValues() {
+            this.processHistoricalValue('UnmetDemands', this.unmetdemand);
+            this.processHistoricalValue('Currencies', Object.fromEntries(
+                Object.entries(this.currencydata)
+                .filter(([_, v]) => v.Amount && v.Amount > 0)
+                .map(([key, val]) => [key, val.Amount ?? 0])
+            ));
+        },
+        processHistoricalValue(key, data) {
+            if (!this.historicalValues[key]) {
+                this.historicalValues[key] = [];
+            }
+            let idx = this.currentTick;
+            let jsonData = JSON.parse(JSON.stringify(data));
+            this.historicalValues[key].push({ [idx]: jsonData });
+            if (this.historicalValues[key].length >= this.maxHistory) {
+                this.historicalValues[key].shift();
+            }
+        },
+        generateChart(data, id) {
+            if(this.currentMenu != 'Charts'){
+                return;
+            }
+            const labels = data.map(obj => Object.keys(obj)[0]);
+            const resourceKeys = Object.keys(data[0][labels[0]]);
+
+            const datasets = resourceKeys.map(key => ({
+                label: key,
+                data: data.map(obj => obj[Object.keys(obj)[0]][key]),
+                borderWidth: 3,
+                fill: false,
+                pointStyle:false,
+                tension: 0.5
+            }));
+            const existingChart = Chart.getChart(id);
+
+            if (existingChart) {
+                Vue.nextTick(() => {
+                    const hiddenStates = existingChart.legend.legendItems.map(x => x.hidden);
+
+                    existingChart.data = {
+                        labels,
+                        datasets
+                    };
+                    hiddenStates.forEach((hidden, i) => {
+                        existingChart.setDatasetVisibility(i, !hidden)
+                    });
+                    existingChart.update('none');
+
+                    
+                });
+            }
+            else {
+                Vue.nextTick(() => {
+                    new Chart(document.getElementById(id), {
+                        type: 'line',
+                        data: {
+                            labels,
+                            datasets
+                        },
+                        options: {
+                            responsive: true,
+                            animations:{y:false},
+                            plugins: {
+                                title: {
+                                    display: true,
+                                    text: id
+                                },
+                                legend: {
+                                    position: 'bottom'
+                                },
+                                tooltip: {
+                                    mode: 'index',
+                                    intersect: false
+                                }
+                            },
+                            interaction: {
+                                mode: 'nearest',
+                                axis: 'x',
+                                intersect: false
+                            },
+                            scales: {
+                                x: {
+                                    type:'linear',
+                                    title: {
+                                        display: true,
+                                        text: 'Ticks'
+                                    },
+                                    min: 1,
+                                    max: 1000,   
+                                },
+                                y: {
+                                    title: {
+                                        display: true,
+                                        text: 'Resource Amount'
+                                    },
+                                    beginAtZero: false
+                                }
+                            }
+                        }
+                    });
+                });
+            }
+
         },
         processProductionModifiers() {
             for (let prodMod of this.productionModifiers) {
@@ -697,26 +819,26 @@ const gamevm = Vue.createApp({
             let deathOdds = 0.01;
             let homelessRate = this.getHomelessnessRatio();
             let possibleCauses = {
-                "Natural Causes":"has died of natural causes.",
+                "Natural Causes": "has died of natural causes.",
             };
 
-            if(homelessRate > 0){
+            if (homelessRate > 0) {
                 deathOdds += homelessRate;
                 possibleCauses["Homelessness"] = "has died homeless.";
             }
-            if(this.gravity == 0){
+            if (this.gravity == 0) {
                 deathOdds = 1;
                 possibleCauses["No Gravity"] = "has floated off into space.";
             }
-            if(this.gravity > 25){
+            if (this.gravity > 25) {
                 deathOdds *= this.gravity;
                 possibleCauses["High Gravity"] = "has been crushed by extreme gravity.";
             }
-            if(this.previousWeather?.temp < -40){
+            if (this.previousWeather?.temp < -40) {
                 deathOdds += (Math.abs(this.previousWeather?.temp) - 40) / 100;
                 possibleCauses["Low Sun"] = "has frozen in the low sunlight.";
             }
-            else if(this.previousWeather?.temp > 120){
+            else if (this.previousWeather?.temp > 120) {
                 deathOdds += (this.previousWeather?.temp - 120) / 100;
                 possibleCauses["Extreme Sun"] = "has fried in the sun.";
             }
@@ -726,7 +848,7 @@ const gamevm = Vue.createApp({
                 if (rand < deathOdds) {
                     //https://stackoverflow.com/questions/2532218/pick-random-property-from-a-javascript-object
                     let keys = Object.keys(possibleCauses);
-                    let reason = [keys[ keys.length * Math.random() << 0]];
+                    let reason = [keys[keys.length * Math.random() << 0]];
 
                     this.die(prof, Math.max(deathOdds - 1, 1), possibleCauses[reason]);
                 }
@@ -874,11 +996,11 @@ const gamevm = Vue.createApp({
                         this.modifyDemand(good, mod * population, "Per Capita from " + tech.Name);
                     }
                     for (let [profName, goods] of Object.entries(tech.demandModifiers)) {
-                        if(profName == 'Global' || profName == 'PerCapita'){
+                        if (profName == 'Global' || profName == 'PerCapita') {
                             continue;
                         }
                         const prof = this.professions.find(p => p.Name == profName);
-                        
+
                         for (let [good, mod] of Object.entries(goods)) {
                             this.modifyDemand(good, mod * prof.Count, `From ${prof.Name} and tech ${tech.Name}`);
                         }
@@ -1053,35 +1175,36 @@ const gamevm = Vue.createApp({
             }
 
             const needed = this.focusedTechnology.Complexity - this.focusedTechnology.Progress;
-            const usable = Math.min(this.currencydata["Knowledge"].Amount, needed);
+            let usable = Math.min(this.focusedTechnology.Complexity / 10, this.currencydata["Knowledge"].Amount, needed);
             if (usable <= 0) {
                 return;
             }
+
             this.focusedTechnology.Progress += usable;
             this.payCurrency('Knowledge', usable, 'For the advancement of ' + this.focusedTechnology.Name);
 
             if (this.focusedTechnology.Progress >= this.focusedTechnology.Complexity) {
                 this.focusedTechnology.Unlock(this);
-                if(this.focusedTechnology.Name == "Firemaking"){
-                    this.currentGoalLevel = 1;
+                if (this.focusedTechnology.Name == "Firemaking") {
+                    this.incrementGoalLevel(1);
                 }
-                else if(this.focusedTechnology.Name == "Pottery"){
-                    this.currentGoalLevel = 2;
+                else if (this.focusedTechnology.Name == "Pottery") {
+                    this.incrementGoalLevel(2);
                 }
-                else if(this.focusedTechnology.Name == "Clay Bullae"){
-                    this.currentGoalLevel = 3;
+                else if (this.focusedTechnology.Name == "Clay Bullae") {
+                    this.incrementGoalLevel(3);
                 }
-                else if(this.focusedTechnology.Name == "Writing"){
-                    this.currentGoalLevel = 4;
+                else if (this.focusedTechnology.Name == "Writing") {
+                    this.incrementGoalLevel(4);
                 }
-                else if(this.focusedTechnology.Name == "Numbers"){
-                    this.currentGoalLevel = 5;
+                else if (this.focusedTechnology.Name == "Numbers") {
+                    this.incrementGoalLevel(5);
                 }
-                else if(this.focusedTechnology.Name == "Taxation"){
-                    this.currentGoalLevel = 6;
+                else if (this.focusedTechnology.Name == "Taxation") {
+                    this.incrementGoalLevel(6);
                 }
-                else if(this.currentGoalLevel == 6){
-                    this.currentGoalLevel = 7;
+                else if (this.currentGoalLevel == 6) {
+                    this.incrementGoalLevel(7);
                 }
                 this.focusedTechnology = null;
 
@@ -1159,7 +1282,7 @@ const gamevm = Vue.createApp({
                 return "You can't demolish our last hut, even if you think it would be really funny.";
             }
             let spaceCost = this.getBuildingSpaceCost(housingType);
-            return "Demolishing this building would free up " + spaceCost + " Space for our people. None of the costs of building would be returned.";
+            return "Demolishing this building would free up " + this.formatNumber(spaceCost) + " Space for our people. None of the costs of building would be returned.";
         },
         getBuildingSpaceCost(housingType) {
             let spaceCost = 0;
@@ -1226,23 +1349,23 @@ const gamevm = Vue.createApp({
         },
         processBaseGrowth() {
             if (this.getPopulation() == 0) {
-                if(this.gravity == 0){
+                if (this.gravity == 0) {
                     this.logit("There isn't enough gravity for anyone to join your civilization.");
                 }
-                else if(this.gravity > 25){
+                else if (this.gravity > 25) {
                     this.logit("There's way too much gravity for anyone to join your civilization.");
                 }
-                else if(this.sunlight > 1.5){
+                else if (this.sunlight > 1.5) {
                     this.logit("There's way too much sunlight for anyone to join your civilization.");
                 }
-                else if(this.sunlight < 0.8){
+                else if (this.sunlight < 0.8) {
                     this.logit("There's not enough sunlight for anyone to join your civilization.");
                 }
-                else{
+                else {
                     this.logit("Despite extreme mismanagement of your state, a wanderer has joined your civilization as the sole member.");
                     this.professions.find(x => x.Name == "Unemployed").Count = 1;
                 }
-                
+
             }
             this.addCurrency('Food', 5, 'Base Production');
             this.addCurrency('Water', 15, 'Base Production');
@@ -1288,7 +1411,7 @@ const gamevm = Vue.createApp({
                 this.payCurrency('Food', profession.Count, "Feeding " + this.toProperPluralize(profession.Name, profession.Count));
                 this.payCurrency('Water', profession.Count, "Watering " + this.toProperPluralize(profession.Name, profession.Count));
 
-                if (!this.buy(profession.Cost, profession.Count, "Cost of " + profession.Name)) {
+                if (profession.Count > 0 && !this.buy(profession.Cost, profession.Count, "Cost of " + profession.Name)) {
                     for (const key in profession.Cost) {
                         if (Object.hasOwn(this.unmetdemand, key)) {
                             this.unmetdemand[key] += profession.Cost[key];
@@ -1298,7 +1421,7 @@ const gamevm = Vue.createApp({
                     }
                 }
                 else {
-
+                    //console.log("Could afford profession cost.", profession);
                 }
             }
             for (let [good, demand] of Object.entries(this.demand)) {
@@ -1308,6 +1431,7 @@ const gamevm = Vue.createApp({
                 let obj = {}
                 obj[good] = demand;
                 this.buy(obj, demand, "Demand for " + good);
+                this.unmetdemand[good] -= demand;
             }
             if (this.currencydata.Food.Amount < 0) {
                 this.starvePeople();
@@ -1342,7 +1466,7 @@ const gamevm = Vue.createApp({
                 if (missingCount > 0) {
                     let actual = this.hire(this.professions.find(x => x.Name == prof), missingCount);
                     this.missingProfessionCounts[prof] -= actual;
-                    if(actual == 0){
+                    if (actual == 0) {
                         break;
                     }
                 }
@@ -1622,7 +1746,7 @@ const gamevm = Vue.createApp({
             let actualProd = this.getActualProduction(profession, minimumForUsefulInfo).map(x => prodDict[x[0]] = x[1]);
             let modified = this.relativeProductionChangeToString(profession, prodDict, maxPossible);
 
-            if(this.hasNumbers() == false){
+            if (this.hasNumbers() == false) {
                 return modified;
             }
 
@@ -1645,7 +1769,7 @@ const gamevm = Vue.createApp({
             let actualProd = this.getActualProduction(profession, maxPossible).map(x => prodDict[x[0]] = x[1]);
             let modified = this.relativeProductionChangeToString(profession, prodDict, -amount);
 
-            if(this.hasNumbers() == false){
+            if (this.hasNumbers() == false) {
                 return modified;
             }
 
@@ -1677,6 +1801,9 @@ const gamevm = Vue.createApp({
             return this.professions.find(x => x.Name == 'Unemployed').Count;
         },
         buy(cost, amount = 1, reason = "Lazy Developer") {
+            if(amount == 0){
+                return 0;
+            }
             if (this.objectIsEmpty(cost)) {
                 return amount;
             }
@@ -1756,7 +1883,7 @@ const gamevm = Vue.createApp({
             return this.formatNumber(hours) + ' ' + this.toProperPluralize('hour', hours) + ' ' + this.formatNumber(Math.round(minutes % 60)) + ' ' + this.toProperPluralize('minute', minutes) + '.';
         },
         playerCantAffordCostToString(cost, amount = 1) {
-            if(!cost){
+            if (!cost) {
                 return '';
             }
             return Object.entries(cost).map(([key, value]) => [key, value])
@@ -1767,7 +1894,7 @@ const gamevm = Vue.createApp({
                 .join(', ');
         },
         costToString(cost, amount = 1) {
-            if(!cost){
+            if (!cost) {
                 return '';
             }
             return Object.entries(cost)
@@ -1776,7 +1903,7 @@ const gamevm = Vue.createApp({
         },
         relativeProductionChangeToString(profession, produced, amount = 1) {
             if (!produced) { return ''; }
-            if(this.hasNumbers() == false){
+            if (this.hasNumbers() == false) {
                 return "If we had a better way of keeping track of how many things there are, we could know more about what doing this would do.";
             }
 
@@ -1950,24 +2077,24 @@ const gamevm = Vue.createApp({
             let quantizedHour = Math.floor(hourInYear / 12) * 12;
             let currentWeatherTemp = weather.Weathers[hourInYear % weather.Weathers.length];
             let currentWeather = weather.Weathers[quantizedHour % weather.Weathers.length];
-            
+
             let weatherDescription = this.getWeatherDescription(currentWeatherTemp.temp, currentWeather);
-            
+
             return 'The weather is ' + weatherDescription + '.';
         },
         getWeatherDescription(temp, weatherData) {
             let { _, rain, humid, wind, cloud } = weatherData;
-            
+
             let description = [];
-            if(this.sunlight != 1){
-                let K = (temp - 32) * (5/9) + 273.15;
+            if (this.sunlight != 1) {
+                let K = (temp - 32) * (5 / 9) + 273.15;
                 K *= this.sunlight;
-                temp = (K - 273.15) * (9/5) + 32;
+                temp = (K - 273.15) * (9 / 5) + 32;
             }
-            if(this.hasTechnology('Temperature')){
+            if (this.hasTechnology('Temperature')) {
                 description.push(this.formatNumber(temp) + " degrees");
             }
-            else{
+            else {
 
                 if (temp <= -10) description.push("freezing cold");
                 else if (temp <= 0) description.push("very cold");

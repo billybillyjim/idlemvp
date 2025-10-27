@@ -134,11 +134,11 @@ export default [
         Requirements: { Technologies: ["Firemaking"] },
         Progress: 0,
         Visible: false,
-        Complexity: 20,
+        Complexity: 10,
         isLocked: true,
         demandModifiers: {
             Global: {},
-            PerCapita: {"Clay":0.1},
+            PerCapita: {"Clay":0.025},
         },
         Unlock(vm) {
             vm.logit("The stuff in the ground was clay. Now we know how to make pots like we've seen others make!");
@@ -390,7 +390,7 @@ export default [
         Requirements: { Technologies: ["Stone Tools", "Rope"] },
         Progress: 0,
         Visible: false,
-        Complexity: 300,
+        Complexity: 200,
         isLocked: true,
         demandModifiers: {
             Global: {},
