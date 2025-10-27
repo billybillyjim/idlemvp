@@ -9,7 +9,7 @@ export default [
         Complexity: 1,
         isLocked: true,
         demandModifiers: {
-            Global: {"Wood":0.5},
+            Global: {"Wood":0.25},
             PerCapita: {}
         },
         Unlock(vm) {
@@ -84,7 +84,7 @@ export default [
         isLocked: true,
         demandModifiers: {
             Global: {},
-            PerCapita: {'Hides':0.1}
+            PerCapita: {'Hides':0.01}
         },
         Unlock(vm) {
             vm.logit("We've found something to do with all of these animal skins.");
@@ -156,7 +156,7 @@ export default [
         isLocked: true,
         demandModifiers: {
             Global: {},
-            PerCapita: {"Clay":0.1},
+            PerCapita: {"Clay":0.02},
         },
         Unlock(vm) {
             vm.logit("It turns out that this new spinny wheel is great for making cups and bowls.");
@@ -268,7 +268,7 @@ export default [
         isLocked: true,
         demandModifiers: {
             Global: {},
-            PerCapita: {"Stone":0.1},
+            PerCapita: {"Stone":0.01},
         },
         Unlock(vm) {
             vm.logit("These sharper stone tools will come in handy for all sorts of things.");
@@ -286,7 +286,7 @@ export default [
         isLocked: true,
         demandModifiers: {
             Global: {},
-            PerCapita: {"Stone":0.1},
+            PerCapita: {"Stone":0.02},
         },
         Unlock(vm) {
             vm.logit("We have developed a way to extract rocks from the other rocks.");
@@ -304,7 +304,7 @@ export default [
         isLocked: true,
         demandModifiers: {
             Global: {},
-            PerCapita: {Rope:0.1},
+            PerCapita: {Rope:0.01},
         },
         Unlock(vm) {
             vm.logit("We have developed an easy way to attach things together!");
@@ -430,7 +430,7 @@ export default [
         isLocked: true,
         demandModifiers: {
             Global: {},
-            PerCapita: { Pottery: 0.1 },
+            PerCapita: { Pottery: 0.001 },
         },
         Unlock(vm) {
             vm.logit("Letting stuff just sit there makes for all kinds of interesting foods and drinks. Now our people want more storage containers for their food.");

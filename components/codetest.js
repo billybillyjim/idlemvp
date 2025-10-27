@@ -9,7 +9,7 @@ export default {
     },
     data: function () {
         return {
-            testCode: `if available housing is 0 print 1.`,
+            testCode: `if available housing is 0, build a hut. if there are more than 1 unemployed people, hire a farmer. if there are 0 lumberjacks, hire a lumberjack.`,
             errors: [],
             content: '',
             scrollTop:0,
@@ -187,12 +187,19 @@ export default {
         },
         getNumberLineOffsetStyle(){
             return `margin-top:-${this.scrollTop % 24 + 5}px; height:${this.height}`;
-        }
+        },
+        addToDailyLaws(){
+            this.$parent.addToDailyLaws(this.testCode);
+        },
     },
     delimiters: ['[[', ']]'],
     template: `
     <div>
         <h4 class="my-2">Laws</h4>
+        <div>
+            <button class="btn btn-primary m-2" @click="testTheCode()">Test</button>
+            <button class="btn btn-primary m-2" @click="addToDailyLaws()">Run Daily</button>
+        </div>
         <div class="d-flex" style="    overflow: hidden;">
             <div class="line-numbers" ref="lineNumbersEle" id="line-numbers" :style="getNumberLineOffsetStyle()">
                 <div v-for="(num, idx) in getLineNumbers()" :key="idx">
@@ -205,9 +212,6 @@ export default {
         <div>
             <div v-for="error in errors">[[error.id.message]]</div>
             <div v-for="output in $parent.consoleOutputs">[[output]]</div>
-            <div>
-                <button class="btn btn-primary m-2" @click="testTheCode()">Test</button>
-            </div>
         </div>
     </div>
     

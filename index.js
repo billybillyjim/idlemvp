@@ -39,6 +39,7 @@ const gamevm = Vue.createApp({
             Verbose: true,
             gravity: 9.81,
             sunlight: 1,
+            basePopulationGrowthChance:0.01,
             civilizationName: "",
             currentMenu: "Main",
             menus: ["Main", "Population", "Stockpiles", "Buildings", "Technology", "Laws", "Modifiers", "Log", "Charts", "Settings"],
@@ -181,7 +182,21 @@ const gamevm = Vue.createApp({
             checkHistoricalValues: true,
             historicalValues: {},
             maxHistory: 1000,
-            charts:[{Name:'UnmetDemands'},{Name:'Currencies'}],
+            charts: [{ Name: 'UnmetDemands' }, { Name: 'Currencies' }, { Name: 'Population' }],
+            keyColors: {
+                'Space': 'rgba(224, 224, 224, 1)',
+                'Wood': 'rgba(146, 91, 54, 1)',
+                'Food': 'rgba(233, 137, 73, 1)',
+                'Water': 'rgba(101, 208, 250, 1)',
+                'Rope': 'rgba(145, 106, 62, 1)',
+                'Housing': 'rgba(178, 246, 248, 1)',
+                'Knowledge': 'rgba(94, 123, 134, 1)',
+                'Pottery': 'rgba(224, 162, 45, 1)',
+                'Clay': 'rgba(170, 102, 63, 1)',
+                'Stone': 'rgba(126, 126, 126, 1)',
+                'Ore': 'rgba(73, 73, 73, 1)',
+                'Grain': 'rgba(252, 240, 135, 1)',
+            }
         }
     },
     created() {
@@ -265,6 +280,16 @@ const gamevm = Vue.createApp({
                 }
             }
         },
+        addToDailyLaws(code){
+            this.passedLaws.push(
+                {
+                    frequency:'Daily',
+                    code:code,
+                    isActive:true,
+                    Name:'Test'
+                }
+            )
+        },
         shouldRunLawToday(law) {
             if (law.frequency == 'Daily') {
                 return true;
@@ -321,15 +346,15 @@ const gamevm = Vue.createApp({
             }
             const tokens = this.tokenize(code);
             if (outputTokens) {
-                console.log(tokens);
+                //console.log(tokens);
             }
             const ast = this.parse(tokens);
             if (outputAST) {
-                console.log(ast);
+                //console.log(ast);
             }
             let output = this.evaluate(ast);
             if (outputOutput) {
-                console.log(output);
+               // console.log(output);
             }
             return output;
         },
@@ -619,9 +644,18 @@ const gamevm = Vue.createApp({
             this.processHistoricalValue('UnmetDemands', this.unmetdemand);
             this.processHistoricalValue('Currencies', Object.fromEntries(
                 Object.entries(this.currencydata)
-                .filter(([_, v]) => v.Amount && v.Amount > 0)
-                .map(([key, val]) => [key, val.Amount ?? 0])
+                    .filter(([_, v]) => v.Amount && v.Amount > 0)
+                    .map(([key, val]) => [key, val.Amount ?? 0])
             ));
+            this.processHistoricalValue('Population',
+                {
+                    ...Object.fromEntries(
+                        Object.entries(this.getVisibleProfessions())
+                            .map(([key, val]) => [val.Name, val.Count ?? 0])
+                    ),
+                    Total: this.getPopulation()
+                }
+            );
         },
         processHistoricalValue(key, data) {
             if (!this.historicalValues[key]) {
@@ -635,18 +669,23 @@ const gamevm = Vue.createApp({
             }
         },
         generateChart(data, id) {
-            if(this.currentMenu != 'Charts'){
+            if (this.currentMenu != 'Charts') {
                 return;
             }
             const labels = data.map(obj => Object.keys(obj)[0]);
-            const resourceKeys = Object.keys(data[0][labels[0]]);
+
+            let label = labels.at(-1);
+            let last = data.at(-1);
+
+            let resourceKeys = Object.keys(last[label]);
 
             const datasets = resourceKeys.map(key => ({
                 label: key,
                 data: data.map(obj => obj[Object.keys(obj)[0]][key]),
                 borderWidth: 3,
+                borderColor: this.keyColors[key],
                 fill: false,
-                pointStyle:false,
+                pointStyle: false,
                 tension: 0.5
             }));
             const existingChart = Chart.getChart(id);
@@ -659,12 +698,17 @@ const gamevm = Vue.createApp({
                         labels,
                         datasets
                     };
+                    if (this.currentTick > 1000) {
+                        existingChart.options.scales.x.min = this.currentTick - 1000;
+                        existingChart.options.scales.x.max = this.currentTick;
+                    }
+
                     hiddenStates.forEach((hidden, i) => {
                         existingChart.setDatasetVisibility(i, !hidden)
                     });
                     existingChart.update('none');
 
-                    
+
                 });
             }
             else {
@@ -677,7 +721,7 @@ const gamevm = Vue.createApp({
                         },
                         options: {
                             responsive: true,
-                            animations:{y:false},
+                            animations: { y: false },
                             plugins: {
                                 title: {
                                     display: true,
@@ -698,13 +742,13 @@ const gamevm = Vue.createApp({
                             },
                             scales: {
                                 x: {
-                                    type:'linear',
+                                    type: 'linear',
                                     title: {
                                         display: true,
                                         text: 'Ticks'
                                     },
                                     min: 1,
-                                    max: 1000,   
+                                    max: 1000,
                                 },
                                 y: {
                                     title: {
@@ -1002,7 +1046,7 @@ const gamevm = Vue.createApp({
                         const prof = this.professions.find(p => p.Name == profName);
 
                         for (let [good, mod] of Object.entries(goods)) {
-                            this.modifyDemand(good, mod * prof.Count, `From ${prof.Name} and tech ${tech.Name}`);
+                            this.modifyDemand(good, mod * prof.Count, `From ${prof.Name} and Tech ${tech.Name}`);
                         }
                     }
                 }
@@ -1371,7 +1415,7 @@ const gamevm = Vue.createApp({
             this.addCurrency('Water', 15, 'Base Production');
             this.addCurrency('Knowledge', this.getPopulation() * 0.005, 'From Population');
             if (this.currencydata.Food.Amount >= this.growthThreshold && this.hasAvailableHousing()) {
-                let growthChance = 0.05 * (this.currencydata.Food.Amount / this.growthThreshold);
+                let growthChance = this.basePopulationGrowthChance * (this.currencydata.Food.Amount / this.growthThreshold);
                 let rand = Math.random();
                 if (rand < growthChance) {
                     this.professions.find(x => x.Name == "Unemployed").Count += 1;
@@ -1801,7 +1845,7 @@ const gamevm = Vue.createApp({
             return this.professions.find(x => x.Name == 'Unemployed').Count;
         },
         buy(cost, amount = 1, reason = "Lazy Developer") {
-            if(amount == 0){
+            if (amount == 0) {
                 return 0;
             }
             if (this.objectIsEmpty(cost)) {
@@ -2231,7 +2275,7 @@ const gamevm = Vue.createApp({
                     break;
                 }
             }
-            console.log(tokens);
+            //console.log(tokens);
             tokens.push({ type: 'EOF' });
             return tokens;
         },
@@ -2576,7 +2620,7 @@ const gamevm = Vue.createApp({
                     this.parser.i++;
                 }
             }
-            console.log(ast);
+            //console.log(ast);
             return ast;
         },
         evaluate(ast) {
@@ -2640,16 +2684,16 @@ const gamevm = Vue.createApp({
                             op: node.test.op
                         }, env);
 
-                    console.log(node, conditionResult);
+                    //console.log(node, conditionResult);
                     if (conditionResult && node.action) {
                         return this.evalNode(node.action, env);
                     }
                     return conditionResult;
 
                 case 'Assignment':
-                    console.log("Assigning...", node);
+                    //console.log("Assigning...", node);
                     if (this.isReservedName(node.id.name)) {
-                        console.log("Invalid assignment");
+                        //console.log("Invalid assignment");
                     }
                     if (node.init.type == "Literal") {
                         env[node.id.name] = node.init.value;
@@ -2657,7 +2701,7 @@ const gamevm = Vue.createApp({
                     else if (node.init.type == "Identifier") {
                         env[node.id.name] = env[node.init.name];
                     }
-                    console.log(env);
+                    //console.log(env);
                     break;
 
                 case 'Action':
@@ -2668,7 +2712,7 @@ const gamevm = Vue.createApp({
                     }
 
                     if (node.action.value == 'hire') {
-                        console.log("Hiring because node", node);
+                       // console.log("Hiring because node", node);
                         let prof = this.sanitizeProfName(node.actionTarget.value);
                         let outputProfName = prof.Name;
                         if (node.count != 1) {
@@ -2688,7 +2732,7 @@ const gamevm = Vue.createApp({
                     }
 
                     if (node.action.value == 'fire') {
-                        console.log("Firing because node", node);
+                       // console.log("Firing because node", node);
                         let prof = this.sanitizeProfName(node.actionTarget.value);
                         let outputProfName = prof.Name;
                         if (node.count != 1) {
@@ -2707,7 +2751,7 @@ const gamevm = Vue.createApp({
                         }
                     }
                     if (node.action.value == 'build') {
-                        console.log("Building because node", node);
+                        //console.log("Building because node", node);
                         let building = node.actionTarget.value;
                         let outputBuildingName = node.actionTarget.value;
                         if (node.count != 1) {
@@ -2743,14 +2787,14 @@ const gamevm = Vue.createApp({
 
                         }
                         this.consoleOutputs.push('Line ' + node.line + ': There ' + isword + ' ' + env[node.output] + ' ' + outword);
-                        console.log(env[node.output], env);
+                        //console.log(env[node.output], env);
                     }
 
                     break;
 
                 case 'Identifier':
                     if (!(node.identifier in env)) {
-                        console.error(node);
+                      //  console.error(node);
                     }
                     return env[node.identifier];
 
@@ -2915,7 +2959,7 @@ const gamevm = Vue.createApp({
         },
         testGetDifferences(obj1, obj2) {
             let innerDiffs = [];
-            console.log("Getting diffs...");
+            //console.log("Getting diffs...");
             for (let [key, value] of Object.entries(obj1)) {
                 let value2 = obj2[key];
                 if (JSON.stringify(value) != JSON.stringify(value2)) {

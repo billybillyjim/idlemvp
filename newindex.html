@@ -567,7 +567,7 @@
                             </template>
                         </div>
                         <div v-for="chart in charts">
-                            <div v-if="chartMenu.currentChart == chart.Name">
+                            <div v-if="chartMenu.currentChart == chart.Name" style="margin-right:200px;">
                                 <canvas :id="chart.Name"></canvas>
                             </div>
                         </div>
