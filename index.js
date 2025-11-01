@@ -39,7 +39,7 @@ const gamevm = Vue.createApp({
             Verbose: true,
             gravity: 9.81,
             sunlight: 1,
-            basePopulationGrowthChance:0.01,
+            basePopulationGrowthChance: 0.01,
             civilizationName: "",
             currentMenu: "Main",
             menus: ["Main", "Population", "Stockpiles", "Buildings", "Technology", "Laws", "Modifiers", "Log", "Charts", "Settings"],
@@ -280,13 +280,13 @@ const gamevm = Vue.createApp({
                 }
             }
         },
-        addToDailyLaws(code){
+        addToDailyLaws(code) {
             this.passedLaws.push(
                 {
-                    frequency:'Daily',
-                    code:code,
-                    isActive:true,
-                    Name:'Test'
+                    frequency: 'Daily',
+                    code: code,
+                    isActive: true,
+                    Name: 'Test'
                 }
             )
         },
@@ -354,7 +354,7 @@ const gamevm = Vue.createApp({
             }
             let output = this.evaluate(ast);
             if (outputOutput) {
-               // console.log(output);
+                // console.log(output);
             }
             return output;
         },
@@ -1375,13 +1375,13 @@ const gamevm = Vue.createApp({
             this.tickProductionValues[currencyName] += amount;
             this.currencydata[currencyName].Amount += amount;
         },
-        payCurrency(currencyName, amount, reason) {
+        payCurrency(currencyName, amount, reason, payEvenIfYouCantAfford = false) {
             if (amount == 0) {
-                return;
+                return 0;
             }
             this.currencyPotentialChange[currencyName] = (this.currencyPotentialChange[currencyName] ?? 0) - amount;
-            if (this.currencydata[currencyName].Amount < amount) {
-                return;
+            if (this.currencydata[currencyName].Amount < amount && !payEvenIfYouCantAfford) {
+                return 0;
             }
             if (this.currencyConsumptionDescriptions[currencyName]) {
                 this.currencyConsumptionDescriptions[currencyName].push([currencyName, this.formatNumber(amount), reason]);
@@ -1390,6 +1390,7 @@ const gamevm = Vue.createApp({
                 this.currencyConsumptionDescriptions[currencyName] = [[currencyName, this.formatNumber(amount), reason]];
             }
             this.currencydata[currencyName].Amount -= amount;
+            return amount;
         },
         processBaseGrowth() {
             if (this.getPopulation() == 0) {
@@ -1455,7 +1456,7 @@ const gamevm = Vue.createApp({
                 this.payCurrency('Food', profession.Count, "Feeding " + this.toProperPluralize(profession.Name, profession.Count));
                 this.payCurrency('Water', profession.Count, "Watering " + this.toProperPluralize(profession.Name, profession.Count));
 
-                if (profession.Count > 0 && !this.buy(profession.Cost, profession.Count, "Cost of " + profession.Name)) {
+                if (profession.Count > 0 && !this.canAfford(profession.Cost, profession.Count, "Cost of " + profession.Name)) {
                     for (const key in profession.Cost) {
                         if (Object.hasOwn(this.unmetdemand, key)) {
                             this.unmetdemand[key] += profession.Cost[key];
@@ -1844,6 +1845,14 @@ const gamevm = Vue.createApp({
         getAvailableWorkers() {
             return this.professions.find(x => x.Name == 'Unemployed').Count;
         },
+        /**
+         * Pay but only if you can afford it. If you can't afford it, the function returns 0.
+         * 
+         * @param {number} cost - The cost to pay of currency key value pairs.
+         * @param {number} amount - The number of times the cost will be paid. Like, buy 4 huts, pay the cost x4.
+         * @param {string} reason - This gets passed through to payCurrency and shows up for the user to see.
+         * @returns {number} The amount actually paid. IDK.
+         */
         buy(cost, amount = 1, reason = "Lazy Developer") {
             if (amount == 0) {
                 return 0;
@@ -1856,6 +1865,26 @@ const gamevm = Vue.createApp({
             }
             for (const [k, v] of Object.entries(cost)) {
                 this.payCurrency(k, v * amount, reason);
+            }
+            return amount;
+        },
+        /**
+         * Pay regardless of if you can afford it or not. If you can't afford it, you just give what you have.
+         * 
+         * @param {number} cost - The cost to pay of currency key value pairs.
+         * @param {number} amount - The number of times the cost will be paid. Like, buy 4 huts, pay the cost x4.
+         * @param {string} reason - This gets passed through to payCurrency and shows up for the user to see.
+         * @returns {number} The amount actually paid. IDK.
+         */
+        pay(cost, amount, reason = "Lazy Developer") {
+            if (amount == 0) {
+                return 0;
+            }
+            if (this.objectIsEmpty(cost)) {
+                return amount;
+            }
+            for (const [k, v] of Object.entries(cost)) {
+                this.payCurrency(k, v * amount, reason, true);
             }
             return amount;
         },
@@ -2712,7 +2741,7 @@ const gamevm = Vue.createApp({
                     }
 
                     if (node.action.value == 'hire') {
-                       // console.log("Hiring because node", node);
+                        // console.log("Hiring because node", node);
                         let prof = this.sanitizeProfName(node.actionTarget.value);
                         let outputProfName = prof.Name;
                         if (node.count != 1) {
@@ -2732,7 +2761,7 @@ const gamevm = Vue.createApp({
                     }
 
                     if (node.action.value == 'fire') {
-                       // console.log("Firing because node", node);
+                        // console.log("Firing because node", node);
                         let prof = this.sanitizeProfName(node.actionTarget.value);
                         let outputProfName = prof.Name;
                         if (node.count != 1) {
@@ -2794,7 +2823,7 @@ const gamevm = Vue.createApp({
 
                 case 'Identifier':
                     if (!(node.identifier in env)) {
-                      //  console.error(node);
+                        //  console.error(node);
                     }
                     return env[node.identifier];
 
