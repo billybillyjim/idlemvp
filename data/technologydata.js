@@ -124,6 +124,7 @@ export default [
         },
         Unlock(vm) {
             vm.logit("We have uncovered the secrets of mudbricks. Now we can make things out of mudbricks!");
+            vm.unlockBuilding('Granary');
             this.isLocked = false;
         },
     },

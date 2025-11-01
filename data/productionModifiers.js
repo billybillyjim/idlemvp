@@ -4,9 +4,21 @@ export default [
         Boosts:[
             {Name:"Lumberjack", Currency:"Wood", ModifierType:"Additive", Amount:0.5,},
             {Name:"Farmer", Currency:"Food", ModifierType:"Additive", Amount:0.5,},
+            {Name:"Unemployed", Currency:"Food", ModifierType:"Additive", Amount:0.1,},
         ],
         Requirements:{
             Technologies:["Stone Tools"]
+        },
+        IsUnlocked:false,
+    },
+    {   
+        Name:"Animal Domestication", 
+        Boosts:[
+            {Name:"Farmer", Currency:"Food", ModifierType:"Additive", Amount:0.25,},
+            {Name:"Unemployed", Currency:"Food", ModifierType:"Additive", Amount:0.05,},
+        ],
+        Requirements:{
+            Technologies:["Animal Domestication"]
         },
         IsUnlocked:false,
     },
@@ -15,6 +27,7 @@ export default [
         Boosts:[
             {Name:"Lumberjack", Currency:"Wood", ModifierType:"Additive", Amount:0.5,},
             {Name:"Farmer", Currency:"Food", ModifierType:"Additive", Amount:0.3,},
+            {Name:"Unemployed", Currency:"Food", ModifierType:"Additive", Amount:0.1,},
         ],
         Requirements:{
             Technologies:["Bronze Tools"]
@@ -62,7 +75,8 @@ export default [
         ],
         Requirements:{
             Technologies:["Pottery Wheel"]
-        }
+        },
+        IsUnlocked:false,
     },
     {
         Name:"Wooden Plows",
@@ -73,6 +87,7 @@ export default [
         Requirements:{
             Technologies:["Wooden Plows"]
         }
+        ,IsUnlocked:false
     },
     {
         Name:"Flax Processing",
@@ -82,6 +97,7 @@ export default [
         Requirements:{
             Technologies:["Flax Processing"]
         }
+        ,IsUnlocked:false
     },
     {
         Name:"Saddle Quern",
@@ -91,6 +107,7 @@ export default [
         Requirements:{
             Technologies:["Saddle Quern"]
         }
+        ,IsUnlocked:false
     },
     {
         Name:"Fermentation",
@@ -98,13 +115,31 @@ export default [
             {Name:"Well", Currency:"Water", ModifierType:"Additive", Amount:1}
         ],
         Requirements:{
-            Technologies:["Fermenetation"]
+            Technologies:["Fermentation"]
         }
+        ,IsUnlocked:false
     },
     {
         Name:"Lunar Calendar",
         Boosts:[
             {Name:"Farmer", Currency:"Food", ModifierType:"Additive", Amount:1}
-        ]
+        ],
+        Requirements:{
+            Technologies:["Lunar Calendar"]
+        }
+        ,IsUnlocked:false
+    },
+    {
+        Name:"Dirt Roads",
+        Boosts:[
+            {Name:"Farmer", Currency:"Food", ModifierType:"Additive", Amount:0.05},
+            {Name:"Lumberjack", Currency:"Wood", ModifierType:"Additive", Amount:0.05},
+            {Name:"Miller", Currency:"Food", ModifierType:"Additive", Amount:0.1},
+            {Name:"Irrigation Worker", Currency:"Fertile Soil", ModifierType:"Additive", Amount:0.2},
+        ],
+        Requirements:{
+            Technologies:["Dirt Roads"]
+        }
+        ,IsUnlocked:false
     }
 ];

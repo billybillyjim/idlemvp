@@ -1923,6 +1923,16 @@ const gamevm = Vue.createApp({
             output += '<span style="color:white;"> Time to afford: ' + timeToCompletion + '</span>';
             return output;
         },
+        unlockBuilding(buildingName){
+            let building = this.buildingdata.find(x => x.Name == buildingName);
+            if(!building){
+                console.error('Invalid building name in building unlock: ', buildingName);
+            }
+            else{
+                building.Visible = true;
+                building.Unlocked = true;
+            }
+        },
         getTimeToAffordCost(cost, amount = 1) {
             let maxTime = 0;
 

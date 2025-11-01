@@ -25,7 +25,7 @@ export default[
         }, 
         Stores: 
         { 
-            Food: 1000 
+            Food: 5000 
         }, 
         Unlocked: false, 
         Visible: false, 
@@ -42,7 +42,7 @@ export default[
         }, 
         Stores: 
         { 
-            Wood: 5000 
+            Wood: 8000 
         }, 
         Unlocked: false, 
         Visible: false, 
