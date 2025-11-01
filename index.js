@@ -1752,6 +1752,20 @@ const gamevm = Vue.createApp({
                 this.hire(prof);
             }
         },
+        tryHire(profession, amount = 1){
+            let maxPossible = Math.min(amount, this.getAvailableWorkers());
+            if(maxPossible == 0){
+                if (!this.missingProfessionCounts[profession.Name]) {
+                    this.missingProfessionCounts[profession.Name] = 0;
+                }
+                if (profession.Name != 'Unemployed') {
+                    this.missingProfessionCounts[profession.Name] += amount;
+                }
+            }
+            if(maxPossible > 0){
+                this.hire(profession, amount);
+            }
+        },
         hire(profession, amount = 1) {
             let maxPossible = Math.min(amount, this.getAvailableWorkers());
             if (profession.RequiredBuilding) {
@@ -1806,6 +1820,26 @@ const gamevm = Vue.createApp({
             return `Hiring ${amount} (Can afford ${maxPossible}) ${this.toProperPluralize(profession.Name, maxPossible)} will result in:${modified}`;
 
         },
+        tryFire(profession, amount = 1){
+            if (!this.missingProfessionCounts[profession.Name]) {
+                this.missingProfessionCounts[profession.Name] = 0;
+            }
+
+            if(this.missingProfessionCounts[profession.Name] == 0){
+                this.fire(profession, amount);
+            }
+            
+            if(this.missingProfessionCounts[profession.Name] >= amount){
+                this.missingProfessionCounts[profession.Name] -= amount;
+            }
+
+            if(this.missingProfessionCounts[profession.Name] > 0 && this.missingProfessionCounts[profession.Name] < amount){
+                let remainder = amount - this.missingProfessionCounts[profession.Name];
+                this.missingProfessionCounts[profession.Name] = 0;
+                this.fire(profession, remainder);
+            }
+            
+        },
         fire(profession, amount = 1) {
             let maxPossible = Math.min(amount, profession.Count);
             profession.Count -= maxPossible;
@@ -1828,6 +1862,9 @@ const gamevm = Vue.createApp({
         },
         canFire(profession) {
             if (profession.Count > 0) {
+                return true;
+            }
+            if(this.missingProfessionCounts[profession.Name] > 0){
                 return true;
             }
             return false;

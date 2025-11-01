@@ -232,13 +232,13 @@
                                             </td>
                                             <td v-if="profession.Name != 'Unemployed'">
                                                 <tooltipwrapper :calcfrom="() => hireInfo(profession, populationMenu.amount)" :ishtml="true">
-                                                    <button class="btn btn-primary m-2" :style="canHire(profession) == false ? 'opacity:0.65' : ''" @click="hire(profession, populationMenu.amount)">
+                                                    <button class="btn btn-primary m-2" @click="tryHire(profession, populationMenu.amount)">
                                                         Hire
                                                     </button>
                                                 </tooltipwrapper>
 
                                                 <tooltipwrapper :calcfrom="() => fireInfo(profession, populationMenu.amount)" :ishtml="true">
-                                                    <button class="btn btn-primary m-2" :style="canFire(profession) == false ? 'opacity:0.65' : ''" @click="fire(profession, populationMenu.amount)">
+                                                    <button class="btn btn-primary m-2" :style="canFire(profession) == false ? 'opacity:0.65' : ''" @click="tryFire(profession, populationMenu.amount)">
                                                         Fire
                                                     </button>
                                                 </tooltipwrapper>
