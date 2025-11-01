@@ -9,7 +9,7 @@ export default [
         Complexity: 1,
         isLocked: true,
         demandModifiers: {
-            Global: {"Wood":0.25},
+            Global: {"Wood":0.05, "Stone":0.025},
             PerCapita: {}
         },
         Unlock(vm) {
@@ -47,7 +47,7 @@ export default [
         QualityOfLifeBoost:0.2,
         demandModifiers: {
             Global: {},
-            PerCapita: {}
+            PerCapita: {"Wood":0.01}
         },
         Unlock(vm) {
             vm.logit("We have uncovered the secrets of making fire. It's really hot!");
@@ -102,7 +102,7 @@ export default [
         isLocked: true,
         demandModifiers: {
             Global: {},
-            PerCapita: {},
+            PerCapita: {"Rope":0.01},
         },
         Unlock(vm) {
             vm.logit("We have uncovered the secrets of well poles. Use the stick to get water better.");

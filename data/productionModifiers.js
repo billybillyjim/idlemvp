@@ -25,7 +25,7 @@ export default [
         Name:"Well Poles", 
         Boosts:[
             {Name:"Farmer", Currency:"Food", ModifierType:"Additive", Amount:0.1,},
-            {Name:"Well", Currency:"Water", ModifierType:"Additive", Amount:2, },
+            {Name:"Well", Currency:"Water", ModifierType:"Additive", Amount:3, },
         ],
         Requirements:{
             Technologies:["Well Poles"]
@@ -54,5 +54,57 @@ export default [
             Technologies:["Rope"]
         },
         IsUnlocked:false,
+    },
+    {
+        Name:"Pottery Wheel",
+        Boosts:[
+            {Name:"Potter", Currency:"Pottery", ModifierType:"Multiplicative", Amount:3,},
+        ],
+        Requirements:{
+            Technologies:["Pottery Wheel"]
+        }
+    },
+    {
+        Name:"Wooden Plows",
+        Boosts:[
+            {Name:"Farmer", Currency:"Grain", ModifierType:"Multiplicative", Amount:1.3,},
+            {Name:"Farmer", Currency:"Food", ModifierType:"Multiplicative", Amount:1.3,},
+        ],
+        Requirements:{
+            Technologies:["Wooden Plows"]
+        }
+    },
+    {
+        Name:"Flax Processing",
+        Boosts:[
+            {Name:"Unemployed", Currency:"Rope", ModifierType:"Additive", Amount:0.3},
+        ],
+        Requirements:{
+            Technologies:["Flax Processing"]
+        }
+    },
+    {
+        Name:"Saddle Quern",
+        Boosts:[
+            {Name:"Farmer", Currency:"Grain", ModifierType:"Additive", Amount:0.25}
+        ],
+        Requirements:{
+            Technologies:["Saddle Quern"]
+        }
+    },
+    {
+        Name:"Fermentation",
+        Boosts:[
+            {Name:"Well", Currency:"Water", ModifierType:"Additive", Amount:1}
+        ],
+        Requirements:{
+            Technologies:["Fermenetation"]
+        }
+    },
+    {
+        Name:"Lunar Calendar",
+        Boosts:[
+            {Name:"Farmer", Currency:"Food", ModifierType:"Additive", Amount:1}
+        ]
     }
 ];

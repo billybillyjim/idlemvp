@@ -1379,9 +1379,13 @@ const gamevm = Vue.createApp({
             if (amount == 0) {
                 return 0;
             }
+            
             this.currencyPotentialChange[currencyName] = (this.currencyPotentialChange[currencyName] ?? 0) - amount;
             if (this.currencydata[currencyName].Amount < amount && !payEvenIfYouCantAfford) {
                 return 0;
+            }
+            if(payEvenIfYouCantAfford && amount > this.currencydata[currencyName].Amount){
+                amount = this.currencydata[currencyName].Amount
             }
             if (this.currencyConsumptionDescriptions[currencyName]) {
                 this.currencyConsumptionDescriptions[currencyName].push([currencyName, this.formatNumber(amount), reason]);
@@ -1390,6 +1394,7 @@ const gamevm = Vue.createApp({
                 this.currencyConsumptionDescriptions[currencyName] = [[currencyName, this.formatNumber(amount), reason]];
             }
             this.currencydata[currencyName].Amount -= amount;
+            
             return amount;
         },
         processBaseGrowth() {
