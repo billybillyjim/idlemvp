@@ -204,7 +204,7 @@ const gamevm = Vue.createApp({
         this.beginTickCurrencyValues = JSON.parse(JSON.stringify(this.currencydata));
         for (let tech of this.technologies) {
             this.techDict[tech.Name] = tech;
-            tech.Unlock(this);
+            //tech.Unlock(this);
         }
         const input = `
                 if Wood >= 0 then hire Test until there are 10.
