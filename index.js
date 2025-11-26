@@ -1843,9 +1843,12 @@ const gamevm = Vue.createApp({
             if (maxPossible == 0) {
                 minimumForUsefulInfo = 1;
             }
+
             let prodDict = {};
-            let actualProd = this.getActualProduction(profession, minimumForUsefulInfo).map(x => prodDict[x[0]] = x[1]);
-            let modified = this.relativeProductionChangeToString(profession, prodDict, maxPossible);
+            this.getActualProduction(profession, minimumForUsefulInfo).map(x => prodDict[x[0]] = x[1]);
+            
+            //prodDict comes pre-packed with the amount, so set the amount to 1 or the final output will ^2 the amount.
+            let modified = this.relativeProductionChangeToString(profession, prodDict, 1);
 
             if (this.hasNumbers() == false) {
                 return modified;
@@ -1887,7 +1890,7 @@ const gamevm = Vue.createApp({
         fireInfo(profession, amount = 1) {
             let maxPossible = Math.min(amount, profession.Count);
             let prodDict = {};
-            let actualProd = this.getActualProduction(profession, maxPossible).map(x => prodDict[x[0]] = x[1]);
+            this.getActualProduction(profession, maxPossible).map(x => prodDict[x[0]] = x[1]);
             let modified = this.relativeProductionChangeToString(profession, prodDict, -amount);
 
             if (this.hasNumbers() == false) {
