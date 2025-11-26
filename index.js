@@ -1005,16 +1005,17 @@ const gamevm = Vue.createApp({
                 totalPop += prof.Count;
             }
 
-            let baseHideDemand = 0.1;
-            let baseClayDemand = 0.1;
-            let baseWoodDemand = 0.15;
-            let baseOreDemand = 0.02;
+            let baseHideDemand = 0.01;
+            let baseClayDemand = 0.01;
+            let baseWoodDemand = 0.015;
+            let baseOreDemand = 0.002;
             let baseSpaceDemand = 0.015;
             let baseHousingDemand = 0.01;
             let baseFurnitureDemand = 0.001;
             let unmetSpaceDemand = 0.001;
             this.modifyDemand('Hides', baseHideDemand * totalPop, 'Global Demand');
             this.modifyDemand('Clay', baseClayDemand * totalPop, 'Global Demand');
+            this.modifyDemand('Wood', baseWoodDemand * totalPop, 'Global Demand');
             this.modifyDemand('Ore', baseOreDemand * totalPop, 'Global Demand');
             this.modifyDemand('Space', baseSpaceDemand * totalPop, 'Global Demand');
             if (this.currencydata.Space.Amount == 0) {
