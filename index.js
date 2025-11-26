@@ -1484,10 +1484,14 @@ const gamevm = Vue.createApp({
                 if (good == 'Space' || good == 'Knowledge' || good == 'Housing' || good == 'Food') {
                     continue;
                 }
+                //demand is NaN on first run for some reason.
+                if(!isNaN(demand)){
                 let obj = {}
                 obj[good] = demand;
-                this.buy(obj, 1, "Demand for " + good);
+                    this.pay(obj, 1, "Demand for " + good);
                 this.unmetdemand[good] -= demand;
+                }
+
             }
             if (this.currencydata.Food.Amount < 0) {
                 this.starvePeople();
