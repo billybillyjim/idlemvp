@@ -2007,6 +2007,15 @@ const gamevm = Vue.createApp({
                 building.Unlocked = true;
             }
         },
+        unlockCurrency(currencyName){
+            let currency = this.currencydata[currencyName];
+            if(!currency){
+                console.error("Bad currency name: ", currencyName);
+            }
+            else{
+                currency.Unlocked = true;
+            }
+        },
         getTimeToAffordCost(cost, amount = 1) {
             let maxTime = 0;
 
