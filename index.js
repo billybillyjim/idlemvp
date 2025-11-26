@@ -1579,12 +1579,39 @@ const gamevm = Vue.createApp({
             if (count == 0) {
                 return;
             }
+            let fullAffordProdMod = 1;
             if (!this.canAfford(worker.Cost)) {
-                return;
+                fullAffordProdMod = this.getWorkerCostRatio(worker.Cost, worker.CostIsRequiredForOutput);
             }
             for (let [currency, production] of this.getActualProduction(worker)) {
-                this.addCurrency(currency, production, "Produced by " + name);
+                let reason = "Produced by " + name;
+                let finalProd = production;
+                let costIsRequired = worker.CostIsRequiredForOutput?.[currency];
+                if(costIsRequired){
+                    finalProd *= fullAffordProdMod;
+                    if(fullAffordProdMod != 1){
+                        reason += `(Reduced by ${Math.round(fullAffordProdMod * 100) }% due to lack of resources.)`;
+                    }
+                }
+
+                
+                this.addCurrency(currency, finalProd, reason);
             }
+        },
+        getWorkerCostRatio(cost){
+            let actual = 1;
+            for(let [currency, amount] of Object.entries(cost)){
+                let current = this.currencydata[currency];
+            
+                if(current.Amount == 0){
+                    return 0;
+                }
+                let ratio = current / amount;
+                if(ratio < actual){
+                    actual = ratio;
+            }
+            }
+            return actual;
         },
         processBuildingConsumption(name) {
             const building = this.buildingdata.find(x => x.Name == name);
