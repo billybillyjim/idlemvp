@@ -338,6 +338,7 @@ export default [
                     Name: 'Potter',
                     Count: 0,
                     Cost: { 'Food': 2.1, 'Clay': 1 },
+                    CostIsRequiredForOutput:{'Pottery':true, 'Clay':false},
                     Produces: { 'Pottery': 0.5, 'Clay': 0.45 },
                     Unlocked: true,
                     Visible: true,
