@@ -5,6 +5,7 @@ export default [
             {Name:"Lumberjack", Currency:"Wood", ModifierType:"Additive", Amount:0.5,},
             {Name:"Farmer", Currency:"Food", ModifierType:"Additive", Amount:0.5,},
             {Name:"Unemployed", Currency:"Food", ModifierType:"Additive", Amount:0.1,},
+            {Name:"Potter", Currency:"Clay", ModifierType:"Additive", Amount:0.1,},
         ],
         Requirements:{
             Technologies:["Stone Tools"]
@@ -28,6 +29,8 @@ export default [
             {Name:"Lumberjack", Currency:"Wood", ModifierType:"Additive", Amount:0.5,},
             {Name:"Farmer", Currency:"Food", ModifierType:"Additive", Amount:0.3,},
             {Name:"Unemployed", Currency:"Food", ModifierType:"Additive", Amount:0.1,},
+            {Name:"Potter", Currency:"Clay", ModifierType:"Additive", Amount:0.2,},
+
         ],
         Requirements:{
             Technologies:["Bronze Tools"]
@@ -72,6 +75,7 @@ export default [
         Name:"Pottery Wheel",
         Boosts:[
             {Name:"Potter", Currency:"Pottery", ModifierType:"Multiplicative", Amount:3,},
+            {Name:"Potter", Currency:"Clay", ModifierType:"Multiplicative", Amount:2,},
         ],
         Requirements:{
             Technologies:["Pottery Wheel"]
