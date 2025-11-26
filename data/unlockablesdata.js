@@ -352,6 +352,32 @@ export default [
         isLocked: true,
     },
     {
+        "Name": "Miller",
+        "Type": "Profession",
+        "Cost": { "Grain": 1000 },
+        "Requirements": { "Technologies": ["Saddle Quern"] },
+        "BaseDemand": { 'Food': 1.1, 'Grain': 0.1 },
+        "ModifiedDemand": {},
+        Unlock(vm) {
+            vm.professions.push(
+                {
+                    Name: 'Miller',
+                    Count: 0,
+                    Cost: { 'Food': 2.1, 'Grain': 1 },
+                    CostIsRequiredForOutput:{'Food':true},
+                    Produces: { 'Food': 7.5 },
+                    Unlocked: true,
+                    Visible: true,
+                    "BaseDemand": { 'Food': 1.1, 'Grain': 3 },
+                    "ModifiedDemand": {},
+                }
+            )
+            vm.logit("Someone can grind grain to flour for us.");
+            this.isLocked = false;
+        },
+        isLocked: true,
+    },
+    {
         "Name": "Construction Worker",
         "Type": "Profession",
         "Cost": { "Food": 100 },
