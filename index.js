@@ -524,6 +524,9 @@ const gamevm = Vue.createApp({
             if (!requireable.Requirements) {
                 return true;
             }
+            if(requireable.IsUnlocked){
+                return true;
+            }
             if (requireable.Requirements.Technologies) {
                 for (let techName of requireable?.Requirements?.Technologies) {
                     let tech = this.techDict[techName];
@@ -563,7 +566,7 @@ const gamevm = Vue.createApp({
                     }
                 }
             }
-
+            requireable.IsUnlocked = true;
             return true;
         },
         getCalendarTech() {
