@@ -1370,26 +1370,34 @@ const gamevm = Vue.createApp({
             else {
                 this.currencyProductionDescriptions[currencyName] = [[currencyName, this.formatNumber(amount), reason]];
             }
+            if(isNaN(amount)){
+                console.error("bad(NaN) value for pay currency", currencyName, reason);
+                return false;
+            }
             this.tickProductionValues[currencyName] += amount;
             this.currencydata[currencyName].Amount += amount;
         },
         payCurrency(currencyName, amount, reason, payEvenIfYouCantAfford = false) {
-            if (amount == 0) {
-                return 0;
+            this.currencyPotentialChange[currencyName] = (this.currencyPotentialChange[currencyName] ?? 0) - amount;
+            if(!this.currencydata[currencyName]){
+                console.error(currencyName, 'is not in the currency data.');
             }
             
-            this.currencyPotentialChange[currencyName] = (this.currencyPotentialChange[currencyName] ?? 0) - amount;
+            if (this.currencyConsumptionDescriptions[currencyName]) {
+                this.currencyConsumptionDescriptions[currencyName].push([currencyName, this.formatNumber(amount), reason]);
+            }
+            else {
+                this.currencyConsumptionDescriptions[currencyName] = [[currencyName, this.formatNumber(amount), reason]];
+            }
             if (this.currencydata[currencyName].Amount < amount && !payEvenIfYouCantAfford) {
                 return 0;
             }
             if(payEvenIfYouCantAfford && amount > this.currencydata[currencyName].Amount){
                 amount = this.currencydata[currencyName].Amount
             }
-            if (this.currencyConsumptionDescriptions[currencyName]) {
-                this.currencyConsumptionDescriptions[currencyName].push([currencyName, this.formatNumber(amount), reason]);
-            }
-            else {
-                this.currencyConsumptionDescriptions[currencyName] = [[currencyName, this.formatNumber(amount), reason]];
+            if(isNaN(amount)){
+                console.error("bad(NaN) value for pay currency", currencyName, reason);
+                return false;
             }
             this.currencydata[currencyName].Amount -= amount;
             
