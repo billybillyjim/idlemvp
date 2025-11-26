@@ -133,6 +133,7 @@ const gamevm = Vue.createApp({
 
             ],
             productionModifiers,
+            prodModCache:{},
             technologies,
             techDict: {},
             currencydata,
@@ -771,6 +772,9 @@ const gamevm = Vue.createApp({
             for (let prodMod of this.productionModifiers) {
                 if (prodMod.IsUnlocked == false) {
                     prodMod.IsUnlocked = this.hasRequirements(prodMod);
+                    if(prodMod.IsUnlocked){
+                        this.prodModCache = {};
+                    }
                 }
             }
         },
@@ -1663,6 +1667,10 @@ const gamevm = Vue.createApp({
             return output;
         },
         getProductionModifiers(name) {
+            let cached = this.prodModCache[name];
+            if(cached){
+                return cached;
+            }
             let additiveModifiers = {};
             let multModifiers = {};
             for (let prod of this.productionModifiers) {
@@ -1690,6 +1698,7 @@ const gamevm = Vue.createApp({
 
                 }
             }
+            this.prodModCache[name] = [additiveModifiers, multModifiers];
             return [additiveModifiers, multModifiers];
         },
         productionToNiceString(profession) {
