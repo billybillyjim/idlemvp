@@ -143,6 +143,8 @@ export default [
         },
         Unlock(vm) {
             vm.logit("The stuff in the ground was clay. Now we know how to make pots like we've seen others make!");
+            vm.unlockCurrency('Clay');
+            vm.unlockCurrency('Pottery');
             this.isLocked = false;
         },
     },
@@ -186,7 +188,7 @@ export default [
     {
         Name: "Bronze Metal",
         Description: "Copper is great but it's really soft. Maybe we can do better somehow.",
-        Cost: { "Ore": 1000, "Copper Metal": 1000 },
+        Cost: { "Ore": 1000, "Copper": 1000 },
         Requirements: { Technologies: ["Copper Metal"] },
         Progress: 0,
         Visible: false,
@@ -205,7 +207,7 @@ export default [
     {
         Name: "Bronze Tools",
         Description: "What if we used the bronze we make for farming tools?",
-        Cost: { "Bronze Metal": 1000 },
+        Cost: { "Bronze": 1000 },
         Requirements: { Technologies: ["Bronze Metal", "Metal Casting"] },
         Progress: 0,
         Visible: false,
@@ -213,7 +215,7 @@ export default [
         isLocked: true,
         demandModifiers: {
             Global: {},
-            PerCapita: { 'Bronze Metal': 0.001 },
+            PerCapita: { 'Bronze': 0.001 },
             Farmer: { 'Bronze Tools': 0.01 }
         },
         Unlock(vm) {
