@@ -2138,14 +2138,14 @@ const gamevm = Vue.createApp({
 
                     currentVal += prodDelta;
 
-                let prodDeltaNewOutputTxt = this.formatNumber(currentVal);
+                let prodDeltaNewOutputDescription = 'Will Produce';
 
                 if (prodDeltaPot > 0 && prodDeltaReal == 0 && prodDeltaChangeAbs > 0) {
-                    prodDeltaNewOutputTxt += ' (Capped)';
+                    prodDeltaNewOutputDescription += ' (Capped)';
                 }
 
                 if(prodDeltaChangeAbs != 0){
-                    sectionsToAdd.push(row('', this.getSignOfValue(prodDelta), this.formatNumber(prodDeltaChangeAbs), prodDeltaNewOutputTxt, 'Will Produce'));
+                    sectionsToAdd.push(row('', this.getSignOfValue(prodDelta), this.formatNumber(prodDeltaChangeAbs), this.formatNumber(currentVal), prodDeltaNewOutputDescription));
                 }
 
                 currentVal += consDelta;
