@@ -188,6 +188,15 @@ export default
             Icon:'./icons/knowledge.svg',
             Unlocked:true,
         },
+        Flax:{
+            Name:'Flax',
+            Value:1,
+            Description:"Flax is a useful plant fiber.",
+            Amount:0,
+            Type:'Raw Good',
+            Icon:'./icons/knowledge.svg',
+            Unlocked:true,
+        },
         'Bronze Tools':{
             Name:'Bronze Tools',
             Value:1,
