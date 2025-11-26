@@ -206,7 +206,7 @@ export default {
                     [[ num !== '' ? num + 1 : '\u00A0' ]]
                 </div>
             </div>
-            <textarea class="code-text-area" @scroll="scrollCheck" @input="getLineNumbers" v-on:resize="updateHeight()" v-model="testCode" id="code-text-area"></textarea>
+            <textarea class="code-text-area" style="width:100%" @scroll="scrollCheck" @input="getLineNumbers" v-on:resize="updateHeight()" v-model="testCode" id="code-text-area"></textarea>
                 
         </div>
         <div>
