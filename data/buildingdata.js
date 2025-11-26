@@ -94,7 +94,7 @@ export default[
         Unlocked: false, 
         Visible: false, 
     },
-        { 
+    { 
         Name: 'Mill', 
         Description:"A building for turning less useful food into more useful food.", 
         Type: "Production", 
@@ -103,6 +103,20 @@ export default[
         { 
             Wood: 300, 
             Space: 15 
+        }, 
+        Unlocked: false, 
+        Visible: false, 
+    },
+    { 
+        Name: 'Irrigated Field', 
+        Description:"A field with great access to fresh water.", 
+        Type: "Production", 
+        Count: 0, 
+        Cost: 
+        { 
+            'Fertile Soil': 300, 
+            'Coordinated Labor':50,
+            Space: 150
         }, 
         Unlocked: false, 
         Visible: false, 
