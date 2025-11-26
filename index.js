@@ -2076,26 +2076,27 @@ const gamevm = Vue.createApp({
                 .join(', ');
         },
         relativeProductionChangeToString(profession, produced, amount = 1) {
-            if (!produced) { return ''; }
+            if (!produced) { 
+                return ''; 
+            }
             if (this.hasNumbers() == false) {
                 return "If we had a better way of keeping track of how many things there are, we could know more about what doing this would do.";
             }
 
             const unemployed = this.professions.find(x => x.Name === 'Unemployed');
             const unemployedProdDict = {};
+            const keys = new Set();
+
             for (const [k, v] of (this.getActualProduction(unemployed, amount) || [])) {
                 unemployedProdDict[k] = v;
+                keys.add(k);
+            }
+            for (const [k, v] of (this.getActualProduction(profession, amount) || [])) {
+                keys.add(k);
             }
 
-            const keys = new Set([
-                ...Object.keys(this.currencyDailyChange || {}),
-                ...Object.keys(produced || {}),
-                ...Object.keys(profession.BaseDemand || {}),
-                ...Object.keys(unemployedProdDict || {})
-            ]);
-
-            const row = (icon, current, op, change, result, reason, extraClass = '') =>
-                `<tr class="${extraClass}"><td>${icon}</td><td style="text-align:left">${reason}</td><td>${current}</td><td>${op}</td><td>${change}</td><td>=</td><td>${result}</td></tr>`;
+            const row = (current, op, change, result, reason, extraClass = '') =>
+                `<tr class="${extraClass}"><td></td><td style="text-align:left">${reason}</td><td>${current}</td><td>${op}</td><td>${change}</td><td>=</td><td>${result}</td></tr>`;
 
             const sectionHeader = (label, initialValue) =>
                 `<tr style="text-align:left;font-weight:bold;vertical-align:bottom""><td colspan="6">${label}</td><td style="text-align:right">${initialValue}</td></tr>`;
@@ -2110,52 +2111,43 @@ const gamevm = Vue.createApp({
                 let sectionsToAdd = [];
 
                 const prodDelta = (produced[key] || 0) * amount;
-                if (prodDelta != 0) {
-                    const op = prodDelta >= 0 ? '+' : '-';
-                    const changeAbs = this.formatNumber(Math.abs(prodDelta));
-                    let newOutputTxt = this.formatNumber(currentVal + prodDelta);
-
-                    const pot = this.currencyPotentialChange[key] || 0;
-                    const real = this.currencyDailyChange[key] || 0;
-                    if (pot > 0 && real === 0 && Math.abs(prodDelta) > 0) {
-                        newOutputTxt += ' (Capped)';
-                    }
-
-                    currentVal += prodDelta;
-                    if (prodDelta != 0) {
-                        sectionsToAdd.push(row(icon, '', op, changeAbs, newOutputTxt, 'Will Produce'));
-                    }
-                }
+                const prodDeltaChangeAbs = Math.abs(prodDelta);
 
                 const consDeltaRaw = (profession.BaseDemand?.[key] || 0) * amount;
-                if (consDeltaRaw != 0) {
-                    const consDelta = -consDeltaRaw;
-                    const op = consDelta >= 0 ? '+' : '-';
-                    const changeAbs = this.formatNumber(Math.abs(consDelta));
-                    const newOutputTxt = this.formatNumber(currentVal + consDelta);
-
-                    currentVal += consDelta;
-                    if (consDelta != 0) {
-                        sectionsToAdd.push(row(icon, '', op, changeAbs, newOutputTxt, 'Will Consume'));
-                    }
-                }
+                const consDelta = -consDeltaRaw;
+                const consDeltaChangeAbs = Math.abs(consDelta);
 
                 const lostUnempRaw = (unemployedProdDict[key] || 0) * amount;
-                if (lostUnempRaw != 0) {
-                    const lostDelta = -lostUnempRaw;
-                    const op = lostDelta >= 0 ? '+' : '-';
-                    const changeAbs = this.formatNumber(Math.abs(lostDelta));
-                    const newOutputTxt = this.formatNumber(currentVal + lostDelta);
+                const lostDelta = -lostUnempRaw;
+                const lostDeltaChangeAbs = Math.abs(lostDelta);
+
+                const prodDeltaPot = this.currencyPotentialChange[key] || 0;
+                const prodDeltaReal = this.currencyDailyChange[key] || 0;
+
+                    currentVal += prodDelta;
+
+                let prodDeltaNewOutputTxt = this.formatNumber(currentVal);
+
+                if (prodDeltaPot > 0 && prodDeltaReal == 0 && prodDeltaChangeAbs > 0) {
+                    prodDeltaNewOutputTxt += ' (Capped)';
+                }
+
+                if(prodDeltaChangeAbs != 0){
+                    sectionsToAdd.push(row('', this.getSignOfValue(prodDelta), this.formatNumber(prodDeltaChangeAbs), prodDeltaNewOutputTxt, 'Will Produce'));
+                }
+
+                currentVal += consDelta;
+
+                if(consDeltaChangeAbs != 0){
+                    sectionsToAdd.push(row('', this.getSignOfValue(consDelta), this.formatNumber(consDeltaChangeAbs), this.formatNumber(currentVal), 'Will Consume'));
+                }
 
                     currentVal += lostDelta;
-                    if (lostDelta != 0) {
-                        sectionsToAdd.push(row(icon, '', op, changeAbs, newOutputTxt, 'Lost Unemployed Production'));
+
+                if(lostDeltaChangeAbs != 0){
+                    sectionsToAdd.push(row('', this.getSignOfValue(lostDelta), this.formatNumber(lostDeltaChangeAbs), this.formatNumber(currentVal), 'Lost Unemployed Production'));
                     }
 
-                }
-                if (sectionsToAdd.length == 0) {
-                    continue;
-                }
                 tableRows.push(sectionHeader(`${icon} <span style="vertical-align:middle">Current ${key}</span>`.trim(), this.formatNumber(this.currencyDailyChange[key] || 0)));
                 for (let section of sectionsToAdd) {
                     tableRows.push(section);
@@ -2171,6 +2163,9 @@ const gamevm = Vue.createApp({
             tableRows.push(`</table>`);
             return tableRows.join('');
 
+        },
+        getSignOfValue(value){
+            return value >= 0 ? '+' : '-';
         },
         costToText(cost, amount = 1) {
             return Object.entries(cost)
