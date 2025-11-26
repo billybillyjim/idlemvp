@@ -1356,9 +1356,6 @@ const gamevm = Vue.createApp({
             return output + '\n' + 'This could be completed in ' + t;
         },
         addCurrency(currencyName, amount, reason) {
-            if (amount == 0) {
-                return;
-            }
             let storage = this.getCurrencyStorage(currencyName);
             this.currencyPotentialChange[currencyName] = (this.currencyPotentialChange[currencyName] ?? 0) + amount;
 
