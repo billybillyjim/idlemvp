@@ -141,6 +141,8 @@ const gamevm = Vue.createApp({
             beginTickCurrencyValues: {},
             preCostTickCurrencyValues: {},
             tickProductionValues: {},
+            uncappedTickProductionValues: {},
+            previousTickProductionValues:{},
             currencyDemandDescriptions: {},
             currencyProductionDescriptions: {},
             currencyConsumptionDescriptions: {},
@@ -182,8 +184,10 @@ const gamevm = Vue.createApp({
             overcrowdspacing: 1,
             checkHistoricalValues: true,
             historicalValues: {},
+            historicalValues33x:{},
+            historicalValues2000x:{},
             maxHistory: 1000,
-            charts: [{ Name: 'UnmetDemands' }, { Name: 'Currencies' }, { Name: 'Population' }],
+            charts: [{ Name: 'UnmetDemands' }, { Name: 'Currencies' }, { Name: 'Population' }, {Name:'Real Production'}, {Name:'Uncapped Production'}],
             keyColors: {
                 'Space': 'rgba(224, 224, 224, 1)',
                 'Wood': 'rgba(146, 91, 54, 1)',
@@ -205,7 +209,7 @@ const gamevm = Vue.createApp({
         this.beginTickCurrencyValues = JSON.parse(JSON.stringify(this.currencydata));
         for (let tech of this.technologies) {
             this.techDict[tech.Name] = tech;
-            //tech.Unlock(this);
+            tech.Unlock(this);
         }
         const input = `
                 if Wood >= 0 then hire Test until there are 10.
@@ -611,9 +615,11 @@ const gamevm = Vue.createApp({
             this.currentTick++;
             this.currentDate = new Date(this.currentDate.getFullYear(), this.currentDate.getMonth(), this.currentDate.getDate(), this.currentDate.getHours() + 1);
             this.beginTickCurrencyValues = JSON.parse(JSON.stringify(this.currencydata));
+            this.previousTickProductionValues = JSON.parse(JSON.stringify(this.tickProductionValues));
             this.tickProductionValues = {};
             for (let currency of Object.keys(this.currencydata)) {
                 this.tickProductionValues[currency] = 0;
+                this.uncappedTickProductionValues[currency] = 0;
                 this.currencyPotentialChange[currency] = 0;
             }
             this.currencyDemandDescriptions = {};
@@ -645,7 +651,35 @@ const gamevm = Vue.createApp({
             }
         },
         processHistoricalValues() {
+            let pairs = [
+                ['UnmetDemands', this.unmetdemand],
+                ['Real Production', this.previousTickProductionValues],
+                ['Uncapped Production', this.uncappedTickProductionValues],
+                ['Currencies', Object.fromEntries(
+                    Object.entries(this.currencydata)
+                        .filter(([_, v]) => v.Amount && v.Amount > 0)
+                        .map(([key, val]) => [key, val.Amount ?? 0])
+                )],
+                ['Population',  {
+                    ...Object.fromEntries(
+                        Object.entries(this.getVisibleProfessions())
+                            .map(([key, val]) => [val.Name, val.Count ?? 0])
+                    ),
+                    Total: this.getPopulation()
+                }],
+            ];
+            for(let pair of pairs){
+                this.processHistoricalValue(pair[0], pair[1]);
+                if(this.currentTick % 33 == 0){
+                    this.processHistoricalValueMinute(pair[0], pair[1]);
+                    if(this.currentTick % 60 == 0){
+                        this.processHistoricalValueHour(pair[0], pair[1]);
+                    }
+                }
+            }
             this.processHistoricalValue('UnmetDemands', this.unmetdemand);
+            this.processHistoricalValue('Real Production', this.previousTickProductionValues);
+            this.processHistoricalValue('Uncapped Production', this.uncappedTickProductionValues);
             this.processHistoricalValue('Currencies', Object.fromEntries(
                 Object.entries(this.currencydata)
                     .filter(([_, v]) => v.Amount && v.Amount > 0)
@@ -670,6 +704,28 @@ const gamevm = Vue.createApp({
             this.historicalValues[key].push({ [idx]: jsonData });
             if (this.historicalValues[key].length >= this.maxHistory) {
                 this.historicalValues[key].shift();
+            }
+        },
+        processHistoricalValueMinute(key, data) {
+            if (!this.historicalValuesMinute[key]) {
+                this.historicalValuesMinute[key] = [];
+            }
+            let idx = this.currentTick;
+            let jsonData = JSON.parse(JSON.stringify(data));
+            this.historicalValuesMinute[key].push({ [idx]: jsonData });
+            if (this.historicalValuesMinute[key].length >= this.maxHistory) {
+                this.historicalValuesMinute[key].shift();
+            }
+        },
+        processHistoricalValueHour(key, data) {
+            if (!this.historicalValuesHour[key]) {
+                this.historicalValuesHour[key] = [];
+            }
+            let idx = this.currentTick;
+            let jsonData = JSON.parse(JSON.stringify(data));
+            this.historicalValuesHour[key].push({ [idx]: jsonData });
+            if (this.historicalValuesHour[key].length >= this.maxHistory) {
+                this.historicalValuesHour[key].shift();
             }
         },
         generateChart(data, id) {
@@ -1366,6 +1422,7 @@ const gamevm = Vue.createApp({
             let storage = this.getCurrencyStorage(currencyName);
             this.currencyPotentialChange[currencyName] = (this.currencyPotentialChange[currencyName] ?? 0) + amount;
 
+            this.uncappedTickProductionValues[currencyName] += amount;
             if (this.currencydata[currencyName].Amount + amount > storage && storage != -1) {
                 amount = this.getCurrencyStorage(currencyName) - this.currencydata[currencyName].Amount;
                 reason += " (Capped by Storage)";
@@ -1389,7 +1446,7 @@ const gamevm = Vue.createApp({
             if(!this.currencydata[currencyName]){
                 console.error(currencyName, 'is not in the currency data.');
             }
-            
+
             if (this.currencyConsumptionDescriptions[currencyName]) {
                 this.currencyConsumptionDescriptions[currencyName].push([currencyName, this.formatNumber(amount), reason]);
             }
@@ -1407,7 +1464,7 @@ const gamevm = Vue.createApp({
                 return false;
             }
             this.currencydata[currencyName].Amount -= amount;
-            
+
             return amount;
         },
         processBaseGrowth() {
@@ -1433,10 +1490,15 @@ const gamevm = Vue.createApp({
             this.addCurrency('Food', 5, 'Base Production');
             this.addCurrency('Water', 15, 'Base Production');
             this.addCurrency('Knowledge', this.getPopulation() * 0.005, 'From Population');
-            if (this.currencydata.Food.Amount >= this.growthThreshold && this.hasAvailableHousing()) {
-                let growthChance = this.basePopulationGrowthChance * (this.currencydata.Food.Amount / this.growthThreshold);
+            let hasFood = this.previousTickProductionValues['Food'] >= this.growthThreshold;
+            let hasWater = this.previousTickProductionValues['Water'] >= this.growthThreshold;
+            if (hasFood && hasWater && this.hasAvailableHousing()) {
+                let foodRatio = Math.min((this.currencydata.Food.Amount / this.growthThreshold), 1);
+                let waterRatio = Math.min((this.currencydata.Water.Amount / this.growthThreshold), 1);
+
+                let growthChance = 1 - this.basePopulationGrowthChance * foodRatio * waterRatio;
                 let rand = Math.random();
-                if (rand < growthChance) {
+                if (rand > growthChance) {
                     this.professions.find(x => x.Name == "Unemployed").Count += 1;
                     for (let [prof, missingCount] of Object.entries(this.missingProfessionCounts)) {
                         if (missingCount > 0) {
@@ -1446,21 +1508,24 @@ const gamevm = Vue.createApp({
                         }
                     }
 
-                    if (this.hasAvailableHousing()) {
-                        if (this.getPopulation() < 200) {
-                            this.logit(`A new child has been born to our people. Their name is ${this.getVillagerName()}.`);
-                        }
-                        else {
-                            this.logit(`Your population has grown. (${this.formatNumber(this.getPopulation())})`);
-                        }
-                    }
-                    else {
-                        this.logit(`Your population has grown to ${this.formatNumber(this.getPopulation())} and now is filling your housing. Build more houses to continue to grow.`);
-                    }
-                    if (this.getPopulation() == 200) {
-                        this.logit("Your population has grown beyond what a person can individually manage. Now you must direct our people through vague lies and secret processes.");
-                    }
+                    this.addPopulationGrowthMessage();
                 }
+            }
+        },
+        addPopulationGrowthMessage() {
+            if (this.hasAvailableHousing()) {
+                if (this.getPopulation() < 200) {
+                    this.logit(`A new child has been born to our people. Their name is ${this.getVillagerName()}.`);
+                }
+                else {
+                    this.logit(`Your population has grown. (${this.formatNumber(this.getPopulation())})`);
+                }
+            }
+            else {
+                this.logit(`Your population has grown to ${this.formatNumber(this.getPopulation())} and now is filling your housing. Build more houses to continue to grow.`);
+            }
+            if (this.getPopulation() == 200) {
+                this.logit("Your population has grown beyond what a person can individually manage. Now you must direct our people through vague lies and secret processes.");
             }
         },
         setTooltipData(text, isHtml, eventData, calcfrom) {
@@ -1493,10 +1558,10 @@ const gamevm = Vue.createApp({
                 }
                 //demand is NaN on first run for some reason.
                 if(!isNaN(demand)){
-                let obj = {}
-                obj[good] = demand;
+                    let obj = {}
+                    obj[good] = demand;
                     this.pay(obj, 1, "Demand for " + good);
-                this.unmetdemand[good] -= demand;
+                    this.unmetdemand[good] -= demand;
                 }
 
             }
@@ -1601,7 +1666,7 @@ const gamevm = Vue.createApp({
                     }
                 }
 
-                
+
                 this.addCurrency(currency, finalProd, reason);
             }
         },
@@ -1609,14 +1674,14 @@ const gamevm = Vue.createApp({
             let actual = 1;
             for(let [currency, amount] of Object.entries(cost)){
                 let current = this.currencydata[currency];
-            
+
                 if(current.Amount == 0){
                     return 0;
                 }
                 let ratio = current / amount;
                 if(ratio < actual){
                     actual = ratio;
-            }
+                }
             }
             return actual;
         },
@@ -1858,7 +1923,7 @@ const gamevm = Vue.createApp({
 
             let prodDict = {};
             this.getActualProduction(profession, minimumForUsefulInfo).map(x => prodDict[x[0]] = x[1]);
-            
+
             //prodDict comes pre-packed with the amount, so set the amount to 1 or the final output will ^2 the amount.
             let modified = this.relativeProductionChangeToString(profession, prodDict, 1);
 
@@ -1880,7 +1945,7 @@ const gamevm = Vue.createApp({
             if(this.missingProfessionCounts[profession.Name] == 0){
                 this.fire(profession, amount);
             }
-            
+
             if(this.missingProfessionCounts[profession.Name] >= amount){
                 this.missingProfessionCounts[profession.Name] -= amount;
             }
@@ -1890,7 +1955,7 @@ const gamevm = Vue.createApp({
                 this.missingProfessionCounts[profession.Name] = 0;
                 this.fire(profession, remainder);
             }
-            
+
         },
         fire(profession, amount = 1) {
             let maxPossible = Math.min(amount, profession.Count);
@@ -2088,8 +2153,8 @@ const gamevm = Vue.createApp({
                 .join(', ');
         },
         relativeProductionChangeToString(profession, produced, amount = 1) {
-            if (!produced) { 
-                return ''; 
+            if (!produced) {
+                return '';
             }
             if (this.hasNumbers() == false) {
                 return "If we had a better way of keeping track of how many things there are, we could know more about what doing this would do.";
@@ -2136,7 +2201,7 @@ const gamevm = Vue.createApp({
                 const prodDeltaPot = this.currencyPotentialChange[key] || 0;
                 const prodDeltaReal = this.currencyDailyChange[key] || 0;
 
-                    currentVal += prodDelta;
+                currentVal += prodDelta;
 
                 let prodDeltaNewOutputDescription = 'Will Produce';
 
@@ -2154,11 +2219,11 @@ const gamevm = Vue.createApp({
                     sectionsToAdd.push(row('', this.getSignOfValue(consDelta), this.formatNumber(consDeltaChangeAbs), this.formatNumber(currentVal), 'Will Consume'));
                 }
 
-                    currentVal += lostDelta;
+                currentVal += lostDelta;
 
                 if(lostDeltaChangeAbs != 0){
                     sectionsToAdd.push(row('', this.getSignOfValue(lostDelta), this.formatNumber(lostDeltaChangeAbs), this.formatNumber(currentVal), 'Lost Unemployed Production'));
-                    }
+                }
 
                 tableRows.push(sectionHeader(`${icon} <span style="vertical-align:middle">Current ${key}</span>`.trim(), this.formatNumber(this.currencyDailyChange[key] || 0)));
                 for (let section of sectionsToAdd) {
