@@ -62,7 +62,7 @@ const gamevm = Vue.createApp({
             uploadedSaveFile: null,
             activeTooltipData: null,
             population: 1,
-            growthThreshold: 50,
+            growthThreshold: 2,
             QOLDecay: 0.95,
             ticksOfUnmetSpaceDemand: 0,
             tickspeed: 300,
