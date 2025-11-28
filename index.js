@@ -12,6 +12,7 @@ import codetester from './components/codetest.js'
 
 import pluralize from './lib/pluralize.js'
 import weather from './lib/weather.js'
+import levenshtein from './lib/levenshtein.js'
 
 import currencydata from './data/currencydata.js'
 import unlockablesdata from './data/unlockablesdata.js'
@@ -2438,12 +2439,14 @@ const gamevm = Vue.createApp({
             const tokenSpec = [
                 ['SKIP', /^,/],
                 ['NUMBER', /^\d+/],
-                ['OPERATOR', /^(greater than|are greater than|is greater than|are less than|is less than|less than|are more than|is more than|more than|fewer than|is fewer than|are fewer than)/],
+                ['OPERATOR', /^(greater than|less than or equal to|greater than or equal to|is less than or equal to|is greater than or equal to|are greater than|is greater than|are less than|is less than|less than|are more than|is more than|more than|fewer than|is fewer than|are fewer than)/],
                 ['AND', /^and\b/],
                 ['OR', /^or\b/],
                 ['NOT', /^not\b/],
                 ['XOR', /^xor\b/],
                 ['ASSIGN', /^(is\b|=)/],
+                ['STRING', /^"[^"]*"/],
+                ['STRING', /^'[^']*'/],
                 ['PLUS', /^\+/],
                 ['MINUS', /^-/],
                 ['STAR', /^\*/],
@@ -2586,7 +2589,10 @@ const gamevm = Vue.createApp({
                     //x is .
                     //x is if
                     //y = until
-                    return this.throwSyntaxError('Identifier', name, `Our scribes are confused by your law. On line ${valueToken.line} it appears you are missing a word to set the value of ${identToken.value} to something.`);
+                    return this.throwSyntaxError(
+                        'Identifier', 
+                        name, 
+                        `Our scribes are confused by your law. On line ${valueToken.line} it appears you are missing a word to set the value of ${identToken.value} to something.`);
                 }
 
             }
@@ -2671,13 +2677,18 @@ const gamevm = Vue.createApp({
                     operator.type = 'OPERATOR';
                 }
                 if (operator.type != 'OPERATOR') {
-                    return this.throwSyntaxError('Evaluatable', operator, `Our scribes are confused by your law. On line ${operator.line} we expected a word to compare values instead of the word ${operator.value}`);
+                    return this.throwSyntaxError(
+                                'Evaluatable', 
+                                operator, 
+                                `Our scribes are confused by your law. On line ${operator.line} we expected a word to compare values instead of the word ${operator.value}`);
 
                 }
 
                 rhs = this.next();
                 if (rhs.type != 'IDENT' && rhs.type != 'NUMBER') {
-                    return this.throwSyntaxError('Evaluatable', rhs, `Our scribes are confused by your law. On line ${rhs.line} we expected a counting of something or a number, instead of the word ${rhs.value}`);
+                    return this.throwSyntaxError('Evaluatable', 
+                        rhs, 
+                        `Our scribes are confused by your law. On line ${rhs.line} we expected a counting of something or a number, instead of the word ${rhs.value}`);
 
                 }
                 potentialModifier = this.peek();
@@ -2699,7 +2710,9 @@ const gamevm = Vue.createApp({
                 //food production is greater than 10
                 //greater than 7
                 //
-                return this.throwSyntaxError('Evaluatable', next, `Our scribes are confused by your law. On line ${next.line} we expected a word to compare values, a counting of something, or a number, instead of the word ${next.value}`);
+                return this.throwSyntaxError('Evaluatable', 
+                    next, 
+                    `Our scribes are confused by your law. On line ${next.line} we expected a word to compare values, a counting of something, or a number, instead of the word ${next.value} Could you have meant ${levenshtein.closest(next.value, Object.keys(env))}`);
             }
             return {
                 type: 'Evaulatable',
@@ -2797,9 +2810,7 @@ const gamevm = Vue.createApp({
         parsePrint() {
             let printCommand = this.next();
             let output = this.next();
-            if (output != null) {
-                output = output.value;
-            }
+            
             return {
                 type: 'Print',
                 output: output,
@@ -2997,7 +3008,13 @@ const gamevm = Vue.createApp({
                     }
                     break;
                 case 'Print':
-                    let num = parseInt(node.output);
+                    console.log(node);
+                    if(node.output.type == 'STRING'){
+                        this.consoleOutputs.push('Line ' + node.line + ': ' + node.output.value.slice(1, -1));
+                        break;
+                    }
+
+                    let num = parseInt(node.output.value);
 
                     if (num) {
                         this.consoleOutputs.push('Line ' + node.line + ': ' + num);
@@ -3071,6 +3088,17 @@ const gamevm = Vue.createApp({
                     if (!right && right !== 0) {
                         right = parseFloat(node.right.value);
                     }
+                    if(isNaN(left)){
+                        this.consoleOutputs.push(`Our scribes did not quite understand what you meant by '${node.left.value}' on line ${node.left.line}. Did you mean ${levenshtein.closest(node.left.value, Object.keys(env))} or something else?`);
+                        break;
+                    }
+                    if(isNaN(right)){
+                        this.consoleOutputs.push(`Our scribes did not quite understand what you meant by '${node.right.value}' on line ${node.right.line}. Did you mean ${levenshtein.closest(node.left.value, Object.keys(env))} or something else?`);
+                        break;
+                    }
+                    if((node.op.value.startsWith('is') && node.op.value != 'is') || (node.op.value.startsWith('are') && node.op.value != 'are')){
+                        node.op.value = node.op.value.replace(/^(is|are)\b\s*/, '');
+                    }
                     switch (node.op.value) {
                         case '+': return left + right;
                         case '-': return left - right;
@@ -3079,21 +3107,18 @@ const gamevm = Vue.createApp({
                         case '>': return left > right;
                         case 'greater than': return left > right;
                         case 'more than': return left > right;
-                        case 'is more than': return left > right;
-                        case 'is greater than': return left > right;
-                        case 'are more than': return left > right;
-                        case 'are greater than': return left > right;
                         case '>=': return left >= right;
+                        case 'greater than or equal to': return left >= right;
+                        case 'more than or equal to': return left >= right;
                         case '<=': return left <= right;
+                        case 'less than or equal to': return left <= right;
+                        case 'fewer than or equal to': return left <= right;
                         case '<': return left < right;
                         case 'less than': return left < right;
-                        case 'is less than': return left < right;
-                        case 'are less than': return left < right;
                         case 'fewer than': return left < right;
-                        case 'are fewer than': return left < right;
-                        case 'is fewer than': return left < right;
                         case '==': return left == right;
                         case 'is': return left == right;
+                        case 'are': return left == right;
                         case '=': return left == right;
                         default: console.error(`Unknown operator: ${node.op}`);
                     }
