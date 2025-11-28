@@ -209,7 +209,9 @@ const gamevm = Vue.createApp({
         this.beginTickCurrencyValues = JSON.parse(JSON.stringify(this.currencydata));
         for (let tech of this.technologies) {
             this.techDict[tech.Name] = tech;
-            //tech.Unlock(this);
+            if (location.hostname === "localhost" || location.hostname === "127.0.0.1"){
+                tech.Unlock(this);
+            }   
         }
         const input = `
                 if Wood >= 0 then hire Test until there are 10.
