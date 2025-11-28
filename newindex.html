@@ -577,6 +577,11 @@
                     <button class="btn btn-primary m-2" @click="setCurrentChart(chart.Name)">[[chart.Name]]</button>
                 </template>
             </div>
+            <div>
+                <button class="btn btn-primary m-2" @click="setChartTimeline('Every Tick')">Every Tick</button>
+                <button class="btn btn-primary m-2" @click="setChartTimeline('Minute')">Minute</button>
+                <button class="btn btn-primary m-2" @click="setChartTimeline('Hour')">Hour</button>
+            </div>
             <div v-for="chart in charts">
                 <div v-if="chartMenu.currentChart == chart.Name" style="margin-right:200px;">
                     <canvas :id="chart.Name"></canvas>

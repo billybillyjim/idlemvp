@@ -56,6 +56,7 @@ const gamevm = Vue.createApp({
             },
             chartMenu: {
                 currentChart: '',
+                chartTime:'Every Tick',
             },
             log: [],
             consoleOutputs: [],
@@ -67,6 +68,8 @@ const gamevm = Vue.createApp({
             ticksOfUnmetSpaceDemand: 0,
             tickspeed: 300,
             currentTick: 0,
+            minuteTick:0,
+            hourTick:0,
             workingHours: 12,
             hoursInDay: 24,
             synodicDays: 29.530588853,
@@ -184,8 +187,8 @@ const gamevm = Vue.createApp({
             overcrowdspacing: 1,
             checkHistoricalValues: true,
             historicalValues: {},
-            historicalValues33x:{},
-            historicalValues2000x:{},
+            historicalValuesMinute:{},
+            historicalValuesHour:{},
             maxHistory: 1000,
             charts: [{ Name: 'UnmetDemands' }, { Name: 'Currencies' }, { Name: 'Population' }, {Name:'Real Production'}, {Name:'Uncapped Production'}],
             keyColors: {
@@ -216,7 +219,6 @@ const gamevm = Vue.createApp({
         const input = `
                 if Wood >= 0 then hire Test until there are 10.
                 `;
-
         this.generateReservedNames();
     },
     mounted: async function () {
@@ -225,7 +227,19 @@ const gamevm = Vue.createApp({
     methods: {
         setCurrentChart(menuName) {
             this.chartMenu.currentChart = menuName;
+            if(this.chartMenu.chartTime == 'Every Tick'){
             this.generateChart(this.historicalValues[menuName], menuName);
+            }
+            else if(this.chartMenu.chartTime == 'Minute'){
+                this.generateChart(this.historicalValuesMinute[menuName], menuName);
+            }
+            else if(this.chartMenu.chartTime == 'Hour'){
+                this.generateChart(this.historicalValuesHour[menuName], menuName);
+            }
+        },
+        setChartTimeline(time){
+            this.chartMenu.chartTime = time;
+            this.setCurrentChart(this.chartMenu.currentChart);
         },
         incrementGoalLevel(newValue) {
             if (newValue > this.currentGoalLevel) {
@@ -674,28 +688,13 @@ const gamevm = Vue.createApp({
                 this.processHistoricalValue(pair[0], pair[1]);
                 if(this.currentTick % 33 == 0){
                     this.processHistoricalValueMinute(pair[0], pair[1]);
+                    this.minuteTick++;
                     if(this.currentTick % 60 == 0){
                         this.processHistoricalValueHour(pair[0], pair[1]);
+                        this.hourTick++;
                     }
                 }
             }
-            this.processHistoricalValue('UnmetDemands', this.unmetdemand);
-            this.processHistoricalValue('Real Production', this.previousTickProductionValues);
-            this.processHistoricalValue('Uncapped Production', this.uncappedTickProductionValues);
-            this.processHistoricalValue('Currencies', Object.fromEntries(
-                Object.entries(this.currencydata)
-                    .filter(([_, v]) => v.Amount && v.Amount > 0)
-                    .map(([key, val]) => [key, val.Amount ?? 0])
-            ));
-            this.processHistoricalValue('Population',
-                {
-                    ...Object.fromEntries(
-                        Object.entries(this.getVisibleProfessions())
-                            .map(([key, val]) => [val.Name, val.Count ?? 0])
-                    ),
-                    Total: this.getPopulation()
-                }
-            );
         },
         processHistoricalValue(key, data) {
             if (!this.historicalValues[key]) {
@@ -712,7 +711,7 @@ const gamevm = Vue.createApp({
             if (!this.historicalValuesMinute[key]) {
                 this.historicalValuesMinute[key] = [];
             }
-            let idx = this.currentTick;
+            let idx = this.minuteTick;
             let jsonData = JSON.parse(JSON.stringify(data));
             this.historicalValuesMinute[key].push({ [idx]: jsonData });
             if (this.historicalValuesMinute[key].length >= this.maxHistory) {
@@ -723,7 +722,7 @@ const gamevm = Vue.createApp({
             if (!this.historicalValuesHour[key]) {
                 this.historicalValuesHour[key] = [];
             }
-            let idx = this.currentTick;
+            let idx =this.hourTick;
             let jsonData = JSON.parse(JSON.stringify(data));
             this.historicalValuesHour[key].push({ [idx]: jsonData });
             if (this.historicalValuesHour[key].length >= this.maxHistory) {
@@ -732,6 +731,9 @@ const gamevm = Vue.createApp({
         },
         generateChart(data, id) {
             if (this.currentMenu != 'Charts') {
+                return;
+            }
+            if(!data || data.length == 0){
                 return;
             }
             const labels = data.map(obj => Object.keys(obj)[0]);
@@ -760,9 +762,29 @@ const gamevm = Vue.createApp({
                         labels,
                         datasets
                     };
-                    if (this.currentTick > 1000) {
+                    if (this.chartMenu.chartTime == 'Every Tick' && this.currentTick > 1000) {
                         existingChart.options.scales.x.min = this.currentTick - 1000;
                         existingChart.options.scales.x.max = this.currentTick;
+                    }
+                    else if (this.chartMenu.chartTime == 'Minute') {
+                        if(this.minuteTick > 1000){
+                            existingChart.options.scales.x.min = this.minuteTick - 1000;
+                            existingChart.options.scales.x.max = this.minuteTick;
+                        }
+                        else{
+                            existingChart.options.scales.x.min = 0;
+                            existingChart.options.scales.x.max = 1000;
+                        }
+                    }
+                    else if (this.chartMenu.chartTime == 'Hour') {
+                        if(this.hourTick > 1000){
+                            existingChart.options.scales.x.min = this.hourTick - 1000;
+                            existingChart.options.scales.x.max = this.hourTick;
+                        }
+                        else{
+                            existingChart.options.scales.x.min = 0;
+                            existingChart.options.scales.x.max = 1000;
+                        }
                     }
 
                     hiddenStates.forEach((hidden, i) => {
