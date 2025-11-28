@@ -1515,8 +1515,8 @@ const gamevm = Vue.createApp({
             this.addCurrency('Food', 5, 'Base Production');
             this.addCurrency('Water', 15, 'Base Production');
             this.addCurrency('Knowledge', this.getPopulation() * 0.005, 'From Population');
-            let hasFood = this.previousTickProductionValues['Food'] >= this.growthThreshold;
-            let hasWater = this.previousTickProductionValues['Water'] >= this.growthThreshold;
+            let hasFood = this.uncappedTickProductionValues['Food'] >= this.growthThreshold;
+            let hasWater = this.uncappedTickProductionValues['Water'] >= this.growthThreshold;
             if (hasFood && hasWater && this.hasAvailableHousing()) {
                 let foodRatio = Math.min((this.currencydata.Food.Amount / this.growthThreshold), 1);
                 let waterRatio = Math.min((this.currencydata.Water.Amount / this.growthThreshold), 1);
