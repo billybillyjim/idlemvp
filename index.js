@@ -39,7 +39,7 @@ const gamevm = Vue.createApp({
             Verbose: true,
             gravity: 9.81,
             sunlight: 1,
-            basePopulationGrowthChance: 0.01,
+            basePopulationGrowthChance: 0.03,
             civilizationName: "",
             currentMenu: "Main",
             menus: ["Main", "Population", "Stockpiles", "Buildings", "Technology", "Laws", "Modifiers", "Log", "Charts", "Settings"],
