@@ -133,7 +133,7 @@ const gamevm = Vue.createApp({
 
             ],
             productionModifiers,
-            prodModCache:{},
+            prodModCache: {},
             technologies,
             techDict: {},
             currencydata,
@@ -529,7 +529,7 @@ const gamevm = Vue.createApp({
             if (!requireable.Requirements) {
                 return true;
             }
-            if(requireable.IsUnlocked){
+            if (requireable.IsUnlocked) {
                 return true;
             }
             if (requireable.Requirements.Technologies) {
@@ -828,7 +828,7 @@ const gamevm = Vue.createApp({
             for (let prodMod of this.productionModifiers) {
                 if (prodMod.IsUnlocked == false) {
                     prodMod.IsUnlocked = this.hasRequirements(prodMod);
-                    if(prodMod.IsUnlocked){
+                    if (prodMod.IsUnlocked) {
                         this.prodModCache = {};
                     }
                 }
@@ -1434,7 +1434,7 @@ const gamevm = Vue.createApp({
             else {
                 this.currencyProductionDescriptions[currencyName] = [[currencyName, this.formatNumber(amount), reason]];
             }
-            if(isNaN(amount)){
+            if (isNaN(amount)) {
                 console.error("bad(NaN) value for pay currency", currencyName, reason);
                 return false;
             }
@@ -1443,7 +1443,7 @@ const gamevm = Vue.createApp({
         },
         payCurrency(currencyName, amount, reason, payEvenIfYouCantAfford = false) {
             this.currencyPotentialChange[currencyName] = (this.currencyPotentialChange[currencyName] ?? 0) - amount;
-            if(!this.currencydata[currencyName]){
+            if (!this.currencydata[currencyName]) {
                 console.error(currencyName, 'is not in the currency data.');
             }
 
@@ -1456,10 +1456,10 @@ const gamevm = Vue.createApp({
             if (this.currencydata[currencyName].Amount < amount && !payEvenIfYouCantAfford) {
                 return 0;
             }
-            if(payEvenIfYouCantAfford && amount > this.currencydata[currencyName].Amount){
+            if (payEvenIfYouCantAfford && amount > this.currencydata[currencyName].Amount) {
                 amount = this.currencydata[currencyName].Amount
             }
-            if(isNaN(amount)){
+            if (isNaN(amount)) {
                 console.error("bad(NaN) value for pay currency", currencyName, reason);
                 return false;
             }
@@ -1557,7 +1557,7 @@ const gamevm = Vue.createApp({
                     continue;
                 }
                 //demand is NaN on first run for some reason.
-                if(!isNaN(demand)){
+                if (!isNaN(demand)) {
                     let obj = {}
                     obj[good] = demand;
                     this.pay(obj, 1, "Demand for " + good);
@@ -1659,10 +1659,10 @@ const gamevm = Vue.createApp({
                 let reason = "Produced by " + name;
                 let finalProd = production;
                 let costIsRequired = worker.CostIsRequiredForOutput?.[currency];
-                if(costIsRequired){
+                if (costIsRequired) {
                     finalProd *= fullAffordProdMod;
-                    if(fullAffordProdMod != 1){
-                        reason += `(Reduced by ${Math.round(fullAffordProdMod * 100) }% due to lack of resources.)`;
+                    if (fullAffordProdMod != 1) {
+                        reason += `(Reduced by ${Math.round(fullAffordProdMod * 100)}% due to lack of resources.)`;
                     }
                 }
 
@@ -1670,16 +1670,16 @@ const gamevm = Vue.createApp({
                 this.addCurrency(currency, finalProd, reason);
             }
         },
-        getWorkerCostRatio(cost){
+        getWorkerCostRatio(cost) {
             let actual = 1;
-            for(let [currency, amount] of Object.entries(cost)){
+            for (let [currency, amount] of Object.entries(cost)) {
                 let current = this.currencydata[currency];
 
-                if(current.Amount == 0){
+                if (current.Amount == 0) {
                     return 0;
                 }
                 let ratio = current / amount;
-                if(ratio < actual){
+                if (ratio < actual) {
                     actual = ratio;
                 }
             }
@@ -1733,7 +1733,7 @@ const gamevm = Vue.createApp({
         },
         getProductionModifiers(name) {
             let cached = this.prodModCache[name];
-            if(cached){
+            if (cached) {
                 return cached;
             }
             let additiveModifiers = {};
@@ -1866,9 +1866,9 @@ const gamevm = Vue.createApp({
                 this.hire(prof);
             }
         },
-        tryHire(profession, amount = 1){
+        tryHire(profession, amount = 1) {
             let maxPossible = Math.min(amount, this.getAvailableWorkers());
-            if(maxPossible == 0){
+            if (maxPossible == 0) {
                 if (!this.missingProfessionCounts[profession.Name]) {
                     this.missingProfessionCounts[profession.Name] = 0;
                 }
@@ -1876,7 +1876,7 @@ const gamevm = Vue.createApp({
                     this.missingProfessionCounts[profession.Name] += amount;
                 }
             }
-            if(maxPossible > 0){
+            if (maxPossible > 0) {
                 this.hire(profession, amount);
             }
         },
@@ -1937,20 +1937,20 @@ const gamevm = Vue.createApp({
             return `Hiring ${amount} (Can afford ${maxPossible}) ${this.toProperPluralize(profession.Name, maxPossible)} will result in:${modified}`;
 
         },
-        tryFire(profession, amount = 1){
+        tryFire(profession, amount = 1) {
             if (!this.missingProfessionCounts[profession.Name]) {
                 this.missingProfessionCounts[profession.Name] = 0;
             }
 
-            if(this.missingProfessionCounts[profession.Name] == 0){
+            if (this.missingProfessionCounts[profession.Name] == 0) {
                 this.fire(profession, amount);
             }
 
-            if(this.missingProfessionCounts[profession.Name] >= amount){
+            if (this.missingProfessionCounts[profession.Name] >= amount) {
                 this.missingProfessionCounts[profession.Name] -= amount;
             }
 
-            if(this.missingProfessionCounts[profession.Name] > 0 && this.missingProfessionCounts[profession.Name] < amount){
+            if (this.missingProfessionCounts[profession.Name] > 0 && this.missingProfessionCounts[profession.Name] < amount) {
                 let remainder = amount - this.missingProfessionCounts[profession.Name];
                 this.missingProfessionCounts[profession.Name] = 0;
                 this.fire(profession, remainder);
@@ -1981,7 +1981,7 @@ const gamevm = Vue.createApp({
             if (profession.Count > 0) {
                 return true;
             }
-            if(this.missingProfessionCounts[profession.Name] > 0){
+            if (this.missingProfessionCounts[profession.Name] > 0) {
                 return true;
             }
             return false;
@@ -2077,22 +2077,22 @@ const gamevm = Vue.createApp({
             output += '<span style="color:white;"> Time to afford: ' + timeToCompletion + '</span>';
             return output;
         },
-        unlockBuilding(buildingName){
+        unlockBuilding(buildingName) {
             let building = this.buildingdata.find(x => x.Name == buildingName);
-            if(!building){
+            if (!building) {
                 console.error('Invalid building name in building unlock: ', buildingName);
             }
-            else{
+            else {
                 building.Visible = true;
                 building.Unlocked = true;
             }
         },
-        unlockCurrency(currencyName){
+        unlockCurrency(currencyName) {
             let currency = this.currencydata[currencyName];
-            if(!currency){
+            if (!currency) {
                 console.error("Bad currency name: ", currencyName);
             }
-            else{
+            else {
                 currency.Unlocked = true;
             }
         },
@@ -2209,19 +2209,19 @@ const gamevm = Vue.createApp({
                     prodDeltaNewOutputDescription += ' (Capped)';
                 }
 
-                if(prodDeltaChangeAbs != 0){
+                if (prodDeltaChangeAbs != 0) {
                     sectionsToAdd.push(row('', this.getSignOfValue(prodDelta), this.formatNumber(prodDeltaChangeAbs), this.formatNumber(currentVal), prodDeltaNewOutputDescription));
                 }
 
                 currentVal += consDelta;
 
-                if(consDeltaChangeAbs != 0){
+                if (consDeltaChangeAbs != 0) {
                     sectionsToAdd.push(row('', this.getSignOfValue(consDelta), this.formatNumber(consDeltaChangeAbs), this.formatNumber(currentVal), 'Will Consume'));
                 }
 
                 currentVal += lostDelta;
 
-                if(lostDeltaChangeAbs != 0){
+                if (lostDeltaChangeAbs != 0) {
                     sectionsToAdd.push(row('', this.getSignOfValue(lostDelta), this.formatNumber(lostDeltaChangeAbs), this.formatNumber(currentVal), 'Lost Unemployed Production'));
                 }
 
@@ -2241,7 +2241,7 @@ const gamevm = Vue.createApp({
             return tableRows.join('');
 
         },
-        getSignOfValue(value){
+        getSignOfValue(value) {
             return value >= 0 ? '+' : '-';
         },
         costToText(cost, amount = 1) {
