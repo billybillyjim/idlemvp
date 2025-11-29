@@ -2769,7 +2769,7 @@ const gamevm = Vue.createApp({
                     lhs = final;
                 }
                 operator = {
-                    type: 'Operator',
+                    type: 'OPERATOR',
                     value: '>='
                 };
                 rhs = count;
