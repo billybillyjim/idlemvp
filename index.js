@@ -2439,7 +2439,8 @@ const gamevm = Vue.createApp({
             const tokenSpec = [
                 ['SKIP', /^,/],
                 ['NUMBER', /^\d+/],
-                ['OPERATOR', /^(greater than|less than or equal to|greater than or equal to|is less than or equal to|is greater than or equal to|are greater than|is greater than|are less than|is less than|less than|are more than|is more than|more than|fewer than|is fewer than|are fewer than)/],
+                ['OPERATOR', /^(greater than|less than or equal to|greater than or equal to|is less than or equal to|is greater than or equal to|is equal to|are greater than|is greater than|are less than|is less than|less than|are more than|is more than|more than|fewer than|is fewer than|are fewer than)/],
+                ['OPERATOR', /^(>=|<=|>|<|==)/],
                 ['AND', /^and\b/],
                 ['OR', /^or\b/],
                 ['NOT', /^not\b/],
@@ -2475,7 +2476,7 @@ const gamevm = Vue.createApp({
                 ['IDENT', /^(total population)\b/],
                 ['IDENT', /^(current population)\b/],
                 ['IDENT', /^[a-zA-Z_]\w*/],
-                ['OPERATOR', /^(>=|<=|>|<|==|=)/],
+                
             ];
 
 
