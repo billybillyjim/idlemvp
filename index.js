@@ -2656,10 +2656,7 @@ const gamevm = Vue.createApp({
                     lhs = final;
                 }
                 else {
-                    condition = {
-                        type: 'SyntaxError',
-                        value: { 'Count': count, 'Final': final }
-                    }
+                    return this.throwSyntaxError('Evaluatable', final, `Our scribes are confused by your law. On line ${final.line} we expected either a word describing what you count ${count.value} of, or the end of the sentence, instead of the word '${final.value}'.`)
                 }
             }
             else if (next.type == 'IDENT') {
