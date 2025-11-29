@@ -3163,6 +3163,7 @@ const gamevm = Vue.createApp({
                         case 'fewer than': return left < right;
                         case '==': return left == right;
                         case 'is': return left == right;
+                        case 'equal to': return left == right;
                         case 'are': return left == right;
                         case '=': return left == right;
                         default: console.error(`Unknown operator: ${node.op}`);
