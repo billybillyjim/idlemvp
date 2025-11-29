@@ -2781,7 +2781,7 @@ const gamevm = Vue.createApp({
             };
             return output;
         },
-        parseConditional(actionTarget) {
+        parseConditional(actionTarget = null) {
 
             let output = { type: 'Evaluatable' };
             let condition = this.next();
