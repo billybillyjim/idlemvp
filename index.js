@@ -2711,11 +2711,12 @@ const gamevm = Vue.createApp({
                 rhs = this.peek();
 
                 if(rhs.type == 'NUMBER'){
-                return this.throwSyntaxError(
-                    'Evaluatable',
-                    lhs,
-                    `Our scribes are confused by your law. On line ${lhs.line} we expected a word to compare values or a label for the number ${lhs.value}, not a number followed by ${rhs.value || 'nothing'}.`
-                );
+                    return this.throwSyntaxError(
+                        'Evaluatable',
+                        lhs,
+                        `Our scribes are confused by your law. On line ${lhs.line} we expected a word to compare values or a label for the number ${lhs.value}, not a number followed by ${rhs.value || 'nothing'}.`
+                    );
+                }
                 if(rhs.type == 'OPERATOR'){
                     operator = this.next();
                     rhs = this.next();
