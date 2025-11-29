@@ -2650,6 +2650,14 @@ const gamevm = Vue.createApp({
                 //unemployed
                 let final = this.next();
                 if (final.type == 'DOT') {
+                    if(!actionTarget){
+                        //No action target means there's a missing antecedent. 
+                        return this.throwSyntaxError(
+                            'Evaluatable',
+                            final,
+                            `Our scribes are confused by your law. On line ${final.line} we could not tell what '${operator.value}' refers to. We request that you name what there ${this.toProperPluralize('is', count.value)} ${count.value} of.`
+                        );
+                    }
                     //If unemployed wasn't mentioned, assume the count refers to the action target.
                     //for example, hire farmers if there are more than 5 
                     //Then 5 refers to farmers.
