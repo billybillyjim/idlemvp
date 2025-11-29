@@ -2459,6 +2459,8 @@ const gamevm = Vue.createApp({
                 ['DOT', /^\./],
                 ['THEN', /^then\b/],
                 ['UNTIL', /^until\b/],
+                ['ELSE', /^else\b/],
+                ['ELSE', /^otherwise\b/],
                 ['PRINT', /^print\b/],
                 ['PRODUCTION', /^production\b/],
                 ['CONSUMPTION', /^consumption\b/],
@@ -2678,7 +2680,6 @@ const gamevm = Vue.createApp({
                                 'Evaluatable', 
                                 operator, 
                                 `Our scribes are confused by your law. On line ${operator.line} we expected a word to compare values instead of the word ${operator.value}`);
-
                 }
 
                 rhs = this.next();
@@ -2686,7 +2687,6 @@ const gamevm = Vue.createApp({
                     return this.throwSyntaxError('Evaluatable', 
                         rhs, 
                         `Our scribes are confused by your law. On line ${rhs.line} we expected a counting of something or a number, instead of the word ${rhs.value}`);
-
                 }
                 potentialModifier = this.peek();
 
@@ -2699,7 +2699,12 @@ const gamevm = Vue.createApp({
             }
             else if (next.type == 'NUMBER') {
                 lhs = this.next();
-                rhs = this.next();
+                rhs = this.peek();
+                return this.throwSyntaxError(
+                    'Evaluatable',
+                    lhs,
+                    `Our scribes are confused by your law. On line ${lhs.line} we expected a word to compare values or a label for the number ${lhs.value}, not a number followed by ${rhs.value || 'nothing'}.`
+                );
             }
             else {
                 //None of the valid inputs:
@@ -2712,7 +2717,7 @@ const gamevm = Vue.createApp({
                     `Our scribes are confused by your law. On line ${next.line} we expected a word to compare values, a counting of something, or a number, instead of the word ${next.value} Could you have meant ${levenshtein.closest(next.value, Object.keys(env))}`);
             }
             return {
-                type: 'Evaulatable',
+                type: 'Evaluatable',
                 test: {
                     left: lhs,
                     op: operator,
@@ -2721,7 +2726,7 @@ const gamevm = Vue.createApp({
             }
         },
         parseUntil(actionTarget) {
-            let output = { type: 'Evaulatable' };
+            let output = { type: 'Evaluatable' };
             //If there are more than 5 unemployed
             //Until there are 3
             //when food production is > 10
@@ -2762,7 +2767,7 @@ const gamevm = Vue.createApp({
         },
         parseConditional(actionTarget) {
 
-            let output = { type: 'Evaulatable' };
+            let output = { type: 'Evaluatable' };
             let condition = this.next();
 
             if (condition.type == 'CONDITIONAL') {
@@ -2802,12 +2807,29 @@ const gamevm = Vue.createApp({
                 action = this.parsePrint();
                 output.action = action;
             }
+            let optionalElse = this.peek();
+            if (optionalElse.type == 'ELSE') {
+                this.consume();
+                let followup = this.peek();
+                if(followup.type == 'ACTION'){
+                    output.else = this.parseAction();
+                }
+                else if (followup.type == 'PRINT'){
+                    output.else = this.parsePrint();
+                }
+                
+            }
             return output;
         },
         parsePrint() {
             let printCommand = this.next();
             let output = this.next();
             
+            let possibleExtra = this.peek();
+            if(possibleExtra.type == 'PRODUCTION' || possibleExtra.type == 'CONSUMPTION'){
+                this.next();
+                output.value += ' ' + possibleExtra.value;
+            }
             return {
                 type: 'Print',
                 output: output,
@@ -2909,7 +2931,7 @@ const gamevm = Vue.createApp({
                     }
                     break;
 
-                case 'Evaulatable':
+                case 'Evaluatable':
                     const conditionResult = this.evalNode(
                         {
                             type: 'BinaryExpression',
@@ -2921,6 +2943,10 @@ const gamevm = Vue.createApp({
                     //console.log(node, conditionResult);
                     if (conditionResult && node.action) {
                         return this.evalNode(node.action, env);
+                    }
+
+                    if(!conditionResult && node.else){
+                        return this.evalNode(node.else, env);
                     }
                     return conditionResult;
 
@@ -3011,23 +3037,29 @@ const gamevm = Vue.createApp({
                         break;
                     }
 
-                    let num = parseInt(node.output.value);
+                    let num = parseFloat(node.output.value);
 
                     if (num) {
                         this.consoleOutputs.push('Line ' + node.line + ': ' + num);
                     }
                     else {
-                        if (env[node.output] == 1) {
+                        if (env[node.output.value] == 1) {
                             var isword = 'is';
-                            var outword = pluralize.singular(node.output);
+                            var outword = pluralize.singular(node.output.value);
                         }
                         else {
                             var isword = ' are '
-                            var outword = pluralize.plural(node.output);
+                            var outword = pluralize.plural(node.output.value);
 
                         }
-                        this.consoleOutputs.push('Line ' + node.line + ': There ' + isword + ' ' + env[node.output] + ' ' + outword);
-                        //console.log(env[node.output], env);
+                        if(true){
+                            this.consoleOutputs.push('Line ' + node.line + ': ' + node.output.value + ' is ' + env[node.output.value] + '.');
+
+                        }
+                        else{
+                            this.consoleOutputs.push('Line ' + node.line + ': There ' + isword + ' ' + env[node.output.value] + ' ' + outword);
+
+                        }
                     }
 
                     break;
