@@ -3059,30 +3059,15 @@ const gamevm = Vue.createApp({
                         this.consoleOutputs.push('Line ' + node.line + ': ' + num);
                     }
                     else {
-                        if (env[node.output.value] == 1) {
-                            var isword = 'is';
-                            var outword = pluralize.singular(node.output.value);
-                        }
-                        else {
-                            var isword = ' are '
-                            var outword = pluralize.plural(node.output.value);
-
-                        }
-                        if(true){
                             this.consoleOutputs.push('Line ' + node.line + ': ' + node.output.value + ' is ' + env[node.output.value] + '.');
-
-                        }
-                        else{
-                            this.consoleOutputs.push('Line ' + node.line + ': There ' + isword + ' ' + env[node.output.value] + ' ' + outword);
-
-                        }
+                        console.log(node, env[node.output.value], env);
                     }
 
                     break;
 
                 case 'Identifier':
                     if (!(node.identifier in env)) {
-                        //  console.error(node);
+                          console.error(node);
                     }
                     return env[node.identifier];
 
@@ -3138,7 +3123,7 @@ const gamevm = Vue.createApp({
                         break;
                     }
                     if(isNaN(right)){
-                        this.consoleOutputs.push(`Our scribes did not quite understand what you meant by '${node.right.value}' on line ${node.right.line}. Did you mean ${levenshtein.closest(node.left.value, Object.keys(env))} or something else?`);
+                        this.consoleOutputs.push(`Our scribes did not quite understand what you meant by '${node.right.value}' on line ${node.right.line}. Did you mean ${levenshtein.closest(node.right.value, Object.keys(env))} or something else?`);
                         break;
                     }
                     if((node.op.value.startsWith('is') && node.op.value != 'is') || (node.op.value.startsWith('are') && node.op.value != 'are')){
@@ -3187,12 +3172,12 @@ const gamevm = Vue.createApp({
                     let anyFalse = false;
                     for (let [key, value] of Object.entries(compared)) {
                         if (value == false) {
-                            anyFalse = true;
+                            anyFalse = key;
                             break;
                         }
                     }
                     if (anyFalse) {
-                        diffs.push({ index: i, ast: ast[i], expected: expected[i], comparison: compared });
+                        diffs.push({ index: i, ast: ast[i], expected: expected[i], comparison: compared, expectedValue:expected[i][anyFalse], actualValue:ast[i][anyFalse] });
                     }
 
                 }
