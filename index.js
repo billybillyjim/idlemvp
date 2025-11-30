@@ -42,7 +42,7 @@ const gamevm = Vue.createApp({
             sunlight: 1,
             basePopulationGrowthChance: 0.03,
             civilizationName: "",
-            currentMenu: "Main",
+            currentMenu: "Laws",
             menus: ["Main", "Population", "Stockpiles", "Buildings", "Technology", "Laws", "Modifiers", "Log", "Charts", "Settings"],
             currentDate: new Date(2000, 0, 1),
             populationMenu: {
@@ -229,7 +229,7 @@ const gamevm = Vue.createApp({
         setCurrentChart(menuName) {
             this.chartMenu.currentChart = menuName;
             if(this.chartMenu.chartTime == 'Every Tick'){
-            this.generateChart(this.historicalValues[menuName], menuName);
+                this.generateChart(this.historicalValues[menuName], menuName);
             }
             else if(this.chartMenu.chartTime == 'Minute'){
                 this.generateChart(this.historicalValuesMinute[menuName], menuName);
@@ -2507,7 +2507,7 @@ const gamevm = Vue.createApp({
                     break;
                 }
             }
-            //console.log(tokens);
+            // console.log(tokens);
             tokens.push({ type: 'EOF' });
             return tokens;
         },
@@ -2711,11 +2711,13 @@ const gamevm = Vue.createApp({
                 rhs = this.peek();
 
                 if(rhs.type == 'NUMBER'){
-                return this.throwSyntaxError(
-                    'Evaluatable',
-                    lhs,
-                    `Our scribes are confused by your law. On line ${lhs.line} we expected a word to compare values or a label for the number ${lhs.value}, not a number followed by ${rhs.value || 'nothing'}.`
-                );
+                    return this.throwSyntaxError(
+                        'Evaluatable',
+                        lhs,
+                        `Our scribes are confused by your law. On line ${lhs.line} we expected a word to compare values or a label for the number ${lhs.value}, not a number followed by ${rhs.value || 'nothing'}.`
+                    );
+                }
+                console.log(rhs);
                 if(rhs.type == 'OPERATOR'){
                     operator = this.next();
                     rhs = this.next();
@@ -2840,7 +2842,7 @@ const gamevm = Vue.createApp({
         parsePrint() {
             let printCommand = this.next();
             let output = this.next();
-            
+
             let possibleExtra = this.peek();
             if(possibleExtra.type == 'PRODUCTION' || possibleExtra.type == 'CONSUMPTION'){
                 this.next();
@@ -2876,6 +2878,7 @@ const gamevm = Vue.createApp({
         },
         parseDot() {
             this.parser.i++;
+            return {type:'Dot'}
         },
         parse(tokens) {
             const ast = [];
@@ -2892,7 +2895,7 @@ const gamevm = Vue.createApp({
                     this.parser.i++;
                 }
             }
-            //console.log(ast);
+            console.log(ast);
             return ast;
         },
         evaluate(ast) {
@@ -2919,6 +2922,7 @@ const gamevm = Vue.createApp({
             env['total housing'] = this.getAvailableHousing();
             env['available housing'] = this.getAvailableHousing();
 
+            console.log(env);
             for (const node of ast) {
                 this.evalNode(node, env);
             }
@@ -2956,7 +2960,7 @@ const gamevm = Vue.createApp({
                             op: node.test.op
                         }, env);
 
-                    //console.log(node, conditionResult);
+                    console.log(node, conditionResult);
                     if (conditionResult && node.action) {
                         return this.evalNode(node.action, env);
                     }
@@ -3059,7 +3063,7 @@ const gamevm = Vue.createApp({
                         this.consoleOutputs.push('Line ' + node.line + ': ' + num);
                     }
                     else {
-                            this.consoleOutputs.push('Line ' + node.line + ': ' + node.output.value + ' is ' + env[node.output.value] + '.');
+                        this.consoleOutputs.push('Line ' + node.line + ': ' + node.output.value + ' is ' + env[node.output.value] + '.');
                         console.log(node, env[node.output.value], env);
                     }
 
@@ -3279,7 +3283,7 @@ const gamevm = Vue.createApp({
             return output;
         },
         getSyntaxErrorFromToken(token) {
-            console.log(token);
+            // console.log(token);
             let name = token.value;
             if (this.professionReservedNames.has(name)) {
                 return `Our scribes are confused by your law. Our people cannot make ${pluralize.plural(name)} by magic. On line ${token.line} we wonder if you meant to hire or fire more ${pluralize.plural(name)}? ${name.charAt(0).toUpperCase() + name.slice(1)} is a special word that always refers to our people with the profession of ${name}.`;
