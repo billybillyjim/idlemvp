@@ -534,12 +534,18 @@ export default {
             <textarea v-if="!isInspecting" class="code-text-area" style="width:100%" @scroll="scrollCheck" @input="getLineNumbers" v-on:resize="updateHeight()" v-model="testCode" id="code-text-area"></textarea>
             
         </div>
-        <div class="d-flex" v-if="isInspecting">
-                <div class="mx-1" v-for="token in tokens">
+        <div class="d-flex" style="flex-wrap:wrap" v-if="isInspecting">
+            <template v-for="token in tokens">
+                <div class="mx-1" v-if="token.type != 'NEWLINE'">
                     <tooltipwrapper :text="getTokenInfo(token)" :vm="$parent">
                         [[token.value]]
                     </tooltipwrapper>
                 </div>
+                <div v-else style="width:100%">
+                    <br/>
+                </div>
+            </template>
+                
             </div>
         <div>
             <div v-for="error in errors">[[error.id.message]]</div>
