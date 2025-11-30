@@ -1,4 +1,9 @@
+import tooltipwrapper from './tooltipwrapper.js'
+
 export default {
+    components: {
+        tooltipwrapper
+    },
     props: {
         data: Object
     },
@@ -12,15 +17,23 @@ export default {
             // testCode: `if available housing is 0, build a hut. 
             // if there are 0 lumberjacks, hire a lumberjack.
             // if wood production is less than or equal to wood consumption, hire a lumberjack.
-            // if there are more than 1 unemployed people, hire a farmer. `,
+            // if stone production is less than or equal to stone consumption hire a miner.
+            // if there are more than 1 unemployed people, hire a farmer. 
+            // if water production is less than or equal to water consumption build a well.
+            // `,
             // testCode: `if there are more than 7 dunemployed print 'yes'`,
             // testCode:'print wood production. print wood consumption. if wood production is less than or equal to wood consumption print "yes" otherwise print "no".',
             // testCode: 'if food > 10 and 5 is equal to 7 then print "ok".',
-            testCode: 'if food > 10 and 5 == 7 then print "ok" otherwise print "not okay".',
+            // testCode: 'if food > 10 and 5 == 7 then print "ok" otherwise print "not okay".',
+            testCode:'if there are 0 lumberjacks, hire a lumberjack.',
             errors: [],
             content: '',
             scrollTop: 0,
             lineCount: 1,
+            isInspecting:false,
+            tokens:[],
+            ast:[],
+            env:[],
             height: '',
             tests: [
                 {
@@ -78,6 +91,14 @@ export default {
                         { type: 'DOT', value: '.', line: 1 },
                         { type: 'EOF' }
                     ]
+                },
+                {
+                    name:"Hiring if there are none",
+                    type:'parse',
+                    code:'if there are 0 lumberjacks, hire a lumberjack.',
+                    expected:{
+
+                    }
                 },
                 {
                     name: 'Parse Assignment',
@@ -397,6 +418,17 @@ export default {
         });
     },
     methods: {
+        inspect(){
+            this.tokens = this.$parent.tokenize(this.testCode);
+            this.ast = this.$parent.parse(this.tokens);
+            this.env = this.$parent.evaluate(this.ast, false);
+            console.log(this.env);
+            console.log(this.ast)
+            this.isInspecting = true;
+        },
+        endInspect(){
+            this.isInspecting = false;
+        },
         getLineNumbers() {
             const lines = this.testCode.split('\n');
             const result = [];
@@ -442,11 +474,13 @@ export default {
             this.scrollTop = textarea.scrollTop;
         },
         testTheCode() {
+           
             let output = this.$parent.runCode(this.testCode, true, true, true);
             if (output['Errors']) {
                 this.errors = output['Errors'];
             }
         },
+
         updateHeight() {
             this.height = '';
             let codeArea = document.getElementById('code-text-area');
@@ -467,6 +501,17 @@ export default {
         clearLog() {
             this.errors = [];
             this.$parent.consoleOutputs = [];
+        },
+        getTokenInfo(token){
+            for(let item of this.ast){
+                // console.log(item);
+            }
+            if(typeof this.env[token.value] != 'undefined'){
+            console.log(this.env, this.env[token.value], token, token.value);
+
+                return 'This is currently ' + this.env[token.value];
+            }
+            return token;   
         }
     },
     delimiters: ['[[', ']]'],
@@ -477,6 +522,8 @@ export default {
             <button class="btn btn-primary m-2" @click="testTheCode()">Test</button>
             <button class="btn btn-primary m-2" @click="addToDailyLaws()">Run Daily</button>
             <button class="btn btn-primary m-2" @click="clearLog()">Clear Log</button>
+            <button class="btn btn-primary m-2" @click="inspect()">Inspect</button>
+            <button class="btn btn-primary m-2" @click="endInspect()">End Inspecting</button>
         </div>
         <div class="d-flex" style="    overflow: hidden;">
             <div class="line-numbers" ref="lineNumbersEle" id="line-numbers" :style="getNumberLineOffsetStyle()">
@@ -484,9 +531,16 @@ export default {
                     [[ num !== '' ? num + 1 : '\u00A0' ]]
                 </div>
             </div>
-            <textarea class="code-text-area" style="width:100%" @scroll="scrollCheck" @input="getLineNumbers" v-on:resize="updateHeight()" v-model="testCode" id="code-text-area"></textarea>
-                
+            <textarea v-if="!isInspecting" class="code-text-area" style="width:100%" @scroll="scrollCheck" @input="getLineNumbers" v-on:resize="updateHeight()" v-model="testCode" id="code-text-area"></textarea>
+            
         </div>
+        <div class="d-flex" v-if="isInspecting">
+                <div class="mx-1" v-for="token in tokens">
+                    <tooltipwrapper :text="getTokenInfo(token)" :vm="$parent">
+                        [[token.value]]
+                    </tooltipwrapper>
+                </div>
+            </div>
         <div>
             <div v-for="error in errors">[[error.id.message]]</div>
             <div v-for="output in $parent.consoleOutputs">[[output]]</div>

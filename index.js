@@ -57,7 +57,7 @@ const gamevm = Vue.createApp({
             },
             chartMenu: {
                 currentChart: '',
-                chartTime:'Every Tick',
+                chartTime: 'Every Tick',
             },
             log: [],
             consoleOutputs: [],
@@ -69,8 +69,8 @@ const gamevm = Vue.createApp({
             ticksOfUnmetSpaceDemand: 0,
             tickspeed: 300,
             currentTick: 0,
-            minuteTick:0,
-            hourTick:0,
+            minuteTick: 0,
+            hourTick: 0,
             workingHours: 12,
             hoursInDay: 24,
             synodicDays: 29.530588853,
@@ -146,7 +146,7 @@ const gamevm = Vue.createApp({
             preCostTickCurrencyValues: {},
             tickProductionValues: {},
             uncappedTickProductionValues: {},
-            previousTickProductionValues:{},
+            previousTickProductionValues: {},
             currencyDemandDescriptions: {},
             currencyProductionDescriptions: {},
             currencyConsumptionDescriptions: {},
@@ -188,10 +188,10 @@ const gamevm = Vue.createApp({
             overcrowdspacing: 1,
             checkHistoricalValues: true,
             historicalValues: {},
-            historicalValuesMinute:{},
-            historicalValuesHour:{},
+            historicalValuesMinute: {},
+            historicalValuesHour: {},
             maxHistory: 1000,
-            charts: [{ Name: 'UnmetDemands' }, { Name: 'Currencies' }, { Name: 'Population' }, {Name:'Real Production'}, {Name:'Uncapped Production'}],
+            charts: [{ Name: 'UnmetDemands' }, { Name: 'Currencies' }, { Name: 'Population' }, { Name: 'Real Production' }, { Name: 'Uncapped Production' }],
             keyColors: {
                 'Space': 'rgba(224, 224, 224, 1)',
                 'Wood': 'rgba(146, 91, 54, 1)',
@@ -213,9 +213,9 @@ const gamevm = Vue.createApp({
         this.beginTickCurrencyValues = JSON.parse(JSON.stringify(this.currencydata));
         for (let tech of this.technologies) {
             this.techDict[tech.Name] = tech;
-            if (location.hostname === "localhost" || location.hostname === "127.0.0.1"){
+            if (location.hostname === "localhost" || location.hostname === "127.0.0.1") {
                 tech.Unlock(this);
-            }   
+            }
         }
         const input = `
                 if Wood >= 0 then hire Test until there are 10.
@@ -228,17 +228,17 @@ const gamevm = Vue.createApp({
     methods: {
         setCurrentChart(menuName) {
             this.chartMenu.currentChart = menuName;
-            if(this.chartMenu.chartTime == 'Every Tick'){
+            if (this.chartMenu.chartTime == 'Every Tick') {
                 this.generateChart(this.historicalValues[menuName], menuName);
             }
-            else if(this.chartMenu.chartTime == 'Minute'){
+            else if (this.chartMenu.chartTime == 'Minute') {
                 this.generateChart(this.historicalValuesMinute[menuName], menuName);
             }
-            else if(this.chartMenu.chartTime == 'Hour'){
+            else if (this.chartMenu.chartTime == 'Hour') {
                 this.generateChart(this.historicalValuesHour[menuName], menuName);
             }
         },
-        setChartTimeline(time){
+        setChartTimeline(time) {
             this.chartMenu.chartTime = time;
             this.setCurrentChart(this.chartMenu.currentChart);
         },
@@ -368,15 +368,15 @@ const gamevm = Vue.createApp({
             }
             const tokens = this.tokenize(code);
             if (outputTokens) {
-                //console.log(tokens);
+                ////console.log(tokens);
             }
             const ast = this.parse(tokens);
             if (outputAST) {
-                //console.log(ast);
+                ////console.log(ast);
             }
             let output = this.evaluate(ast);
             if (outputOutput) {
-                // console.log(output);
+                // //console.log(output);
             }
             return output;
         },
@@ -521,7 +521,7 @@ const gamevm = Vue.createApp({
         },
         uploadSave() {
             if (!this.uploadedSaveFile) {
-                console.log("No uploaded save file.");
+                //console.log("No uploaded save file.");
                 return;
             }
 
@@ -677,7 +677,7 @@ const gamevm = Vue.createApp({
                         .filter(([_, v]) => v.Amount && v.Amount > 0)
                         .map(([key, val]) => [key, val.Amount ?? 0])
                 )],
-                ['Population',  {
+                ['Population', {
                     ...Object.fromEntries(
                         Object.entries(this.getVisibleProfessions())
                             .map(([key, val]) => [val.Name, val.Count ?? 0])
@@ -685,12 +685,12 @@ const gamevm = Vue.createApp({
                     Total: this.getPopulation()
                 }],
             ];
-            for(let pair of pairs){
+            for (let pair of pairs) {
                 this.processHistoricalValue(pair[0], pair[1]);
-                if(this.currentTick % 33 == 0){
+                if (this.currentTick % 33 == 0) {
                     this.processHistoricalValueMinute(pair[0], pair[1]);
                     this.minuteTick++;
-                    if(this.currentTick % 60 == 0){
+                    if (this.currentTick % 60 == 0) {
                         this.processHistoricalValueHour(pair[0], pair[1]);
                         this.hourTick++;
                     }
@@ -723,7 +723,7 @@ const gamevm = Vue.createApp({
             if (!this.historicalValuesHour[key]) {
                 this.historicalValuesHour[key] = [];
             }
-            let idx =this.hourTick;
+            let idx = this.hourTick;
             let jsonData = JSON.parse(JSON.stringify(data));
             this.historicalValuesHour[key].push({ [idx]: jsonData });
             if (this.historicalValuesHour[key].length >= this.maxHistory) {
@@ -734,7 +734,7 @@ const gamevm = Vue.createApp({
             if (this.currentMenu != 'Charts') {
                 return;
             }
-            if(!data || data.length == 0){
+            if (!data || data.length == 0) {
                 return;
             }
             const labels = data.map(obj => Object.keys(obj)[0]);
@@ -768,21 +768,21 @@ const gamevm = Vue.createApp({
                         existingChart.options.scales.x.max = this.currentTick;
                     }
                     else if (this.chartMenu.chartTime == 'Minute') {
-                        if(this.minuteTick > 1000){
+                        if (this.minuteTick > 1000) {
                             existingChart.options.scales.x.min = this.minuteTick - 1000;
                             existingChart.options.scales.x.max = this.minuteTick;
                         }
-                        else{
+                        else {
                             existingChart.options.scales.x.min = 0;
                             existingChart.options.scales.x.max = 1000;
                         }
                     }
                     else if (this.chartMenu.chartTime == 'Hour') {
-                        if(this.hourTick > 1000){
+                        if (this.hourTick > 1000) {
                             existingChart.options.scales.x.min = this.hourTick - 1000;
                             existingChart.options.scales.x.max = this.hourTick;
                         }
-                        else{
+                        else {
                             existingChart.options.scales.x.min = 0;
                             existingChart.options.scales.x.max = 1000;
                         }
@@ -1574,7 +1574,7 @@ const gamevm = Vue.createApp({
                     }
                 }
                 else {
-                    //console.log("Could afford profession cost.", profession);
+                    ////console.log("Could afford profession cost.", profession);
                 }
             }
             for (let [good, demand] of Object.entries(this.demand)) {
@@ -2445,7 +2445,7 @@ const gamevm = Vue.createApp({
                 ['OR', /^or\b/],
                 ['NOT', /^not\b/],
                 ['XOR', /^xor\b/],
-                ['ASSIGN', /^(is\b|=)/],
+                ['ASSIGN', /^(is\b|=|are\b)/], //This can get converted to an operator if used in an evaluatable after an identity
                 ['STRING', /^"[^"]*"/],
                 ['STRING', /^'[^']*'/],
                 ['PLUS', /^\+/],
@@ -2476,14 +2476,14 @@ const gamevm = Vue.createApp({
                 ['IDENT', /^(total population)\b/],
                 ['IDENT', /^(current population)\b/],
                 ['IDENT', /^[a-zA-Z_]\w*/],
-                
+
             ];
 
 
             const tokens = [];
             let remaining = input.toLowerCase();
             let line = 1;
-
+            let id = 0;
             while (remaining.length > 0) {
                 let matched = false;
 
@@ -2494,7 +2494,8 @@ const gamevm = Vue.createApp({
                         const text = match[0];
                         const newlines = (text.match(/\n/g) || []).length;
                         if (type !== 'SKIP') {
-                            tokens.push({ type, value: text, line: line });
+                            tokens.push({ type, value: text, line: line, id: id });
+                            id++;
                         }
                         line += newlines;
                         remaining = remaining.slice(text.length);
@@ -2507,7 +2508,7 @@ const gamevm = Vue.createApp({
                     break;
                 }
             }
-            // console.log(tokens);
+            console.log(tokens);
             tokens.push({ type: 'EOF' });
             return tokens;
         },
@@ -2564,7 +2565,7 @@ const gamevm = Vue.createApp({
             const identToken = this.next();
             const name = identToken.value;
             if (this.isReservedName(name)) {
-                return this.throwSyntaxError('Identifier', name, this.getSyntaxErrorFromToken(identToken));
+                return this.throwSyntaxError('Identifier', name, this.getSyntaxErrorFromToken(identToken), identToken.id);
             }
             if (this.peek().type == 'ASSIGN') {
                 this.consume();
@@ -2573,7 +2574,8 @@ const gamevm = Vue.createApp({
                     return {
                         type: 'Assignment',
                         id: { type: 'Identifier', name },
-                        init: { type: 'Literal', value: Number(valueToken.value) }
+                        init: { type: 'Literal', value: Number(valueToken.value) },
+                        tokenid: valueToken.id
                     };
                 }
                 else if (valueToken.type == 'IDENT') {
@@ -2584,7 +2586,8 @@ const gamevm = Vue.createApp({
                     return {
                         type: 'Assignment',
                         id: { type: 'Identifier', name },
-                        init: { type: 'Identifier', name: valueToken.value }
+                        init: { type: 'Identifier', name: valueToken.value },
+                        tokenid: valueToken.id
                     };
                 }
                 else {
@@ -2593,20 +2596,22 @@ const gamevm = Vue.createApp({
                     //x is if
                     //y = until
                     return this.throwSyntaxError(
-                        'Identifier', 
-                        name, 
-                        `Our scribes are confused by your law. On line ${valueToken.line} it appears you are missing a word to set the value of ${identToken.value} to something.`);
+                        'Identifier',
+                        name,
+                        `Our scribes are confused by your law. On line ${valueToken.line} it appears you are missing a word to set the value of ${identToken.value} to something.`,
+                        valueToken.tokenid);
                 }
 
             }
             else {
                 //Not assigning a value.
                 //x greater than 7.
-                return this.throwSyntaxError('Identifier', name, this.getSyntaxErrorFromToken(this.peek()));
+                let peek = this.peek();
+                return this.throwSyntaxError('Identifier', name, this.getSyntaxErrorFromToken(peek), peek.tokenid);
             }
 
         },
-        throwSyntaxError(id, name, message) {
+        throwSyntaxError(id, name, message, tokenid = -1) {
             this.parser.i += 10000;
             return {
                 type: 'SyntaxError',
@@ -2614,7 +2619,8 @@ const gamevm = Vue.createApp({
                     type: id,
                     name,
                     message: message
-                }
+                },
+                tokenid: tokenid
 
             };
         },
@@ -2631,10 +2637,12 @@ const gamevm = Vue.createApp({
             let next = this.peek();
 
             if (next.type == 'THERE_ARE') {
+                let tokenid = next.id;
                 this.consume();
                 operator = {
                     type: "OPERATOR",
-                    value: "="
+                    value: "=",
+                    id: tokenid
                 };
             }
             //Either a comparator or an identity
@@ -2650,12 +2658,13 @@ const gamevm = Vue.createApp({
                 //unemployed
                 let final = this.next();
                 if (final.type == 'DOT') {
-                    if(!actionTarget){
+                    if (!actionTarget) {
                         //No action target means there's a missing antecedent. 
                         return this.throwSyntaxError(
                             'Evaluatable',
                             final,
-                            `Our scribes are confused by your law. On line ${final.line} we could not tell what '${operator.value}' refers to. We request that you name what there ${this.toProperPluralize('is', count.value)} ${count.value} of.`
+                            `Our scribes are confused by your law. On line ${final.line} we could not tell what '${operator.value}' refers to. We request that you name what there ${this.toProperPluralize('is', count.value)} ${count.value} of.`,
+                            operator.id
                         );
                     }
                     //If unemployed wasn't mentioned, assume the count refers to the action target.
@@ -2667,7 +2676,12 @@ const gamevm = Vue.createApp({
                     lhs = final;
                 }
                 else {
-                    return this.throwSyntaxError('Evaluatable', final, `Our scribes are confused by your law. On line ${final.line} we expected either a word describing what you count ${count.value} of, or the end of the sentence, instead of the word '${final.value}'.`)
+                    return this.throwSyntaxError(
+                        'Evaluatable',
+                        final,
+                        `Our scribes are confused by your law. On line ${final.line} we expected either a word describing what you count ${count.value} of, or the end of the sentence, instead of the word '${final.value}'.`,
+                        final.id
+                    )
                 }
             }
             else if (next.type == 'IDENT') {
@@ -2681,21 +2695,28 @@ const gamevm = Vue.createApp({
                 }
                 operator = this.next();
                 if (operator.type == 'ASSIGN') {
-                    //Convert is in any evaluatable to comparison.
+                    // Convert is in any evaluatable to comparison.
+                    // Is this evil? Maybe... This will modify the original token 
+                    // and make it look like is is an Operator even though it isnt
                     operator.type = 'OPERATOR';
                 }
                 if (operator.type != 'OPERATOR') {
                     return this.throwSyntaxError(
-                                'Evaluatable', 
-                                operator, 
-                                `Our scribes are confused by your law. On line ${operator.line} we expected a word to compare values instead of the word ${operator.value}`);
+                        'Evaluatable',
+                        operator,
+                        `Our scribes are confused by your law. On line ${operator.line} we expected a word to compare values instead of the word ${operator.value}`,
+                        operator.id
+                    );
+
                 }
 
                 rhs = this.next();
                 if (rhs.type != 'IDENT' && rhs.type != 'NUMBER') {
-                    return this.throwSyntaxError('Evaluatable', 
-                        rhs, 
-                        `Our scribes are confused by your law. On line ${rhs.line} we expected a counting of something or a number, instead of the word ${rhs.value}`);
+                    return this.throwSyntaxError('Evaluatable',
+                        rhs,
+                        `Our scribes are confused by your law. On line ${rhs.line} we expected a counting of something or a number, instead of the word ${rhs.value}`,
+                        rhs.id
+                    );
                 }
                 potentialModifier = this.peek();
 
@@ -2707,22 +2728,43 @@ const gamevm = Vue.createApp({
 
             }
             else if (next.type == 'NUMBER') {
-                lhs = this.next();
-                rhs = this.peek();
+                //0 lumberjacks
+                lhs = this.next(); //0
+                rhs = this.peek(); //lumberjacks
 
-                if(rhs.type == 'NUMBER'){
+                if (rhs.type == 'NUMBER') {
+                    //Catch double numbers like "if there are 7 8 lumberjacks"
                     return this.throwSyntaxError(
                         'Evaluatable',
                         lhs,
-                        `Our scribes are confused by your law. On line ${lhs.line} we expected a word to compare values or a label for the number ${lhs.value}, not a number followed by ${rhs.value || 'nothing'}.`
+                        `Our scribes are confused by your law. On line ${lhs.line} we expected a word to compare values or a label for the number ${lhs.value}, not a number followed by ${rhs.value || 'nothing'}.`,
+                        lhs.id
                     );
                 }
-                console.log(rhs);
-                if(rhs.type == 'OPERATOR'){
-                    operator = this.next();
+                //console.log(rhs);
+                if (operator == null) {
+                    //if lumberjacks are 0
+                    //Is this right? Seems like it wont get here
+                    //lhs is lumberjacks
+                    //rhs has peeked to find are and is currently an operator
+                    //swap the rhs to operator and set the rhs to after
+                    //operator will be set to are
+                    //rhs is set to 0
+                    if (rhs.type == 'OPERATOR') {
+                        operator = this.next();
+                        rhs = this.next();
+                    }
+                }
+                else {
+                    //Operator already set by something like THERE ARE
+                    //If there are 0 lumberjacks
+                    //Operator is set by there are above
+                    //lhs is set to 0
+                    //rhs is peeked to lumberjacks and should be nexted
                     rhs = this.next();
                 }
-                
+
+
             }
             else {
                 //None of the valid inputs:
@@ -2730,9 +2772,12 @@ const gamevm = Vue.createApp({
                 //food production is greater than 10
                 //greater than 7
                 //
-                return this.throwSyntaxError('Evaluatable', 
-                    next, 
-                    `Our scribes are confused by your law. On line ${next.line} we expected a word to compare values, a counting of something, or a number, instead of the word ${next.value} Could you have meant ${levenshtein.closest(next.value, Object.keys(env))}`);
+                return this.throwSyntaxError('Evaluatable',
+                    next,
+                    `Our scribes are confused by your law. On line ${next.line} we expected a word to compare values, a counting of something, or a number, instead of the word ${next.value} Could you have meant ${levenshtein.closest(next.value, Object.keys(env))}`,
+                    next.id
+                );
+
             }
             return {
                 type: 'Evaluatable',
@@ -2740,7 +2785,9 @@ const gamevm = Vue.createApp({
                     left: lhs,
                     op: operator,
                     right: rhs
-                }
+                },
+                //ID would be the if that comes before 
+                tokenid: operator.id - 1 
             }
         },
         parseUntil(actionTarget) {
@@ -2756,6 +2803,7 @@ const gamevm = Vue.createApp({
             //there are 10 farmers
             //there are x
             let next = this.peek();
+            let thereareid = next.id;
             if (next.type == 'THERE_ARE') {
                 this.consume();
             }
@@ -2772,7 +2820,8 @@ const gamevm = Vue.createApp({
                 }
                 operator = {
                     type: 'OPERATOR',
-                    value: '>='
+                    value: '>=',
+                    id:thereareid
                 };
                 rhs = count;
             }
@@ -2781,6 +2830,7 @@ const gamevm = Vue.createApp({
                 op: operator,
                 right: rhs
             };
+            output.tokenid = operator.id;
             return output;
         },
         parseConditional(actionTarget = null) {
@@ -2791,7 +2841,12 @@ const gamevm = Vue.createApp({
             if (condition.type == 'CONDITIONAL') {
                 let next = this.peek();
                 if (next.type == 'NUMBER') {
-                    return this.throwSyntaxError('Conditional', next, `Our scribes are confused by your law. On line ${next.line} we expected a word to begin a check of truth, instead of the number ${next.value}.`);
+                    return this.throwSyntaxError(
+                        'Conditional', 
+                        next, 
+                        `Our scribes are confused by your law. On line ${next.line} after the word 'if' we expected a word or phrase to begin a check of truth like 'there are' or a word to describe a group like 'huts' or 'farmers', instead of the number ${next.value}.`,
+                        next.id
+                    );
                 }
                 else {
                     output = this.parseEvaluatable(actionTarget);
@@ -2802,11 +2857,13 @@ const gamevm = Vue.createApp({
                 output = this.parseUntil(actionTarget);
             }
             while (this.peek().type == 'AND' || this.peek().type == 'OR') {
+                let next = this.next();
                 output = {
                     type: "BooleanOperator",
-                    value: this.next(),
+                    value: next,
                     lhs: this.parseEvaluatable(actionTarget),
-                    rhs: JSON.parse(JSON.stringify(output))
+                    rhs: JSON.parse(JSON.stringify(output)),
+                    tokenid: next.id
                 }
             }
             let optionalThen = this.peek();
@@ -2829,13 +2886,13 @@ const gamevm = Vue.createApp({
             if (optionalElse.type == 'ELSE') {
                 this.consume();
                 let followup = this.peek();
-                if(followup.type == 'ACTION'){
+                if (followup.type == 'ACTION') {
                     output.else = this.parseAction();
                 }
-                else if (followup.type == 'PRINT'){
+                else if (followup.type == 'PRINT') {
                     output.else = this.parsePrint();
                 }
-                
+
             }
             return output;
         },
@@ -2844,14 +2901,15 @@ const gamevm = Vue.createApp({
             let output = this.next();
 
             let possibleExtra = this.peek();
-            if(possibleExtra.type == 'PRODUCTION' || possibleExtra.type == 'CONSUMPTION'){
+            if (possibleExtra.type == 'PRODUCTION' || possibleExtra.type == 'CONSUMPTION') {
                 this.next();
                 output.value += ' ' + possibleExtra.value;
             }
             return {
                 type: 'Print',
                 output: output,
-                line: printCommand.line
+                line: printCommand.line,
+                tokenid:output.id
             }
         },
         parsePrimary() {
@@ -2878,7 +2936,7 @@ const gamevm = Vue.createApp({
         },
         parseDot() {
             this.parser.i++;
-            return {type:'Dot'}
+            return { type: 'Dot' }
         },
         parse(tokens) {
             const ast = [];
@@ -2898,7 +2956,7 @@ const gamevm = Vue.createApp({
             console.log(ast);
             return ast;
         },
-        evaluate(ast) {
+        evaluate(ast, act=true) {
             this.consoleOutputs = [];
             let env = {};
             for (let [good, data] of Object.entries(this.currencydata)) {
@@ -2922,10 +2980,13 @@ const gamevm = Vue.createApp({
             env['total housing'] = this.getAvailableHousing();
             env['available housing'] = this.getAvailableHousing();
 
-            console.log(env);
-            for (const node of ast) {
-                this.evalNode(node, env);
+            if(act){
+                //console.log(env);
+                for (const node of ast) {
+                    this.evalNode(node, env);
+                }
             }
+            
             return env;
         },
         evalNode(node, env) {
@@ -2960,20 +3021,20 @@ const gamevm = Vue.createApp({
                             op: node.test.op
                         }, env);
 
-                    console.log(node, conditionResult);
+                    //console.log(node, conditionResult);
                     if (conditionResult && node.action) {
                         return this.evalNode(node.action, env);
                     }
 
-                    if(!conditionResult && node.else){
+                    if (!conditionResult && node.else) {
                         return this.evalNode(node.else, env);
                     }
                     return conditionResult;
 
                 case 'Assignment':
-                    //console.log("Assigning...", node);
+                    ////console.log("Assigning...", node);
                     if (this.isReservedName(node.id.name)) {
-                        //console.log("Invalid assignment");
+                        ////console.log("Invalid assignment");
                     }
                     if (node.init.type == "Literal") {
                         env[node.id.name] = node.init.value;
@@ -2981,7 +3042,7 @@ const gamevm = Vue.createApp({
                     else if (node.init.type == "Identifier") {
                         env[node.id.name] = env[node.init.name];
                     }
-                    //console.log(env);
+                    ////console.log(env);
                     break;
 
                 case 'Action':
@@ -2992,7 +3053,7 @@ const gamevm = Vue.createApp({
                     }
 
                     if (node.action.value == 'hire') {
-                        // console.log("Hiring because node", node);
+                        // //console.log("Hiring because node", node);
                         let prof = this.sanitizeProfName(node.actionTarget.value);
                         let outputProfName = prof.Name;
                         if (node.count != 1) {
@@ -3012,7 +3073,7 @@ const gamevm = Vue.createApp({
                     }
 
                     if (node.action.value == 'fire') {
-                        // console.log("Firing because node", node);
+                        // //console.log("Firing because node", node);
                         let prof = this.sanitizeProfName(node.actionTarget.value);
                         let outputProfName = prof.Name;
                         if (node.count != 1) {
@@ -3031,7 +3092,7 @@ const gamevm = Vue.createApp({
                         }
                     }
                     if (node.action.value == 'build') {
-                        //console.log("Building because node", node);
+                        ////console.log("Building because node", node);
                         let building = node.actionTarget.value;
                         let outputBuildingName = node.actionTarget.value;
                         if (node.count != 1) {
@@ -3051,8 +3112,8 @@ const gamevm = Vue.createApp({
                     }
                     break;
                 case 'Print':
-                    console.log(node);
-                    if(node.output.type == 'STRING'){
+                    //console.log(node);
+                    if (node.output.type == 'STRING') {
                         this.consoleOutputs.push('Line ' + node.line + ': ' + node.output.value.slice(1, -1));
                         break;
                     }
@@ -3063,15 +3124,23 @@ const gamevm = Vue.createApp({
                         this.consoleOutputs.push('Line ' + node.line + ': ' + num);
                     }
                     else {
-                        this.consoleOutputs.push('Line ' + node.line + ': ' + node.output.value + ' is ' + env[node.output.value] + '.');
-                        console.log(node, env[node.output.value], env);
+                        let value = env[node.output.value];
+                        if (typeof value == 'undefined') {
+                            this.consoleOutputs.push('Line ' + node.line + ': ' + node.output.value + ` has not been referenced before this point. If you just want to print the word ${node.output.value} our scribes request you put it inside of quotation marks like '${node.output.value}' or "".`);
+
+                        }
+                        else {
+                            this.consoleOutputs.push('Line ' + node.line + ': ' + node.output.value + ' is ' + value + '.');
+
+                        }
+                        //console.log(node, env[node.output.value], env);
                     }
 
                     break;
 
                 case 'Identifier':
                     if (!(node.identifier in env)) {
-                          console.error(node);
+                        console.error(node);
                     }
                     return env[node.identifier];
 
@@ -3122,15 +3191,15 @@ const gamevm = Vue.createApp({
                     if (!right && right !== 0) {
                         right = parseFloat(node.right.value);
                     }
-                    if(isNaN(left)){
+                    if (isNaN(left)) {
                         this.consoleOutputs.push(`Our scribes did not quite understand what you meant by '${node.left.value}' on line ${node.left.line}. Did you mean ${levenshtein.closest(node.left.value, Object.keys(env))} or something else?`);
                         break;
                     }
-                    if(isNaN(right)){
+                    if (isNaN(right)) {
                         this.consoleOutputs.push(`Our scribes did not quite understand what you meant by '${node.right.value}' on line ${node.right.line}. Did you mean ${levenshtein.closest(node.right.value, Object.keys(env))} or something else?`);
                         break;
                     }
-                    if((node.op.value.startsWith('is') && node.op.value != 'is') || (node.op.value.startsWith('are') && node.op.value != 'are')){
+                    if ((node.op.value.startsWith('is') && node.op.value != 'is') || (node.op.value.startsWith('are') && node.op.value != 'are')) {
                         node.op.value = node.op.value.replace(/^(is|are)\b\s*/, '');
                     }
                     switch (node.op.value) {
@@ -3181,7 +3250,7 @@ const gamevm = Vue.createApp({
                         }
                     }
                     if (anyFalse) {
-                        diffs.push({ index: i, ast: ast[i], expected: expected[i], comparison: compared, expectedValue:expected[i][anyFalse], actualValue:ast[i][anyFalse] });
+                        diffs.push({ index: i, ast: ast[i], expected: expected[i], comparison: compared, expectedValue: expected[i][anyFalse], actualValue: ast[i][anyFalse] });
                     }
 
                 }
@@ -3245,11 +3314,11 @@ const gamevm = Vue.createApp({
         },
         testGetDifferences(obj1, obj2) {
             let innerDiffs = [];
-            //console.log("Getting diffs...");
+            ////console.log("Getting diffs...");
             for (let [key, value] of Object.entries(obj1)) {
                 let value2 = obj2[key];
                 if (JSON.stringify(value) != JSON.stringify(value2)) {
-                    console.log("Different", value, value2);
+                    //console.log("Different", value, value2);
                     if (typeof value == 'Object') {
                         innerDiffs.push(this.testGetDifferences(value, value2));
                     }
@@ -3279,11 +3348,11 @@ const gamevm = Vue.createApp({
                 let tokens = this.tokenize(code);
                 var output = this.testParse(tokens, expected);
             }
-            console.log(output);
+            //console.log(output);
             return output;
         },
         getSyntaxErrorFromToken(token) {
-            // console.log(token);
+            // //console.log(token);
             let name = token.value;
             if (this.professionReservedNames.has(name)) {
                 return `Our scribes are confused by your law. Our people cannot make ${pluralize.plural(name)} by magic. On line ${token.line} we wonder if you meant to hire or fire more ${pluralize.plural(name)}? ${name.charAt(0).toUpperCase() + name.slice(1)} is a special word that always refers to our people with the profession of ${name}.`;
@@ -3353,4 +3422,4 @@ const gamevm = Vue.createApp({
 });
 
 window.VM = gamevm.mount('#vm');
-console.log(window.VM);
+//console.log(window.VM);

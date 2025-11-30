@@ -15,7 +15,7 @@ export default {
   },
   methods: {
     pos() {
-        if(this.data && this.data.visible){
+        if(this.data?.visible){
             let height = this.getTooltipHeight();
             let max = window.innerHeight;
             let top = (this.data?.data.clientY - this.offsetY)
@@ -31,8 +31,9 @@ export default {
         if(this.data?.calcfrom){
             return this.data.calcfrom();
         }
-        if(this.data?.text){
-            return this.data.text;
+        let text = this.data?.text;
+        if(typeof text != 'undefined'){
+            return text;
         }
         return '';
         
