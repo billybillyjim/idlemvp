@@ -49,3 +49,19 @@ Notes 3.
 5. The route to unlock clay bullae is impossible with the current setup
 6. There should be one or two more good farming techs early on.
 7. If writing takes food for example, the hint should include storehouses.
+
+Current code issues:
+
+Bug: In the NUMBER branch, you set lhs and rhs, but never set operator, and later BinaryExpression uses node.op.value.
+    if food > 10 and 5 7 then print "ok".
+- null reading of value
+
+parseConditional without actionTarget: implicit “there are” lhs becomes undefined
+Bug: When you start with a bare conditional (not attached to an action), parseConditional() is called without actionTarget. In a there are-style condition, final == DOT sets lhs = actionTarget, which is undefined.
+    if there are more than 5.
+
+parseDot returning undefined node
+    .
+
+Bug: The boolean chain reverses the logical structure and evaluates both sides without short-circuiting.
+if unknownresource > 0 and money > 0 then print "ok".
