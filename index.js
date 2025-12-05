@@ -2448,10 +2448,10 @@ const gamevm = Vue.createApp({
                 ['ASSIGN', /^(is\b|=|are\b)/], //This can get converted to an operator if used in an evaluatable after an identity
                 ['STRING', /^"[^"]*"/],
                 ['STRING', /^'[^']*'/],
-                ['PLUS', /^\+/],
-                ['MINUS', /^-/],
-                ['STAR', /^\*/],
-                ['SLASH', /^\//],
+                ['OPERATOR', /^\+/],
+                ['OPERATOR', /^-/],
+                ['OPERATOR', /^\*/],
+                ['OPERATOR', /^\//],
                 ['LPAREN', /^\(/],
                 ['RPAREN', /^\)/],
                 ['NEWLINE', /^\n+/],
@@ -2567,17 +2567,33 @@ const gamevm = Vue.createApp({
             if (this.isReservedName(name)) {
                 return this.throwSyntaxError('Identifier', name, this.getSyntaxErrorFromToken(identToken), identToken.id);
             }
+            //ident followed by is/are
             if (this.peek().type == 'ASSIGN') {
                 this.consume();
-                const valueToken = this.next();
+
+                //x = [something]
+                //Something is either a number, in which case check for an expression
+                let valueToken = this.next();
                 if (valueToken.type == 'NUMBER') {
+                    //Check for expression
+                    valueToken = this.parseExpression(valueToken);
+                    if(valueToken.type == "NUMBER"){
+                        return {
+                            type: 'Assignment',
+                            id: { type: 'Identifier', name },
+                            init: { type: 'Number', value: Number(valueToken.value) },
+                            tokenid: valueToken.id
+                        };
+                    }
                     return {
                         type: 'Assignment',
                         id: { type: 'Identifier', name },
-                        init: { type: 'Literal', value: Number(valueToken.value) },
+                        init: { type: 'Expression', value: valueToken },
                         tokenid: valueToken.id
                     };
                 }
+                //Or its already a thing
+                //x is lumberjacks
                 else if (valueToken.type == 'IDENT') {
                     if (this.peek().type == 'PRODUCTION' || this.peek().type == "CONSUMPTION") {
                         let modifier = this.next();
@@ -2648,14 +2664,19 @@ const gamevm = Vue.createApp({
             //Either a comparator or an identity
             next = this.peek();
             //more than 5 unemployed
+            //less than z - 1 lumberjacks
             if (next.type == 'OPERATOR') {
+                //we've got an operator, which could be a comparator or a + or - or something.
                 operator = this.next();
                 //5 unemployed
+                //z - 1 lumberjacks
                 let count = this.next();
-                if (count.type == 'NUMBER') {
-                    rhs = count;
+                if (count.type == 'NUMBER' || count.type == "IDENT") {
+                    rhs = this.parseExpression(count);
+                    // rhs = count;
                 }
-                //unemployed
+
+
                 let final = this.next();
                 if (final.type == 'DOT') {
                     if (!actionTarget) {
@@ -2673,7 +2694,7 @@ const gamevm = Vue.createApp({
                     lhs = actionTarget;
                 }
                 else if (final.type == 'IDENT') {
-                    lhs = final;
+                    lhs = this.parseExpression(final);
                 }
                 else {
                     return this.throwSyntaxError(
@@ -2693,22 +2714,37 @@ const gamevm = Vue.createApp({
                     lhs.value += ' ' + potentialModifier.value;
                     this.consume();
                 }
-                operator = this.next();
-                if (operator.type == 'ASSIGN') {
-                    // Convert is in any evaluatable to comparison.
-                    // Is this evil? Maybe... This will modify the original token 
-                    // and make it look like is is an Operator even though it isnt
-                    operator.type = 'OPERATOR';
-                }
-                if (operator.type != 'OPERATOR') {
-                    return this.throwSyntaxError(
-                        'Evaluatable',
-                        operator,
-                        `Our scribes are confused by your law. On line ${operator.line} we expected a word to compare values instead of the word ${operator.value}`,
-                        operator.id
-                    );
 
+                //if there are x unemployed people
+                //in this case we already have the operator and x, and unemployed people is an ident that can be compared.
+                if(operator && operator.type == 'OPERATOR'){
+                    //In this case there are was the operator but there may be a chance there's more, like
+                    //if there are less than 7 unemployed people
+                    let potentialOp = this.peek();
+                    if(potentialOp.type == "OPERATOR"){
+                        operator = potentialOp;
+                    }
                 }
+                else{
+                    operator = this.next();
+                    if (operator.type == 'ASSIGN') {
+                        // Convert is in any evaluatable to comparison.
+                        // Is this evil? Maybe... This will modify the original token 
+                        // and make it look like is is an Operator even though it isnt
+                        operator.type = 'OPERATOR';
+                    }
+                    if (operator.type != 'OPERATOR') {
+                        return this.throwSyntaxError(
+                            'Evaluatable',
+                            operator,
+                            `Our scribes are confused by your law. On line ${operator.line} we expected a word to compare values instead of the word ${operator.value}`,
+                            operator.id
+                        );
+
+                    }
+                }
+
+                
 
                 rhs = this.next();
                 if (rhs.type != 'IDENT' && rhs.type != 'NUMBER') {
@@ -2729,7 +2765,8 @@ const gamevm = Vue.createApp({
             }
             else if (next.type == 'NUMBER') {
                 //0 lumberjacks
-                lhs = this.next(); //0
+
+                lhs = this.parseExpression(this.next());
                 rhs = this.peek(); //lumberjacks
 
                 if (rhs.type == 'NUMBER') {
@@ -2899,7 +2936,9 @@ const gamevm = Vue.createApp({
         parsePrint() {
             let printCommand = this.next();
             let output = this.next();
-
+            if(output.type == "NUMBER" || output.type == "IDENT"){
+                output = this.parseExpression(output);
+            }
             let possibleExtra = this.peek();
             if (possibleExtra.type == 'PRODUCTION' || possibleExtra.type == 'CONSUMPTION') {
                 this.next();
@@ -2911,6 +2950,46 @@ const gamevm = Vue.createApp({
                 line: printCommand.line,
                 tokenid:output.id
             }
+        },
+        parseExpression(startingToken){
+            //x = 7 + 10
+            //starting token was found to be a number followed by an operation
+            let lhs = startingToken;
+            
+            //If you make it more than 10k it will break
+            let sanityCheck = 10000;
+            let iterator = 0;
+            //spooky while true
+            while(true){
+                let op = this.peek();
+                if(!op || op.type != "OPERATOR"){
+                    break;
+                }
+
+                this.consume();
+
+                let rhs = this.peek();
+
+                if(!rhs || (rhs.type != 'NUMBER' && rhs.type != "IDENT")){
+                    break;
+                }
+
+                this.consume();
+
+                lhs = {
+                    type:'BinaryExpression',
+                    left:lhs,
+                    op:op,
+                    right:rhs
+                }
+
+                iterator++;
+                if(iterator >= sanityCheck){
+                    break;
+                }
+            }
+
+            return lhs;
         },
         parsePrimary() {
             const token = this.peek();
@@ -2993,6 +3072,9 @@ const gamevm = Vue.createApp({
             if (!node) {
                 console.error('Node was null', env);
             }
+            if(!env){
+                console.error("You forgot to pass in the env......");
+            }
             switch (node.type) {
                 case 'Program':
                     for (const stmt of node.body) {
@@ -3036,8 +3118,13 @@ const gamevm = Vue.createApp({
                     if (this.isReservedName(node.id.name)) {
                         ////console.log("Invalid assignment");
                     }
-                    if (node.init.type == "Literal") {
-                        env[node.id.name] = node.init.value;
+                    if (node.init.type == "Expression") {
+                        let value = this.evalNode(node.init.value, env);
+                        env[node.id.name] = value;
+                    }
+                    else if(node.init.type == "Number"){
+                        let value = node.init.value;
+                        env[node.id.name] = value;
                     }
                     else if (node.init.type == "Identifier") {
                         env[node.id.name] = env[node.init.name];
@@ -3117,8 +3204,14 @@ const gamevm = Vue.createApp({
                         this.consoleOutputs.push('Line ' + node.line + ': ' + node.output.value.slice(1, -1));
                         break;
                     }
+                    if(node.output.type == "BinaryExpression"){
+                        var num = this.evalNode(node.output, env);
+                    }
+                    else{
+                        var num = parseFloat(node.output.value);
+                    }
 
-                    let num = parseFloat(node.output.value);
+                    
 
                     if (num) {
                         this.consoleOutputs.push('Line ' + node.line + ': ' + num);
@@ -3183,8 +3276,28 @@ const gamevm = Vue.createApp({
                     if (!node.right) {
                         return "Right operand undefined";
                     }
-                    let left = env[node.left.value];
-                    let right = env[node.right.value];
+
+                    if(node.left.type == "BinaryExpression"){
+                        var left = this.evalNode(node.left, env);
+                    }
+                    else if(node.left.type == "NUMBER"){
+                        var left = Number(node.left.value);
+                    }
+                    else{
+                        var left = env[node.left.value];
+                    }
+
+                    if(node.right.type == "BinaryExpression"){
+                        var right = this.evalNode(node.right, env);
+                    }
+                    else if(node.right.type == "NUMBER"){
+                        var right = Number(node.right.value);
+                    }
+                    else{
+                        var right = env[node.right.value];
+                    }
+                    
+                    
                     if (!left && left !== 0) {
                         left = parseFloat(node.left.value);
                     }

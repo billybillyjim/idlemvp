@@ -25,7 +25,15 @@ export default {
             // testCode:'print wood production. print wood consumption. if wood production is less than or equal to wood consumption print "yes" otherwise print "no".',
             // testCode: 'if food > 10 and 5 is equal to 7 then print "ok".',
             // testCode: 'if food > 10 and 5 == 7 then print "ok" otherwise print "not okay".',
-            testCode:'if there are 0 lumberjacks, hire a lumberjack.',
+            // testCode:'if there are 0 lumberjacks, hire a lumberjack.',
+            // testCode:'if there are more than z - 3 lumberjacks print \'oh no\'.',
+
+            testCode:`x is 5.
+print x.
+y is 10 + 3.
+print y.
+print x + y.
+`,
             errors: [],
             content: '',
             scrollTop: 0,
