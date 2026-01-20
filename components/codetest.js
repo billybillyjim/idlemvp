@@ -28,31 +28,71 @@ export default {
             // testCode:'if there are 0 lumberjacks, hire a lumberjack.',
             // testCode:'if there are more than z - 3 lumberjacks print \'oh no\'.',
 
-            testCode:`x is 5.
-print x.
+            testCode: `x is 5.
 y is 10 + 3.
-print y.
-print x + y.
+print x > y.
 `,
             errors: [],
             content: '',
             scrollTop: 0,
             lineCount: 1,
-            isInspecting:false,
-            tokens:[],
-            ast:[],
-            env:[],
+            isInspecting: false,
+            tokens: [],
+            ast: [],
+            env: [],
             height: '',
+            parsed:[],
+            validMori:[
+                'Build 7 huts.',
+                'Build a hut until there are no homeless people.',
+                'Build three huts.',
+                'Fire a farmer if there are any farmers.',
+                'Hire 10 farmers.',
+                'If available housing is less than x, build a hut.',
+                'If there are more than 0 homeless, build a hut.',
+                `Hire 3 farmers.`,
+                `Hire a farmer if there are any unemployed people.`,
+                `Hire a farmer.`,
+                `Hire farmers until there are 10.`,
+                `Hire y farmers.`,
+                `Hire a farmer until food production is greater than food consumption.`,
+                `If food is greater than 10 and 5 is equal to 7 then print "ok" otherwise print "Nope".`,
+                `If food production is greater than or equal to food consumption, print 'we are okay'.`,
+                `If food production less than food consumption print 'we not okay'.`,
+                `If there are 0 lumberjacks, hire a lumberjack.`,
+                `If there are 7 Unemployed hire a farmer.`,
+                `If there are 7 Unemployed, then hire a farmer.`,
+                `If there are 8 farmers, hire a farmer otherwise print 'nope'.`,
+                `If there are any lumberjacks, fire lumberjacks.`,
+                `If there are any unemployed people hire a lumberjack if wood consumption is higher than wood production otherwise hire a farmer.`,
+                `If there are more farmers than lumberjacks hire lumberjacks until there are more lumberjacks than farmers.`,
+                `If there are more than z - 3 lumberjacks print 'oh no'.`,
+                `If there are no lumberjacks, hire one.`,
+                `If there are x Farmers, hire a farmer.`,
+                `If x > y hire a farmer.`,
+                `print 5 - 3 + 4 - 1.`,
+                `print 7 = 4.`,
+                `print wood production + 3 if wood production < wood consumption otherwise print 'None'.`,
+                `print wood production > wood consumption.`,
+                `print wood production.`,
+                `print wood.`,
+                `print x + y.`,
+                `print x > y.`,
+                `y is 3 + 5.`,
+                `y is 7.`,
+                `y is > 7.`,
+                `y is x + 5.`,
+            ],
             tests: [
                 {
                     name: 'assignment',
                     type: 'token',
                     code: 'x = 10.',
                     expected: [
-                        { type: 'IDENT', value: 'x', line: 1 },
-                        { type: 'ASSIGN', value: '=', line: 1 },
-                        { type: 'NUMBER', value: '10', line: 1 },
-                        { type: 'DOT', value: '.', line: 1 },
+                        { type: 'IDENT', value: 'x', line: 1, id: 0 },
+                        { type: 'ASSIGN', value: '=', line: 1, id: 1 },
+                        { type: 'NUMBER', value: '10', line: 1, id: 2 },
+                        { type: 'DOT', value: '.', line: 1, id: 3 },
                         { type: 'EOF' },
                     ]
                 },
@@ -61,17 +101,17 @@ print x + y.
                     type: 'token',
                     code: 'if Food < x then hire Farmers until there are x.',
                     expected: [
-                        { type: 'CONDITIONAL', value: 'if', line: 1 },
-                        { type: 'IDENT', value: 'food', line: 1 },
-                        { type: 'OPERATOR', value: '<', line: 1 },
-                        { type: 'IDENT', value: 'x', line: 1 },
-                        { type: 'THEN', value: 'then', line: 1 },
-                        { type: 'ACTION', value: 'hire', line: 1 },
-                        { type: 'IDENT', value: 'farmers', line: 1 },
-                        { type: 'UNTIL', value: 'until', line: 1 },
-                        { type: 'THERE_ARE', value: 'there are', line: 1 },
-                        { type: 'IDENT', value: 'x', line: 1 },
-                        { type: 'DOT', value: '.', line: 1 },
+                        { type: 'CONDITIONAL', value: 'if', line: 1, id: 0 },
+                        { type: 'IDENT', value: 'food', line: 1, id: 1 },
+                        { type: 'COMPARATOR', value: '<', line: 1, id: 2 },
+                        { type: 'IDENT', value: 'x', line: 1, id: 3 },
+                        { type: 'THEN', value: 'then', line: 1, id: 4 },
+                        { type: 'ACTION', value: 'hire', line: 1, id: 5 },
+                        { type: 'IDENT', value: 'farmers', line: 1, id: 6 },
+                        { type: 'UNTIL', value: 'until', line: 1, id: 7 },
+                        { type: 'THERE_ARE', value: 'there are', line: 1, id: 8 },
+                        { type: 'IDENT', value: 'x', line: 1, id: 9 },
+                        { type: 'DOT', value: '.', line: 1, id: 10 },
                         { type: 'EOF' }
                     ]
                 },
@@ -80,10 +120,10 @@ print x + y.
                     type: 'token',
                     code: 'there are more than 5.',
                     expected: [
-                        { type: 'THERE_ARE', value: 'there are', line: 1 },
-                        { type: 'OPERATOR', value: 'more than', line: 1 },
-                        { type: 'NUMBER', value: '5', line: 1 },
-                        { type: 'DOT', value: '.', line: 1 },
+                        { type: 'THERE_ARE', value: 'there are', line: 1, id: 0 },
+                        { type: 'COMPARATOR', value: 'more than', line: 1, id: 1 },
+                        { type: 'NUMBER', value: '5', line: 1, id: 2 },
+                        { type: 'DOT', value: '.', line: 1, id: 3 },
                         { type: 'EOF' }
                     ]
                 },
@@ -92,19 +132,19 @@ print x + y.
                     type: 'token',
                     code: 'not x xor y.',
                     expected: [
-                        { type: 'NOT', value: 'not', line: 1 },
-                        { type: 'IDENT', value: 'x', line: 1 },
-                        { type: 'XOR', value: 'xor', line: 1 },
-                        { type: 'IDENT', value: 'y', line: 1 },
-                        { type: 'DOT', value: '.', line: 1 },
+                        { type: 'NOT', value: 'not', line: 1, id: 0 },
+                        { type: 'IDENT', value: 'x', line: 1, id: 1 },
+                        { type: 'XOR', value: 'xor', line: 1, id: 2 },
+                        { type: 'IDENT', value: 'y', line: 1, id: 3 },
+                        { type: 'DOT', value: '.', line: 1, id: 4 },
                         { type: 'EOF' }
                     ]
                 },
                 {
-                    name:"Hiring if there are none",
-                    type:'parse',
-                    code:'if there are 0 lumberjacks, hire a lumberjack.',
-                    expected:{
+                    name: "Hiring if there are none",
+                    type: 'parse',
+                    code: 'if there are 0 lumberjacks, hire a lumberjack.',
+                    expected: {
 
                     }
                 },
@@ -125,11 +165,11 @@ print x + y.
                     type: 'token',
                     code: 'food production < 10.',
                     expected: [
-                        { type: 'IDENT', value: 'food', line: 1 },
-                        { type: 'PRODUCTION', value: 'production', line: 1 },
-                        { type: 'OPERATOR', value: '<', line: 1 },
-                        { type: 'NUMBER', value: '10', line: 1 },
-                        { type: 'DOT', value: '.', line: 1 },
+                        { type: 'IDENT', value: 'food', line: 1, id: 0 },
+                        { type: 'PRODUCTION', value: 'production', line: 1, id: 1 },
+                        { type: 'COMPARATOR', value: '<', line: 1, id: 2 },
+                        { type: 'NUMBER', value: '10', line: 1, id: 3 },
+                        { type: 'DOT', value: '.', line: 1, id: 4 },
                         { type: 'EOF' }
                     ]
                 },
@@ -142,7 +182,7 @@ print x + y.
                             type: 'Evaluatable',
                             test: {
                                 left: { type: 'IDENT', value: 'farmers', line: 2 },
-                                op: { type: 'OPERATOR', value: 'more than', line: 1 },
+                                op: { type: 'COMPARATOR', value: 'more than', line: 1 },
                                 right: { type: 'NUMBER', value: '5', line: 2 }
                             }
                         }
@@ -160,7 +200,7 @@ print x + y.
                                 type: 'Evaluatable',
                                 test: {
                                     left: { type: 'IDENT', value: 'wood' },
-                                    op: { type: 'OPERATOR', value: '<' },
+                                    op: { type: 'COMPARATOR', value: '<' },
                                     right: { type: 'NUMBER', value: '3' }
                                 }
                             },
@@ -168,7 +208,7 @@ print x + y.
                                 type: 'Evaluatable',
                                 test: {
                                     left: { type: 'IDENT', value: 'food' },
-                                    op: { type: 'OPERATOR', value: '>' },
+                                    op: { type: 'COMPARATOR', value: '>' },
                                     right: { type: 'NUMBER', value: '5' }
                                 }
                             }
@@ -189,7 +229,7 @@ print x + y.
                                 type: 'Evaluatable',
                                 test: {
                                     left: { type: 'IDENT', value: 'farmers' },
-                                    op: { type: 'Operator', value: '>=' },
+                                    op: { type: 'COMPARATOR', value: '>=' },
                                     right: { type: 'NUMBER', value: '3' }
                                 }
                             }
@@ -201,10 +241,10 @@ print x + y.
                     type: 'token',
                     code: 'there are more than 5.',
                     expected: [
-                        { type: 'THERE_ARE', value: 'there are', line: 1 },
-                        { type: 'OPERATOR', value: 'more than', line: 1 },
-                        { type: 'NUMBER', value: '5', line: 1 },
-                        { type: 'DOT', value: '.', line: 1 },
+                        { type: 'THERE_ARE', value: 'there are', line: 1, id: 0 },
+                        { type: 'COMPARATOR', value: 'more than', line: 1, id: 1 },
+                        { type: 'NUMBER', value: '5', line: 1, id: 2 },
+                        { type: 'DOT', value: '.', line: 1, id: 3 },
                         { type: 'EOF' }
                     ]
                 }, {
@@ -212,12 +252,12 @@ print x + y.
                     type: 'token',
                     code: 'if not x xor y.',
                     expected: [
-                        { type: 'CONDITIONAL', value: 'if', line: 1 },
-                        { type: 'NOT', value: 'not', line: 1 },
-                        { type: 'IDENT', value: 'x', line: 1 },
-                        { type: 'XOR', value: 'xor', line: 1 },
-                        { type: 'IDENT', value: 'y', line: 1 },
-                        { type: 'DOT', value: '.', line: 1 },
+                        { type: 'CONDITIONAL', value: 'if', line: 1, id: 0 },
+                        { type: 'NOT', value: 'not', line: 1, id: 1 },
+                        { type: 'IDENT', value: 'x', line: 1, id: 2 },
+                        { type: 'XOR', value: 'xor', line: 1, id: 3 },
+                        { type: 'IDENT', value: 'y', line: 1, id: 4 },
+                        { type: 'DOT', value: '.', line: 1, id: 5 },
                         { type: 'EOF' }
                     ]
                 }, {
@@ -225,12 +265,12 @@ print x + y.
                     type: 'token',
                     code: 'food production < food consumption.',
                     expected: [
-                        { type: 'IDENT', value: 'food', line: 1 },
-                        { type: 'PRODUCTION', value: 'production', line: 1 },
-                        { type: 'OPERATOR', value: '<', line: 1 },
-                        { type: 'IDENT', value: 'food', line: 1 },
-                        { type: 'CONSUMPTION', value: 'consumption', line: 1 },
-                        { type: 'DOT', value: '.', line: 1 },
+                        { type: 'IDENT', value: 'food', line: 1, id: 0 },
+                        { type: 'PRODUCTION', value: 'production', line: 1, id: 1 },
+                        { type: 'COMPARATOR', value: '<', line: 1, id: 2 },
+                        { type: 'IDENT', value: 'food', line: 1, id: 3 },
+                        { type: 'CONSUMPTION', value: 'consumption', line: 1, id: 4 },
+                        { type: 'DOT', value: '.', line: 1, id: 5 },
                         { type: 'EOF' }
                     ]
                 },
@@ -239,11 +279,11 @@ print x + y.
                     type: 'token',
                     code: 'if food is greater than or equal to 10.',
                     expected: [
-                        { type: 'CONDITIONAL', value: 'if', line: 1 },
-                        { type: 'IDENT', value: 'food', line: 1 },
-                        { type: 'OPERATOR', value: 'is greater than or equal to', line: 1 },
-                        { type: 'NUMBER', value: '10', line: 1 },
-                        { type: 'DOT', value: '.', line: 1 },
+                        { type: 'CONDITIONAL', value: 'if', line: 1, id: 0 },
+                        { type: 'IDENT', value: 'food', line: 1, id: 1 },
+                        { type: 'COMPARATOR', value: 'is greater than or equal to', line: 1, id: 2 },
+                        { type: 'NUMBER', value: '10', line: 1, id: 3 },
+                        { type: 'DOT', value: '.', line: 1, id: 4 },
                         { type: 'EOF' }
                     ]
                 },
@@ -252,21 +292,19 @@ print x + y.
                     type: 'token',
                     code: 'x = 10.\ny is x.\nprint y.',
                     expected: [
-                        { type: 'IDENT', value: 'x', line: 1 },
-                        { type: 'ASSIGN', value: '=', line: 1 },
-                        { type: 'NUMBER', value: '10', line: 1 },
-                        { type: 'DOT', value: '.', line: 1 },
-                        { type: 'NEWLINE', value: '\n', line: 1 },
+                        { type: 'IDENT', value: 'x', line: 1, id: 0 },
+                        { type: 'ASSIGN', value: '=', line: 1, id: 1 },
+                        { type: 'NUMBER', value: '10', line: 1, id: 2 },
+                        { type: 'DOT', value: '.', line: 1, id: 3 },
 
-                        { type: 'IDENT', value: 'y', line: 2 },
-                        { type: 'ASSIGN', value: 'is', line: 2 },
-                        { type: 'IDENT', value: 'x', line: 2 },
-                        { type: 'DOT', value: '.', line: 2 },
-                        { type: 'NEWLINE', value: '\n', line: 2 },
+                        { type: 'IDENT', value: 'y', line: 2, id: 4 },
+                        { type: 'ASSIGN', value: 'is', line: 2, id: 5 },
+                        { type: 'IDENT', value: 'x', line: 2, id: 6 },
+                        { type: 'DOT', value: '.', line: 2, id: 7 },
 
-                        { type: 'PRINT', value: 'print', line: 3 },
-                        { type: 'IDENT', value: 'y', line: 3 },
-                        { type: 'DOT', value: '.', line: 3 },
+                        { type: 'PRINT', value: 'print', line: 3, id: 8 },
+                        { type: 'IDENT', value: 'y', line: 3, id: 9 },
+                        { type: 'DOT', value: '.', line: 3, id: 10 },
                         { type: 'EOF' }
                     ]
                 },
@@ -275,10 +313,10 @@ print x + y.
                     type: 'token',
                     code: 'there are 5 unemployed people.',
                     expected: [
-                        { type: 'THERE_ARE', value: 'there are', line: 1 },
-                        { type: 'NUMBER', value: '5', line: 1 },
-                        { type: 'IDENT', value: 'unemployed people', line: 1 },
-                        { type: 'DOT', value: '.', line: 1 },
+                        { type: 'THERE_ARE', value: 'there are', line: 1, id: 0 },
+                        { type: 'NUMBER', value: '5', line: 1, id: 1 },
+                        { type: 'IDENT', value: 'unemployed people', line: 1, id: 2 },
+                        { type: 'DOT', value: '.', line: 1, id: 3 },
                         { type: 'EOF' }
                     ]
                 },
@@ -327,15 +365,49 @@ print x + y.
                     code: 'if food > 10 and 5 7.',
                     expected: [
                         {
-                            type: 'SyntaxError',
-                            id: {
-                                type: 'Evaluatable',
-                                name: {
-                                    line: 1,
-                                    type: "NUMBER",
-                                    value: "5",
+                            type: 'BooleanOperator',
+                            value: {
+                                type: 'AND',
+                                value: 'and',
+                                line: 1,
+                                id: 4
+                            },
+                            lhs: {
+                                type: 'SyntaxError',
+                                id: {
+                                    type: 'Evaluatable',
+                                    name: {
+                                        type: "NUMBER",
+                                        value: '5',
+                                        line: 1,
+                                        id: 5
+                                    },
+                                    message: '',
                                 },
-                                message: ''
+                                tokenid: 5
+                            },
+                            rhs: {
+                                type: 'Evaluatable',
+                                test: {
+                                    left: {
+                                        type: 'IDENT',
+                                        value: 'food',
+                                        line: 1,
+                                        id: 1
+                                    },
+                                    op: {
+                                        type: 'COMPARATOR',
+                                        value: '>',
+                                        line: 1,
+                                        id: 2
+                                    },
+                                    right: {
+                                        type: 'NUMBER',
+                                        value: '10',
+                                        line: 1,
+                                        id: 3
+                                    }
+                                }
                             }
                         }
                     ]
@@ -345,10 +417,10 @@ print x + y.
                     type: 'token',
                     code: 'x is 7.',
                     expected: [
-                        { type: 'IDENT', value: 'x', line: 1 },
-                        { type: 'ASSIGN', value: 'is', line: 1 },
-                        { type: 'NUMBER', value: '7', line: 1 },
-                        { type: 'DOT', value: '.', line: 1 },
+                        { type: 'IDENT', value: 'x', line: 1, id: 0, },
+                        { type: 'ASSIGN', value: 'is', line: 1, id: 1, },
+                        { type: 'NUMBER', value: '7', line: 1, id: 2, },
+                        { type: 'DOT', value: '.', line: 1, id: 3, },
                         { type: 'EOF' }
                     ]
                 },
@@ -366,7 +438,7 @@ print x + y.
                                     line: 1
                                 },
                                 "op": {
-                                    "type": "OPERATOR",
+                                    "type": "COMPARATOR",
                                     "value": "<",
                                     line: 1
                                 },
@@ -399,7 +471,7 @@ print x + y.
                                             line: 1
                                         },
                                         "op": {
-                                            "type": "OPERATOR",
+                                            "type": "COMPARATOR",
                                             "value": ">=",
                                         },
                                         "right": {
@@ -413,11 +485,41 @@ print x + y.
                         }
                     ]
                 }
-            ]
+            ],
+            possiblePaths:[],
         }
     },
     mounted: function () {
-        this.runTests();
+        // this.runTests();
+        let asts = [];
+        for(let v of this.validMori){
+            
+            let tokens = this.$parent.tokenize(v);
+            this.parsed.push(tokens);
+            let ast = this.$parent.parse(tokens);
+            asts.push(ast);
+        }
+        console.log(asts);
+        console.log(this.parsed);
+        const transitions = {};
+        const transitionExamples = {};
+
+        for (const seq of this.parsed) {
+            for (let i = 0; i < seq.length - 1; i++) {
+                const a = seq[i].type;
+                const b = seq[i + 1].type;
+
+                if (!transitions[a]) {
+                    transitions[a] = new Set();
+                    transitionExamples[a] = [];
+                }
+                transitions[a].add(b);
+                transitionExamples[a].push(seq[i + 1]);
+            }
+        }
+        console.log(transitions);
+        console.log(transitionExamples);
+
         const textarea = document.querySelector('#code-text-area');
         const lineNumbersEle = document.querySelector('#line-numbers');
         const styles = window.getComputedStyle(textarea);
@@ -426,7 +528,7 @@ print x + y.
         });
     },
     methods: {
-        inspect(){
+        inspect() {
             this.tokens = this.$parent.tokenize(this.testCode);
             this.ast = this.$parent.parse(this.tokens);
             this.env = this.$parent.evaluate(this.ast, false);
@@ -434,7 +536,7 @@ print x + y.
             console.log(this.ast)
             this.isInspecting = true;
         },
-        endInspect(){
+        endInspect() {
             this.isInspecting = false;
         },
         getLineNumbers() {
@@ -467,7 +569,7 @@ print x + y.
             for (let test of this.tests) {
                 let output = this.$parent.testCode(test.type, test.code, JSON.parse(JSON.stringify(test.expected)))
                 if (output === true) {
-                    console.log(test.name + ': passed');
+                    // console.log(test.name + ': passed');
                 }
                 else {
                     console.log(test.name + ': failed: ', output);
@@ -482,7 +584,7 @@ print x + y.
             this.scrollTop = textarea.scrollTop;
         },
         testTheCode() {
-           
+
             let output = this.$parent.runCode(this.testCode, true, true, true);
             if (output['Errors']) {
                 this.errors = output['Errors'];
@@ -510,16 +612,16 @@ print x + y.
             this.errors = [];
             this.$parent.consoleOutputs = [];
         },
-        getTokenInfo(token){
-            for(let item of this.ast){
+        getTokenInfo(token) {
+            for (let item of this.ast) {
                 // console.log(item);
             }
-            if(typeof this.env[token.value] != 'undefined'){
-            console.log(this.env, this.env[token.value], token, token.value);
+            if (typeof this.env[token.value] != 'undefined') {
+                console.log(this.env, this.env[token.value], token, token.value);
 
                 return 'This is currently ' + this.env[token.value];
             }
-            return token;   
+            return token;
         }
     },
     delimiters: ['[[', ']]'],
