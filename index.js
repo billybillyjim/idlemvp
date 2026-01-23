@@ -2444,6 +2444,9 @@ const gamevm = Vue.createApp({
                 ['NUMBER', /^(one|two|three|four|five|six|seven|eight|nine|ten|eleven|twelve|no)\b/],
                 ['COMPARATOR', /^(greater than|less than or equal to|is higher than|is lower than|higher than|lower than|greater than or equal to|is less than or equal to|is greater than or equal to|is equal to|are greater than|is greater than|are less than|is less than|less than|are more than|is more than|more than|fewer than|is fewer than|are fewer than)/],
                 ['COMPARATOR', /^(>=|<=|>|<|==)/],
+                ['MORE', /^more/],
+                ['LESS', /^less/],
+                ['LESS', /^fewer/],
                 ['THAN', /^than\b/],
                 ['AND', /^and\b/],
                 ['OR', /^or\b/],
@@ -2468,8 +2471,6 @@ const gamevm = Vue.createApp({
                 ['ELSE', /^else\b/],
                 ['ELSE', /^otherwise\b/],
                 ['PRINT', /^print\b/],
-                ['PRODUCTION', /^production\b/],
-                ['CONSUMPTION', /^consumption\b/],
                 ['THERE_ARE', /^(there are|there is)\b/],
                 ['IT_IS', /^it is\b/],
                 ['ACTION', /^(hire|fire|build)\b/],
@@ -2480,8 +2481,9 @@ const gamevm = Vue.createApp({
                 ['IDENT', /^(total housing)\b/],
                 ['IDENT', /^(total population)\b/],
                 ['IDENT', /^(current population)\b/],
+                ['IDENT', /^[a-zA-Z_]\w*\s*(consumption|production)/],
                 ['IDENT', /^[a-zA-Z_]\w*/],
-
+                
             ];
 
 
@@ -2557,13 +2559,6 @@ const gamevm = Vue.createApp({
 
                 //Hire Y ___
                 next = this.peek();
-
-                if(next.type =="PRODUCTION" || next.type == "CONSUMPTION"){
-                    //Syntax error 
-                    //Hire farmer production
-                    let error = this.getSyntaxErrorFromToken(next);
-                    return error;
-                }
 
                 if(next.type == "THEN"){
                     //THEN is only valid inside a conditional
@@ -2785,8 +2780,6 @@ const gamevm = Vue.createApp({
         },
         newParseNumber(){
             let value = this.next();
-
-
             return {
                 type:"Number",
                 "value":value,
@@ -2810,9 +2803,13 @@ const gamevm = Vue.createApp({
                     lhs = value;
                 }
                 op = this.peek();
-                //3.
-                let endOfCommand = op.type == "DOT" || op.type == 'EOF';
-                //3 + 
+                // 3.
+                // Either this command is done, 
+                // or this expression will be compared somehow, 
+                // or this expression is the second half of a comparison and will be followed up with an action
+                // so we end.
+                let endOfCommand = op.type == "DOT" || op.type == 'EOF' || op.type == 'COMPARATOR' || op.type == 'ACTION' || op.type == 'AND' || op.type == 'OR' || op.type == "THEN" || op.type == "THAN";
+                // 3 + 
                 let isArithmetic = op.type == "ARITHMETIC";
 
                 if(op.type == 'IDENT' || endOfCommand){
@@ -2877,7 +2874,19 @@ const gamevm = Vue.createApp({
             if(until.type != 'UNTIL'){
                 console.error("Ran parse until but the token is not an until. Did you next when you meant to peek?");
             }
-            return this.newParseEvaluatable();
+            let evaluatable = this.newParseEvaluatable();
+            let next = this.peek();
+            while(next.type == "AND" || next.type == "OR"){
+                next = this.next();
+                
+                let newEvaluatable = {
+                    lhs:evaluatable,
+                    op:next,
+                    rhs:this.newParseEvaluatable()
+                }
+                evaluatable = newEvaluatable;
+            }
+            return evaluatable; 
         },
         newParseEvaluatable(){
             //anything that will eventually evaluate to a true/false
@@ -2890,11 +2899,38 @@ const gamevm = Vue.createApp({
             if (next.type == 'THERE_ARE') {
                 let tokenid = next.id;
                 this.consume();
-                operator = {
-                    type: "COMPARATOR",
-                    value: "=",
-                    id: tokenid
-                };
+                //First we check if we are comparing something, otherwise there are is an equality check
+                //e.g. If there are more than 0 homeless vs if there are any farmers.
+                //The former needs to be a > 0, the latter, = 0
+                let optionalComparator = this.peek();
+                if(optionalComparator.type == "COMPARATOR"){
+                    optionalComparator = this.next();
+                    operator = optionalComparator;
+                }
+                else if(optionalComparator.type == "MORE"){
+                    this.consume();
+                    operator = {
+                        type: "COMPARATOR",
+                        value: ">",
+                        id: tokenid
+                    };
+                }
+                else if(optionalComparator.type == "LESS"){
+                    this.consume();
+                    operator = {
+                        type: "COMPARATOR",
+                        value: "<",
+                        id: tokenid
+                    };
+                }
+                else{
+                    operator = {
+                        type: "COMPARATOR",
+                        value: "=",
+                        id: tokenid
+                    };
+                }
+                
                 //There are can be followed by a number, any, a comparator, or an identity
 
                 //There are 7
@@ -2913,8 +2949,21 @@ const gamevm = Vue.createApp({
 
                     rhs = this.newParseExpression();
                 }
-                //there are any x
-                if(next.type == "ANY"){
+                else if(next.type == "IDENT"){
+                    lhs = this.newParseExpression();
+                    
+                    //Until there are no homeless people
+                    //lhs is an expression,
+                    //op is known
+                    //rhs needs to be gotten
+                    next = this.peek();
+                    if(next.type == "THAN"){
+                        this.consume();
+                    }
+
+                    rhs = this.newParseExpression();
+                }
+                else if(next.type == "ANY"){
                     //We need to change the check from = to > 0
                     //If there are any farmers
                     //farmers > 0
@@ -2949,28 +2998,20 @@ const gamevm = Vue.createApp({
 
             next = this.peek();
 
-            if(next.type == "IDENT"){
-                //Food production is greater than food consumption
-                next = this.next();
-                let optionalModifier = this.peek();
-                if(optionalModifier.type == "PRODUCTION" || optionalModifier.type == "CONSUMPTION"){
-                    next.value += " " + optionalModifier.value;
-                }
+            if(next.type == "IDENT" || next.type == "NUMBER"){
+
                 lhs = this.newParseExpression();
                 next = this.peek();
                 //op should be in the middle
                 if(next.type == "COMPARATOR"){
-                    op = this.next();
+                    operator = this.next();
                 }
                 next = this.peek();
-                if(next.type == "IDENT"){
-                    next = this.next();
-                    let optionalModifier = this.peek();
-                    if(optionalModifier.type == "PRODUCTION" || optionalModifier.type == "CONSUMPTION"){
-                        next.value += " " + optionalModifier.value;
-                    }
+
+                if(next.type == "IDENT" || next.type == "NUMBER"){
                     rhs = this.newParseExpression();
                 }
+
             }
 
             return {
@@ -2986,8 +3027,48 @@ const gamevm = Vue.createApp({
             if(ifWhenToken.type != 'CONDITIONAL'){
                 console.error("Ran parse if but the token is not an if or when. Did you next when you meant to peek?");
             }
+            let condition = this.newParseEvaluatable();
+            let next = this.peek();
+            
+            while(next.type == "AND" || next.type == "OR"){
+                next = this.next();
+                
+                let newCondition = {
+                    lhs:condition,
+                    op:next,
+                    rhs:this.newParseEvaluatable()
+                }
+                condition = newCondition;
+                next = this.peek();
+                if(next.type == 'THEN'){
+                    this.consume();
 
-            return this.newParseEvaluatable();
+                    break;
+                }
+            }
+            next = this.peek();
+            if(next.type == "THEN"){
+                this.consume();
+            }
+            let optionalAction = this.peek();
+            if(optionalAction.type == "ACTION"){
+                condition.action = this.newParseAction();
+            }
+            if(optionalAction.type == "PRINT"){
+                condition.action = this.parsePrint();
+            }
+            let optionalElse = this.peek();
+            if(optionalElse.type == "ELSE"){
+                this.consume();
+                let optionalElseAction = this.next();
+                if(optionalElseAction.type == "ACTION"){
+                    condition.elseAction = this.newParseAction();
+                }
+                if(optionalElseAction.type == "PRINT"){
+                    condition.elseAction = this.parsePrint();
+                }
+            }
+            return condition;
         },
         parseAction() {
             //do something (until) lhs op rhs
@@ -3480,7 +3561,7 @@ const gamevm = Vue.createApp({
                 return this.parseIdent();
             }
             else if (token.type == 'CONDITIONAL') {
-                return this.parseConditional();
+                return this.newParseConditional();
             }
             else if (token.type == "ACTION") {
                 return this.newParseAction();
@@ -3963,7 +4044,7 @@ const gamevm = Vue.createApp({
                 Trying to say it is something else is unclear. 
                 It may need a different name.`;
             }
-
+            return `Unknown Syntax error: line ${token.line}, ${token.value}`;
         },
         sanitizeProfName(name) {
             if (!name) {
