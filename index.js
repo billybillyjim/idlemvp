@@ -2515,7 +2515,7 @@ const gamevm = Vue.createApp({
                     break;
                 }
             }
-            console.log(tokens);
+            // console.log(tokens);
             tokens.push({ type: 'EOF' });
             return tokens;
         },
@@ -2613,11 +2613,34 @@ const gamevm = Vue.createApp({
                 }
 
                 if(next.type == "ELSE"){
-                    //ELSE is only valid inside a conditional
-                    //Hire y farmers else
+                    //If there are 8 farmers hire y farmers else print 'nope'
                     //Syntax error
-                    let error = this.getSyntaxErrorFromToken(next);
-                    return error;
+                    this.consume();
+                    next = this.peek();
+                    if(next.type == "ACTION"){
+                        let elseAction = this.newParseAction();
+                        return {
+                            type:"Action",
+                            action:action,
+                            target:target,
+                            amount:amount,
+                            elseAction:elseAction,
+                            tokenid: action.id
+                        }
+                    }
+                    else if(next.type == "PRINT"){
+                        let elseAction = this.parsePrint();
+                        return {
+                            type:"Print",
+                            action:action,
+                            target:target,
+                            amount:amount,
+                            elseAction:elseAction,
+                            tokenid: action.id
+                        }
+                    }
+                    
+
                 }
                 
                 if(next.type == 'DOT'){
@@ -2703,9 +2726,14 @@ const gamevm = Vue.createApp({
 
                 if(next.type == "DOT"){
                     //Hire 7.
-                    //Syntax error.
-                    let error = this.getSyntaxErrorFromToken(next);
-                    return error;
+                    //This is technically a syntax error but we can probably figure it out from context.
+                    return {
+                        type:"Action",
+                        action:action,
+                        target:null,
+                        amount:amount,
+                        tokenid: action.id
+                    }
                 }
 
                 if(next.type == "AND"){
@@ -2808,7 +2836,16 @@ const gamevm = Vue.createApp({
                 // or this expression will be compared somehow, 
                 // or this expression is the second half of a comparison and will be followed up with an action
                 // so we end.
-                let endOfCommand = op.type == "DOT" || op.type == 'EOF' || op.type == 'COMPARATOR' || op.type == 'ACTION' || op.type == 'AND' || op.type == 'OR' || op.type == "THEN" || op.type == "THAN";
+                let endOfCommand =  op.type == "DOT" || 
+                                    op.type == 'EOF' || 
+                                    op.type == 'COMPARATOR' || 
+                                    op.type == 'ACTION' || 
+                                    op.type == 'AND' || 
+                                    op.type == 'OR' || 
+                                    op.type == "THEN" || 
+                                    op.type == "PRINT" || 
+                                    op.type == "ELSE" || 
+                                    op.type == "THAN";
                 // 3 + 
                 let isArithmetic = op.type == "ARITHMETIC";
 
@@ -2829,6 +2866,7 @@ const gamevm = Vue.createApp({
                     //This could be the point where we hit something like
                     //Hire farmers until there are 10.
                     //Maybe I can pretend it's find and catch it later?
+
                     let error = this.getSyntaxErrorFromToken(op);
                     return error;
                 }
@@ -3060,7 +3098,7 @@ const gamevm = Vue.createApp({
             let optionalElse = this.peek();
             if(optionalElse.type == "ELSE"){
                 this.consume();
-                let optionalElseAction = this.next();
+                let optionalElseAction = this.peek();
                 if(optionalElseAction.type == "ACTION"){
                     condition.elseAction = this.newParseAction();
                 }
@@ -3412,7 +3450,7 @@ const gamevm = Vue.createApp({
                 op: operator,
                 right: rhs
             };
-            console.log(operator);
+            // console.log(operator);
             output.tokenid = operator.id;
             return output;
         },
@@ -3539,7 +3577,7 @@ const gamevm = Vue.createApp({
                     break;
                 }
                 
-                console.log(lhs, op, rhs);
+                // console.log(lhs, op, rhs);
                 lhs = {
                     type:'BinaryExpression',
                     left:lhs,
@@ -4029,7 +4067,7 @@ const gamevm = Vue.createApp({
             return output;
         },
         getSyntaxErrorFromToken(token) {
-            // //console.log(token);
+            console.error(token);
             let name = token.value;
             if (this.professionReservedNames.has(name)) {
                 return `Our scribes are confused by your law. Our people cannot make ${pluralize.plural(name)} by magic. On line ${token.line} we wonder if you meant to hire or fire more ${pluralize.plural(name)}? ${name.charAt(0).toUpperCase() + name.slice(1)} is a special word that always refers to our people with the profession of ${name}.`;

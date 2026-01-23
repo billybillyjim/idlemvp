@@ -499,8 +499,8 @@ print x > y.
             let ast = this.$parent.parse(tokens);
             asts.push(ast);
         }
-        console.log(asts);
-        console.log(this.parsed);
+        // console.log(asts);
+        // console.log(this.parsed);
         const transitions = {};
         const transitionExamples = {};
 
@@ -517,8 +517,8 @@ print x > y.
                 transitionExamples[a].push(seq[i + 1]);
             }
         }
-        console.log(transitions);
-        console.log(transitionExamples);
+        // console.log(transitions);
+        // console.log(transitionExamples);
 
         const textarea = document.querySelector('#code-text-area');
         const lineNumbersEle = document.querySelector('#line-numbers');
@@ -532,8 +532,8 @@ print x > y.
             this.tokens = this.$parent.tokenize(this.testCode);
             this.ast = this.$parent.parse(this.tokens);
             this.env = this.$parent.evaluate(this.ast, false);
-            console.log(this.env);
-            console.log(this.ast)
+            // console.log(this.env);
+            // console.log(this.ast)
             this.isInspecting = true;
         },
         endInspect() {
