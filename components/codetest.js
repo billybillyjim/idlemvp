@@ -64,7 +64,6 @@ print x > y.
                 `If there are 7 Unemployed, then hire a farmer.`,
                 `If there are 8 farmers, hire a farmer otherwise print 'nope'.`,
                 `If there are any lumberjacks, fire lumberjacks.`,
-                `If there are any unemployed people hire a lumberjack if wood consumption is higher than wood production otherwise hire a farmer.`,
                 `If there are more farmers than lumberjacks hire lumberjacks until there are more lumberjacks than farmers.`,
                 `If there are more than z - 3 lumberjacks print 'oh no'.`,
                 `If there are no lumberjacks, hire one.`,
@@ -80,7 +79,7 @@ print x > y.
                 `print x > y.`,
                 `y is 3 + 5.`,
                 `y is 7.`,
-                `y is > 7.`,
+                `x = y is > 7.`,
                 `y is x + 5.`,
             ],
             tests: [
@@ -499,8 +498,8 @@ print x > y.
             let ast = this.$parent.parse(tokens);
             asts.push(ast);
         }
-        // console.log(asts);
-        // console.log(this.parsed);
+        console.log(asts);
+        console.log(this.parsed);
         const transitions = {};
         const transitionExamples = {};
 

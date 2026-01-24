@@ -368,15 +368,16 @@ const gamevm = Vue.createApp({
             }
             const tokens = this.tokenize(code);
             if (outputTokens) {
-                ////console.log(tokens);
+                console.log(tokens);
             }
+            this.parser.tokens = tokens;
             const ast = this.parse(tokens);
             if (outputAST) {
-                ////console.log(ast);
+                console.log(ast);
             }
             let output = this.evaluate(ast);
             if (outputOutput) {
-                // //console.log(output);
+                console.log(output);
             }
             return output;
         },
@@ -2442,8 +2443,8 @@ const gamevm = Vue.createApp({
                 ['SKIP', /^(a )\b/],
                 ['NUMBER', /^\d+/],
                 ['NUMBER', /^(one|two|three|four|five|six|seven|eight|nine|ten|eleven|twelve|no)\b/],
-                ['COMPARATOR', /^(greater than|less than or equal to|is higher than|is lower than|higher than|lower than|greater than or equal to|is less than or equal to|is greater than or equal to|is equal to|are greater than|is greater than|are less than|is less than|less than|are more than|is more than|more than|fewer than|is fewer than|are fewer than)/],
-                ['COMPARATOR', /^(>=|<=|>|<|==)/],
+                ['COMPARATOR', /^(greater than or equal to|less than or equal to|(is|are) greater than or equal to|(is|are) less than or equal to|greater than|less than|(is|are) greater than|(is|are) less than|(is|are) equal to)/i],
+                ['COMPARATOR', /^(is >|is <|is <=|is >=|is =|is ==|are >|are <|are <=|are >=|are =|are ==|>=|<=|>|<|==)/],
                 ['MORE', /^more/],
                 ['LESS', /^less/],
                 ['LESS', /^fewer/],
@@ -2452,7 +2453,7 @@ const gamevm = Vue.createApp({
                 ['OR', /^or\b/],
                 ['NOT', /^not\b/],
                 ['XOR', /^xor\b/],
-                ['ASSIGN', /^(is\b|=|are\b)/], //This can get converted to an operator if used in an evaluatable after an identity
+                ['ASSIGN', /^(is\b|=|are\b)/],
                 ['STRING', /^"[^"]*"/],
                 ['STRING', /^'[^']*'/],
                 ['ARITHMETIC', /^\+/],
@@ -2461,12 +2462,11 @@ const gamevm = Vue.createApp({
                 ['ARITHMETIC', /^\//],
                 ['LPAREN', /^\(/],
                 ['RPAREN', /^\)/],
-                ['NEWLINE', /^\n+/],
                 ['CONDITIONAL', /^(if|when)/],
                 ['DOT', /^\./],
                 ['THEN', /^then\b/],
                 ['ANY', /^any\b/],
-                ['NONE', /^any\b/],
+                ['NONE', /^none\b/],
                 ['UNTIL', /^until\b/],
                 ['ELSE', /^else\b/],
                 ['ELSE', /^otherwise\b/],
@@ -2523,7 +2523,7 @@ const gamevm = Vue.createApp({
             return this.parser.tokens[this.parser.i + offset] || {};
         },
         expect(type, offset = 0) {
-            const token = peek(offset);
+            const token = this.peek(offset);
             if (token.type !== type) {
                 throw new SyntaxError(`Expected ${type} at position ${this.parser.i + offset}, got ${token.type}`);
             }
@@ -2538,7 +2538,7 @@ const gamevm = Vue.createApp({
         isReservedName(name) {
             return this.reservedNames.has(name);
         },
-        newParseAction(){
+        parseAction(){
             //Hire, fire, or build
             let action = this.next();
             //Actions can be followed by identities or numbers.
@@ -2579,7 +2579,7 @@ const gamevm = Vue.createApp({
                 if(next.type == "ARITHMETIC"){
                     //Hire farmer +
                     //We have an equation to solve for the amount
-                    let amount = this.newParseExpression();
+                    let amount = this.parseExpression();
                     //Hire farmer + 7 farmers
                     let target = this.peek();
                     if(target.type != 'IDENT'){
@@ -2618,7 +2618,7 @@ const gamevm = Vue.createApp({
                     this.consume();
                     next = this.peek();
                     if(next.type == "ACTION"){
-                        let elseAction = this.newParseAction();
+                        let elseAction = this.parseAction();
                         return {
                             type:"Action",
                             action:action,
@@ -2655,7 +2655,7 @@ const gamevm = Vue.createApp({
                 }
                 
                 if(next.type == "UNTIL"){
-                    let untilClause = this.newParseUntil();
+                    let untilClause = this.parseUntil();
                     return {
                         type:"Action",
                         action:action,
@@ -2667,7 +2667,7 @@ const gamevm = Vue.createApp({
                 }
                 
                 if(next.type == "CONDITIONAL"){
-                    let conditionalClause = this.newParseConditional();
+                    let conditionalClause = this.parseConditional();
                     return {
                         type:"Action",
                         action:action,
@@ -2774,7 +2774,7 @@ const gamevm = Vue.createApp({
                 if(next.type == "ARITHMETIC"){
                     //Hire 7 +
                     //Time to do math
-                    amount = this.newParseExpression();
+                    amount = this.parseExpression();
                     let target = this.peek();
                     if(target.type != 'IDENT'){
                         let error = this.getSyntaxErrorFromToken(next);
@@ -2806,14 +2806,14 @@ const gamevm = Vue.createApp({
                 tokenid: action.id
             }
         },
-        newParseNumber(){
+        parseNumber(){
             let value = this.next();
             return {
                 type:"Number",
                 "value":value,
             }
         },
-        newParseExpression(){
+        parseExpression(){
             //3 + 7 - farmers > x + 1 / 4
             
             //3
@@ -2845,11 +2845,12 @@ const gamevm = Vue.createApp({
                                     op.type == "THEN" || 
                                     op.type == "PRINT" || 
                                     op.type == "ELSE" || 
+                                    op.type == "CONDITIONAL" || 
                                     op.type == "THAN";
                 // 3 + 
                 let isArithmetic = op.type == "ARITHMETIC";
 
-                if(op.type == 'IDENT' || endOfCommand){
+                if(op.type == 'IDENT' || op.type == "NUMBER" || endOfCommand){
                     //could be something like 
                     //no homeless people
                     if(!value){
@@ -2861,8 +2862,32 @@ const gamevm = Vue.createApp({
                     }
                     break;
                 }
+                if(op.type == "ASSIGN"){
+                    //This has now changed from an expression to an evaluatable.
+                    //7 + 1 = 8 + y
+                    //I think we return an evaluatable, with the other half being another expression.
+                    if(!value){
+                        value = {
+                            lhs:lhs,
+                            rhs:null,
+                            op:null,
+                        }
+                    }
+                    this.consume();
 
-                if(!isArithmetic){
+                    let newOp = { type:"COMPARATOR", value:"==", id: op.id, line: op.line };
+                    return {
+                        type:"Evaluatable",
+                        lhs:{
+                            type:"Expression",
+                            tokenid: lhs.id || lhs.tokenid,
+                            value
+                        },
+                        op:newOp,
+                        rhs:this.parseExpression()
+                    }
+                }
+                else if(!isArithmetic){
                     //This could be the point where we hit something like
                     //Hire farmers until there are 10.
                     //Maybe I can pretend it's find and catch it later?
@@ -2882,7 +2907,7 @@ const gamevm = Vue.createApp({
 
                 let rhsIsValid = rhs.type == "IDENT" || rhs.type == "NUMBER";
                 if(!rhsIsValid){
-                    let error = this.getSyntaxErrorFromToken(next);
+                    let error = this.getSyntaxErrorFromToken(rhs);
                     return error;
                 }
                 rhs = this.next();
@@ -2907,12 +2932,12 @@ const gamevm = Vue.createApp({
                 value:value
             }
         },
-        newParseUntil(){
+        parseUntil(){
             let until = this.next();
             if(until.type != 'UNTIL'){
                 console.error("Ran parse until but the token is not an until. Did you next when you meant to peek?");
             }
-            let evaluatable = this.newParseEvaluatable();
+            let evaluatable = this.parseEvaluatable();
             let next = this.peek();
             while(next.type == "AND" || next.type == "OR"){
                 next = this.next();
@@ -2920,13 +2945,13 @@ const gamevm = Vue.createApp({
                 let newEvaluatable = {
                     lhs:evaluatable,
                     op:next,
-                    rhs:this.newParseEvaluatable()
+                    rhs:this.parseEvaluatable()
                 }
                 evaluatable = newEvaluatable;
             }
             return evaluatable; 
         },
-        newParseEvaluatable(){
+        parseEvaluatable(){
             //anything that will eventually evaluate to a true/false
             let operator = null;
             let rhs = null;
@@ -2972,23 +2997,32 @@ const gamevm = Vue.createApp({
                 //There are can be followed by a number, any, a comparator, or an identity
 
                 //There are 7
+                
+                // There are two other possibilities if we find a THAN , either this is 
+                // There are more than 7 farmers, or
+                // There are more farmers than lumberjacks.
+                // If the next word is than, we have the former.
+
                 next = this.peek();
+
                 if(next.type == "NUMBER"){
                     //Could be an expression
                     //There are 7( + 1 farmers)
                     //Same as 7 + 1 == farmers
-                    lhs = this.newParseExpression();
+                    lhs = this.parseExpression();
                     
                     //Until there are no homeless people
                     //lhs is an expression,
                     //op is known
                     //rhs needs to be gotten
                     next = this.peek();
-
-                    rhs = this.newParseExpression();
+                    if(next.type == "THAN"){
+                        this.consume();
+                    }
+                    rhs = this.parseExpression();
                 }
                 else if(next.type == "IDENT"){
-                    lhs = this.newParseExpression();
+                    lhs = this.parseExpression();
                     
                     //Until there are no homeless people
                     //lhs is an expression,
@@ -2999,7 +3033,7 @@ const gamevm = Vue.createApp({
                         this.consume();
                     }
 
-                    rhs = this.newParseExpression();
+                    rhs = this.parseExpression();
                 }
                 else if(next.type == "ANY"){
                     //We need to change the check from = to > 0
@@ -3027,9 +3061,23 @@ const gamevm = Vue.createApp({
                     return {
                         type:"Evaluatable",
                         lhs:lhs,
-                        operator:operator,
+                        op:operator,
                         rhs:rhs
                     }
+                }
+                else if(next.type == "THAN"){
+                    // There are more than 7 farmers
+                    // now we compare a evaluatables
+                    this.consume();
+                    lhs = this.parseExpression();
+                    rhs = this.parseExpression();
+                }
+                    
+                return {
+                    type:"Evaluatable",
+                    lhs:lhs,
+                    op:operator,
+                    rhs:rhs
                 }
 
             }
@@ -3038,7 +3086,7 @@ const gamevm = Vue.createApp({
 
             if(next.type == "IDENT" || next.type == "NUMBER"){
 
-                lhs = this.newParseExpression();
+                lhs = this.parseExpression();
                 next = this.peek();
                 //op should be in the middle
                 if(next.type == "COMPARATOR"){
@@ -3047,25 +3095,24 @@ const gamevm = Vue.createApp({
                 next = this.peek();
 
                 if(next.type == "IDENT" || next.type == "NUMBER"){
-                    rhs = this.newParseExpression();
+                    rhs = this.parseExpression();
                 }
-
             }
 
             return {
                 type:"Evaluatable",
                 lhs:lhs,
-                operator:operator,
+                op:operator,
                 rhs:rhs
             }
 
         },
-        newParseConditional(){
+        parseConditional(){
             let ifWhenToken = this.next();
             if(ifWhenToken.type != 'CONDITIONAL'){
                 console.error("Ran parse if but the token is not an if or when. Did you next when you meant to peek?");
             }
-            let condition = this.newParseEvaluatable();
+            let condition = this.parseEvaluatable();
             let next = this.peek();
             
             while(next.type == "AND" || next.type == "OR"){
@@ -3074,7 +3121,7 @@ const gamevm = Vue.createApp({
                 let newCondition = {
                     lhs:condition,
                     op:next,
-                    rhs:this.newParseEvaluatable()
+                    rhs:this.parseEvaluatable()
                 }
                 condition = newCondition;
                 next = this.peek();
@@ -3090,7 +3137,7 @@ const gamevm = Vue.createApp({
             }
             let optionalAction = this.peek();
             if(optionalAction.type == "ACTION"){
-                condition.action = this.newParseAction();
+                condition.action = this.parseAction();
             }
             if(optionalAction.type == "PRINT"){
                 condition.action = this.parsePrint();
@@ -3100,7 +3147,7 @@ const gamevm = Vue.createApp({
                 this.consume();
                 let optionalElseAction = this.peek();
                 if(optionalElseAction.type == "ACTION"){
-                    condition.elseAction = this.newParseAction();
+                    condition.elseAction = this.parseAction();
                 }
                 if(optionalElseAction.type == "PRINT"){
                     condition.elseAction = this.parsePrint();
@@ -3108,101 +3155,36 @@ const gamevm = Vue.createApp({
             }
             return condition;
         },
-        parseAction() {
-            //do something (until) lhs op rhs
-            //TODO:Reverse this logic. Until x should mean while x not true
-            //hire farmers until (there are 7 (farmers)) 
-            let action = this.next();
-            let count = 1;
-            let actionTarget = this.next();
-            if (actionTarget.type == 'NUMBER') {
-                count = parseInt(actionTarget.value);
-                actionTarget = this.next();
-            }
-            let until = this.peek();
-            let actionConditional = null;
-            //Until or if or when
-            if (until.type == 'UNTIL' || until.type == 'CONDITIONAL') {
-                actionConditional = this.parseConditional(actionTarget);
-            }
-            return {
-                type: 'Action',
-                action,
-                count: count,
-                actionTarget,
-                condition: actionConditional
-            }
-        },
-        parseIdent() {
-            //Allowed ideas of syntax:
-
-            //X = 10.
-            //y is 7.
-            //
-            const identToken = this.next();
-            const name = identToken.value;
-            if (this.isReservedName(name)) {
-                return this.throwSyntaxError('Identifier', name, this.getSyntaxErrorFromToken(identToken), identToken.id);
-            }
-            //ident followed by is/are
-            if (this.peek().type == 'ASSIGN') {
+        parseIdent(){
+            let ident = this.next();
+            let name = ident.value;
+           
+            let next = this.peek();
+            if(next.type == "ASSIGN"){
+                //Simple assignment.
+                //Not valid to assign a reserved keyword
+                 if(this.isReservedName(name)){
+                    return this.throwSyntaxError('Identifier', name, this.getSyntaxErrorFromToken(ident), ident.id);
+                }
                 this.consume();
-
-                //x = [something]
-                //Something is either a number, in which case check for an expression
-                let valueToken = this.next();
-                if (valueToken.type == 'NUMBER') {
-                    //Check for expression
-                    valueToken = this.parseExpression(valueToken);
-                    if(valueToken.type == "NUMBER"){
-                        return {
-                            type: 'Assignment',
-                            id: { type: 'Identifier', name },
-                            init: { type: 'Number', value: Number(valueToken.value) },
-                            tokenid: valueToken.id
-                        };
+                let rhs = this.parseEvaluatable();
+                return {
+                    type:"Assignment",
+                    init:{
+                        type:"Number",
+                        value:rhs
+                    },
+                    id:{
+                        type:"Identifier",
+                        name
                     }
-                    return {
-                        type: 'Assignment',
-                        id: { type: 'Identifier', name },
-                        init: { type: 'Expression', value: valueToken },
-                        tokenid: valueToken.id
-                    };
                 }
-                //Or its already a thing
-                //x is lumberjacks
-                else if (valueToken.type == 'IDENT') {
-                    if (this.peek().type == 'PRODUCTION' || this.peek().type == "CONSUMPTION") {
-                        let modifier = this.next();
-                        valueToken.value += ' ' + modifier.value;
-                    }
-                    return {
-                        type: 'Assignment',
-                        id: { type: 'Identifier', name },
-                        init: { type: 'Identifier', name: valueToken.value },
-                        tokenid: valueToken.id
-                    };
-                }
-                else {
-                    //Not a number or ident
-                    //x is .
-                    //x is if
-                    //y = until
-                    return this.throwSyntaxError(
-                        'Identifier',
-                        name,
-                        `Our scribes are confused by your law. On line ${valueToken.line} it appears you are missing a word to set the value of ${identToken.value} to something.`,
-                        valueToken.tokenid);
-                }
-
             }
-            else {
-                //Not assigning a value.
-                //x greater than 7.
-                let peek = this.peek();
-                return this.throwSyntaxError('Identifier', name, this.getSyntaxErrorFromToken(peek), peek.tokenid);
+            else if(next.type == "COMPARATOR"){
+                return {
+                    
+                }
             }
-
         },
         throwSyntaxError(id, name, message, tokenid = -1) {
             this.parser.i += 10000;
@@ -3217,381 +3199,30 @@ const gamevm = Vue.createApp({
 
             };
         },
-        parseEvaluatable(actionTarget) {
-            //If there are more than 5 unemployed
-            //Until there are 3
-            //when food production is > 10
-            //until there are x
-            let operator = null;
-            let rhs = null;
-            let lhs = null;
-
-            //there are more than 5 unemployed
-            let next = this.peek();
-
-            if (next.type == 'THERE_ARE') {
-                let tokenid = next.id;
-                this.consume();
-                operator = {
-                    type: "COMPARATOR",
-                    value: "=",
-                    id: tokenid
-                };
-            }
-            //Either a comparator or an identity
-            next = this.peek();
-            //more than 5 unemployed
-            //less than z - 1 lumberjacks
-            //7 items
-            if (next.type == 'COMPARATOR') {
-                //we've got an comparator
-                operator = this.next();
-                //5 unemployed
-                //z - 1 lumberjacks
-                let count = this.next();
-                if (count.type == 'NUMBER' || count.type == "IDENT") {
-                    rhs = this.parseExpression(count);
-                }
-
-                let final = this.next();
-                if (final.type == 'IDENT') {
-                    lhs = this.parseExpression(final);
-                }
-                else if (final.type == 'DOT') {
-                    if (!actionTarget && !lhs) {
-                        //No action target means there's a missing antecedent. 
-                        return this.throwSyntaxError(
-                            'Evaluatable',
-                            final,
-                            `Our scribes are confused by your law. On line ${final.line} we could not tell what '${operator.value}' refers to. We request that you name what there ${this.toProperPluralize('is', count.value)} ${count.value} of.`,
-                            operator.id
-                        );
-                    }
-                    //If unemployed wasn't mentioned, assume the count refers to the action target.
-                    //for example, hire farmers if there are more than 5 
-                    //Then 5 refers to farmers.
-                    lhs = actionTarget;
-                }
-                else if(!rhs || !lhs || !operator){
-                    return this.throwSyntaxError(
-                        'Evaluatable',
-                        final,
-                        `Our scribes are confused by your law. On line ${final.line} we expected either a word describing what you count ${count.value} of, or the end of the sentence, instead of the word '${final.value}'.`,
-                        final.id
-                    )
-                }
-            }
-            else if (next.type == 'IDENT') {
-                //food production is greater than 10
-                //x > y
-                //lhs is x
-                lhs = this.next();
-                //potentialMod is >
-                let potentialModifier = this.peek();
-
-                if (potentialModifier.type == 'CONSUMPTION' || potentialModifier.type == 'PRODUCTION') {
-                    lhs.value += ' ' + potentialModifier.value;
-                    this.consume();
-                }
-
-                //if there are x unemployed people
-                //in this case we already have the operator and x, and unemployed people is an ident that can be compared.
-                //for x > y, operator has not been set
-                if(operator && operator.type == 'COMPARATOR'){
-                    //In this case there are was the operator but there may be a chance there's more, like
-                    //if there are less than 7 unemployed people
-                    let potentialOp = this.peek();
-                    if(potentialOp.type == "COMPARATOR"){
-                        operator = potentialOp;
-                    }
-                }
-                else{
-                    //for x > y, 
-                    operator = this.next();
-
-                    if (operator.type == 'ASSIGN') {
-                        // Convert is in any evaluatable to comparison.
-                        // Is this evil? Maybe... This will modify the original token 
-                        // and make it look like is is an Operator even though it isnt
-                        operator.type = 'COMPARATOR';
-                    }
-
-                    if (operator.type != 'COMPARATOR') {
-                        return this.throwSyntaxError(
-                            'Evaluatable',
-                            operator,
-                            `Our scribes are confused by your law. On line ${operator.line} we expected a word to compare values instead of the word ${operator.value}`,
-                            operator.id
-                        );
-
-                    }
-                }
-
-                
-
-                rhs = this.next();
-                if (rhs.type != 'IDENT' && rhs.type != 'NUMBER') {
-                    return this.throwSyntaxError('Evaluatable',
-                        rhs,
-                        `Our scribes are confused by your law. On line ${rhs.line} we expected a counting of something or a number, instead of the word ${rhs.value}`,
-                        rhs.id
-                    );
-                }
-                potentialModifier = this.peek();
-
-                if (potentialModifier.type == 'CONSUMPTION' || potentialModifier.type == 'PRODUCTION') {
-                    rhs.value += ' ' + potentialModifier.value;
-                    this.consume();
-                }
-
-
-            }
-            else if (next.type == 'NUMBER') {
-                //0 lumberjacks
-
-                lhs = this.parseExpression(this.next());
-                rhs = this.peek(); //lumberjacks
-
-                if (rhs.type == 'NUMBER') {
-                    //Catch double numbers like "if there are 7 8 lumberjacks"
-                    return this.throwSyntaxError(
-                        'Evaluatable',
-                        lhs,
-                        `Our scribes are confused by your law. On line ${lhs.line} we expected a word to compare values or a label for the number ${lhs.value}, not a number followed by ${rhs.value || 'nothing'}.`,
-                        lhs.id
-                    );
-                }
-                //console.log(rhs);
-                if (operator == null) {
-                    //if lumberjacks are 0
-                    //Is this right? Seems like it wont get here
-                    //lhs is lumberjacks
-                    //rhs has peeked to find are and is currently an comparator
-                    //swap the rhs to comparator and set the rhs to after
-                    //comparator will be set to are
-                    //rhs is set to 0
-                    if (rhs.type == 'COMPARATOR') {
-                        operator = this.next();
-                        rhs = this.next();
-                    }
-                }
-                else {
-                    //Operator already set by something like THERE ARE
-                    //If there are 0 lumberjacks
-                    //Operator is set by there are above
-                    //lhs is set to 0
-                    //rhs is peeked to lumberjacks and should be nexted
-                    rhs = this.next();
-                }
-
-
-            }
-            else {
-                //None of the valid inputs:
-                //more than 5 unemployed
-                //food production is greater than 10
-                //greater than 7
-                //
-                return this.throwSyntaxError('Evaluatable',
-                    next,
-                    `Our scribes are confused by your law. On line ${next.line} we expected a word to compare values, a counting of something, or a number, instead of the word ${next.value}`,
-                    next.id
-                );
-
-            }
-            return {
-                type: 'Evaluatable',
-                test: {
-                    left: lhs,
-                    op: operator,
-                    right: rhs
-                },
-                //ID would be the if that comes before 
-                tokenid: operator.id - 1 
-            }
-        },
-        parseUntil(actionTarget) {
-            let output = { type: 'Evaluatable' };
-            //If there are more than 5 unemployed
-            //Until there are 3
-            //when food production is > 10
-            //until there are x
-            let operator = null;
-            let rhs = null;
-            let lhs = null;
-            //there are 5
-            //there are 10 farmers
-            //there are x
-            let next = this.peek();
-            let thereareid = next.id;
-            if (next.type == 'THERE_ARE') {
-                this.consume();
-            }
-            //5
-            //10 farmers
-            let count = this.next();
-            if (count.type == 'NUMBER' || count.type == 'IDENT') {
-                let final = this.next();
-                if (final.type == 'DOT') {
-                    lhs = actionTarget;
-                }
-                else if (final.type == 'IDENT') {
-                    lhs = final;
-                }
-                operator = {
-                    type: 'COMPARATOR',
-                    value: '>=',
-                    id:thereareid
-                };
-                rhs = count;
-            }
-            output.test = {
-                left: lhs,
-                op: operator,
-                right: rhs
-            };
-            // console.log(operator);
-            output.tokenid = operator.id;
-            return output;
-        },
-        parseConditional(actionTarget = null) {
-
-            let output = { type: 'Evaluatable' };
-            let condition = this.next();
-
-            if (condition.type == 'CONDITIONAL') {
-                let next = this.peek();
-                if (next.type == 'NUMBER') {
-                    return this.throwSyntaxError(
-                        'Conditional', 
-                        next, 
-                        `Our scribes are confused by your law. On line ${next.line} after the word 'if' we expected a word or phrase to begin a check of truth like 'there are' or a word to describe a group like 'huts' or 'farmers', instead of the number ${next.value}.`,
-                        next.id
-                    );
-                }
-                else {
-                    output = this.parseEvaluatable(actionTarget);
-                }
-
-            }
-            else if (condition.type == 'UNTIL') {
-                output = this.parseUntil(actionTarget);
-            }
-            while (this.peek().type == 'AND' || this.peek().type == 'OR') {
-                let next = this.next();
-                output = {
-                    type: "BooleanOperator",
-                    value: next,
-                    lhs: this.parseEvaluatable(actionTarget),
-                    rhs: JSON.parse(JSON.stringify(output)),
-                    tokenid: next.id
-                }
-            }
-            let optionalThen = this.peek();
-            if (optionalThen.type == 'THEN') {
-                this.consume();
-            }
-
-            let actionToken = this.peek();
-            let action = null;
-
-            if (actionToken.type == "ACTION") {
-                action = this.parseAction();
-                output.action = action;
-            }
-            if (actionToken.type == "PRINT") {
-                action = this.parsePrint();
-                output.action = action;
-            }
-            let optionalElse = this.peek();
-            if (optionalElse.type == 'ELSE') {
-                this.consume();
-                let followup = this.peek();
-                if (followup.type == 'ACTION') {
-                    output.else = this.parseAction();
-                }
-                else if (followup.type == 'PRINT') {
-                    output.else = this.parsePrint();
-                }
-
-            }
-            return output;
-        },
         parsePrint() {
             let printCommand = this.next();
-            let output = this.next();
+            let output = this.peek();
+            let outputid = output.id;
             if(output.type == "NUMBER" || output.type == "IDENT"){
-                output = this.parseExpression(output);
+                output = this.parseEvaluatable();
+            }
+            else if(output.type == "STRING"){
+                this.consume();
             }
 
-            let possibleExtra = this.peek();
-            if (possibleExtra.type == 'PRODUCTION' || possibleExtra.type == 'CONSUMPTION') {
-                this.next();
-                output.value += ' ' + possibleExtra.value;
+            let optionalConditional = this.peek();
+            let conditional = null;
+            if(optionalConditional.type == "CONDITIONAL"){
+                conditional = this.parseConditional();                
             }
+
             return {
                 type: 'Print',
                 output: output,
                 line: printCommand.line,
-                tokenid:output.id
+                tokenid:outputid,
+                conditional:conditional
             }
-        },
-        parseExpression(startingToken){
-            //x = 7 + 10
-            //starting token was found to be a number followed by an operation
-            //TODO:Make this handle comparators as well
-            let lhs = startingToken;
-            
-            //If you make it more than 10k it will break
-            let sanityCheck = 10000;
-            let iterator = 0;
-            //spooky while true
-            while(true){
-                let op = this.peek();
-                if(!op){
-                    break;
-                }
-                if(op.type == 'COMPARATOR'){
-                    //This could be a comparator.
-                    //Then what?
-                    //What does it mean to say
-                    //x + y > 17
-                    //ideally you wanna build a comparator with the existing expression as the lhs and the remainder as the rhs.
-                    //Lets do that.
-                    //We are already too late, the evaluatable needs the variable
-                    var rhs = this.parseEvaluatable();
-                    
-                }
-                else if(op.type == 'ARITHMETIC'){
-                    this.consume();
-
-                    var rhs = this.peek();
-
-                    if(!rhs || (rhs.type != 'NUMBER' && rhs.type != "IDENT")){
-                        break;
-                    }
-
-                    this.consume();
-                }
-                else{
-                    break;
-                }
-                
-                // console.log(lhs, op, rhs);
-                lhs = {
-                    type:'BinaryExpression',
-                    left:lhs,
-                    op:op,
-                    right:rhs
-                }
-
-                iterator++;
-                if(iterator >= sanityCheck){
-                    break;
-                }
-            }
-
-            return lhs;
         },
         parsePrimary() {
             const token = this.peek();
@@ -3599,10 +3230,10 @@ const gamevm = Vue.createApp({
                 return this.parseIdent();
             }
             else if (token.type == 'CONDITIONAL') {
-                return this.newParseConditional();
+                return this.parseConditional();
             }
             else if (token.type == "ACTION") {
-                return this.newParseAction();
+                return this.parseAction();
             }
             else if (token.type == 'PRINT') {
                 return this.parsePrint();
@@ -3621,8 +3252,8 @@ const gamevm = Vue.createApp({
         },
         parse(tokens) {
             const ast = [];
-            this.parser.tokens = tokens.filter(x => x.type != 'NEWLINE');
             this.parser.i = 0;
+            this.parser.tokens = tokens;
 
             while (this.parser.i < this.parser.tokens.length) {
                 ast.push(this.parsePrimary())
@@ -3634,6 +3265,7 @@ const gamevm = Vue.createApp({
                     this.parser.i++;
                 }
             }
+            console.log(tokens);
             console.log(ast);
             return ast;
         },
