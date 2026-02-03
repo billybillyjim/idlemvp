@@ -29,6 +29,9 @@ export default {
             // testCode:'if there are more than z - 3 lumberjacks print \'oh no\'.',
 
             testCode: `x is 5 * 5 * 5.
+            z is 10.
+            red is z.
+            print z = red.
 y is 10 + 3.
 print x > y.
 `,

@@ -2876,15 +2876,17 @@ const gamevm = Vue.createApp({
                         }
                     }
                     this.consume();
-
+                    let leftExpression = {
+                        type:"Expression",
+                        tokenid: lhs.id || lhs.tokenid,
+                        lhs:value.lhs,
+                        op:value.op,
+                        rhs:value.rhs,
+                    }
                     let newOp = { type:"COMPARATOR", value:"==", id: op.id, line: op.line };
                     return {
                         type:"Evaluatable",
-                        lhs:{
-                            type:"Expression",
-                            tokenid: lhs.id || lhs.tokenid,
-                            value
-                        },
+                        lhs:leftExpression,
                         op:newOp,
                         rhs:this.parseExpression()
                     }
@@ -3589,6 +3591,8 @@ const gamevm = Vue.createApp({
                     
                     if(!node.op){
                         //This expression is probably just a value.
+                        console.log("NO op in this expression:" , node);
+                        //current problem is you can get here with an expresssion that has a value and one that has not value layer.
                         return this.evalNode(node.lhs, env);
                     }
 
