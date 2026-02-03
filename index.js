@@ -2810,7 +2810,7 @@ const gamevm = Vue.createApp({
             let value = this.next();
             return {
                 type:"Number",
-                "value":value,
+                value,
             }
         },
         parseExpression(){
@@ -2853,6 +2853,8 @@ const gamevm = Vue.createApp({
                 if(op.type == 'IDENT' || op.type == "NUMBER" || endOfCommand){
                     //could be something like 
                     //no homeless people
+                    // here we need to return an ident or a number
+                    
                     if(!value){
                         value = {
                             lhs:lhs,
@@ -2920,7 +2922,8 @@ const gamevm = Vue.createApp({
                 value = {
                     lhs:lhs,
                     rhs:rhs,
-                    op:op
+                    op:op,
+                    type:"Expression"
                 }
             }
 
@@ -2929,7 +2932,9 @@ const gamevm = Vue.createApp({
             }
             return {
                 type:"Expression",
-                value:value
+                lhs:value.lhs,
+                op:value.op,
+                rhs:value.rhs,
             }
         },
         parseUntil(){
@@ -2945,7 +2950,8 @@ const gamevm = Vue.createApp({
                 let newEvaluatable = {
                     lhs:evaluatable,
                     op:next,
-                    rhs:this.parseEvaluatable()
+                    rhs:this.parseEvaluatable(),
+                    type:"Evaluatable"
                 }
                 evaluatable = newEvaluatable;
             }
@@ -3296,7 +3302,7 @@ const gamevm = Vue.createApp({
             if(act){
                 //console.log(env);
                 for (const node of ast) {
-                    this.evalNode(node, env);
+                    console.log(this.evalNode(node, env));
                 }
             }
             
@@ -3329,14 +3335,76 @@ const gamevm = Vue.createApp({
                     break;
 
                 case 'Evaluatable':
-                    const conditionResult = this.evalNode(
-                        {
-                            type: 'BinaryExpression',
-                            left: node.test.left,
-                            right: node.test.right,
-                            op: node.test.op
-                        }, env);
-
+                    console.log('Begin parse evaluatable', node);
+                    console.log('evaluating node...', node.lhs);
+                    let left = this.evalNode(node.lhs, env);
+                    console.log('evald to : ', left);
+                    //If left is undefined, we have a variable that was never assigned.
+                    if(typeof left === 'undefined'){
+                        this.consoleOutputs.push(`Our scribes were surprised to see '${node.lhs.lhs.value}' on line ${node.lhs.lhs.line}. They were not sure what you meant when you wrote it.`);
+                        return;
+                    }
+                    if(left.type == "Expression" && node.op == null){
+                        return this.evalNode(left, env);
+                    }
+                    if(node.op == null){
+                        return left;
+                    }
+                    let right = this.evalNode(node.rhs, env);
+                    
+                    let conditionResult = false;
+                    switch (node.op.value) {
+                        case '>': 
+                            conditionResult = left > right;
+                            break;
+                        case 'greater than': 
+                            conditionResult = left > right;
+                            break;
+                        case 'more than': 
+                            conditionResult = left > right;
+                            break;
+                        case '>=':
+                            conditionResult = left >= right;
+                            break;
+                        case 'greater than or equal to': 
+                            conditionResult = left >= right;
+                            break;
+                        case 'more than or equal to': 
+                            conditionResult = left >= right;
+                            break;
+                        case '<=': 
+                            conditionResult = left <= right;
+                            break;
+                        case 'less than or equal to': 
+                            conditionResult = left <= right;
+                            break;
+                        case 'fewer than or equal to': 
+                            conditionResult = left <= right;
+                            break;
+                        case '<': 
+                            conditionResult = left < right;
+                            break;
+                        case 'less than': 
+                            conditionResult = left < right;
+                            break;
+                        case 'fewer than': 
+                            conditionResult = left < right;
+                            break;
+                        case '==': 
+                            conditionResult = left == right;
+                            break;
+                        case 'is': 
+                            conditionResult = left == right;
+                            break;
+                        case 'equal to': 
+                            conditionResult = left == right;
+                        case 'are': 
+                            conditionResult = left == right;
+                            break;
+                        case '=': 
+                            conditionResult = left == right;
+                            break;
+                    }
                     //console.log(node, conditionResult);
                     if (conditionResult && node.action) {
                         return this.evalNode(node.action, env);
@@ -3348,16 +3416,24 @@ const gamevm = Vue.createApp({
                     return conditionResult;
 
                 case 'Assignment':
-                    ////console.log("Assigning...", node);
+                    console.log("Assigning...", node);
                     if (this.isReservedName(node.id.name)) {
-                        ////console.log("Invalid assignment");
+                        console.log("Invalid assignment");
                     }
                     if (node.init.type == "Expression") {
                         let value = this.evalNode(node.init.value, env);
                         env[node.id.name] = value;
                     }
+                    else if (node.init.type == "Evaluatable") {
+                        let value = this.evalNode(node.init.value, env);
+                        env[node.id.name] = value;
+                    }
                     else if(node.init.type == "Number"){
                         let value = node.init.value;
+                        if(value.type == "Evaluatable"){
+                            value = this.evalNode(value, env);
+                        }
+                        console.log("Setting value", value);
                         env[node.id.name] = value;
                     }
                     else if (node.init.type == "Identifier") {
@@ -3438,16 +3514,20 @@ const gamevm = Vue.createApp({
                         this.consoleOutputs.push('Line ' + node.line + ': ' + node.output.value.slice(1, -1));
                         break;
                     }
-                    if(node.output.type == "BinaryExpression"){
-                        var num = this.evalNode(node.output, env);
+                    let num = null;
+                    if(node.output.type == "Expression"){
+                        num = this.evalNode(node.output, env);
+                    }
+                    else if(node.output.type == "Evaluatable"){
+                        num = this.evalNode(node.output, env);
                     }
                     else{
-                        var num = parseFloat(node.output.value);
+                        num = parseFloat(node.output.value);
                     }
 
                     
 
-                    if (num) {
+                    if (num !== null) {
                         this.consoleOutputs.push('Line ' + node.line + ': ' + num);
                     }
                     else {
@@ -3498,79 +3578,41 @@ const gamevm = Vue.createApp({
                         return true;
                     }
                     return false;
-                    break;
-                case 'BinaryExpression':
+                    
+                case 'IDENT':
+                    console.log(env, node.value, env[node.value]);
+                    return env[node.value];
+                case 'NUMBER':
+                    return parseFloat(node.value);
+                case 'Expression':
+                    console.log("Begin parse Expression:", node);
+                    
+                    if(!node.op){
+                        //This expression is probably just a value.
+                        return this.evalNode(node.lhs, env);
+                    }
 
-                    if (!node.left && !node.right) {
-                        return "Left and Right operands undefined.";
-                    }
-                    if (!node.left) {
-                        return "Left operand undefined";
-                    }
-                    if (!node.right) {
-                        return "Right operand undefined";
-                    }
-
-                    if(node.left.type == "BinaryExpression"){
-                        var left = this.evalNode(node.left, env);
-                    }
-                    else if(node.left.type == "NUMBER"){
-                        var left = Number(node.left.value);
+                    let leftValue = 0;
+                    let rightValue = 0;
+                    if(node.lhs.type == "NUMBER"){
+                        leftValue = parseFloat(node.lhs.value);
                     }
                     else{
-                        var left = env[node.left.value];
+                        leftValue = this.evalNode(node.lhs, env);
                     }
-
-                    if(node.right.type == "BinaryExpression"){
-                        var right = this.evalNode(node.right, env);
-                    }
-                    else if(node.right.type == "NUMBER"){
-                        var right = Number(node.right.value);
+                    
+                    if(node.rhs.type == "NUMBER"){
+                        rightValue = parseFloat(node.rhs.value);
                     }
                     else{
-                        var right = env[node.right.value];
+                        rightValue = this.evalNode(node.rhs, env);
                     }
-                    
-                    
-                    if (!left && left !== 0) {
-                        left = parseFloat(node.left.value);
-                    }
-                    if (!right && right !== 0) {
-                        right = parseFloat(node.right.value);
-                    }
-                    if (isNaN(left)) {
-                        this.consoleOutputs.push(`Our scribes did not quite understand what you meant by '${node.left.value}' on line ${node.left.line}. Did you mean ${levenshtein.closest(node.left.value, Object.keys(env))} or something else?`);
-                        break;
-                    }
-                    if (isNaN(right)) {
-                        this.consoleOutputs.push(`Our scribes did not quite understand what you meant by '${node.right.value}' on line ${node.right.line}. Did you mean ${levenshtein.closest(node.right.value, Object.keys(env))} or something else?`);
-                        break;
-                    }
-                    if ((node.op.value.startsWith('is') && node.op.value != 'is') || (node.op.value.startsWith('are') && node.op.value != 'are')) {
-                        node.op.value = node.op.value.replace(/^(is|are)\b\s*/, '');
-                    }
+
                     switch (node.op.value) {
-                        case '+': return left + right;
-                        case '-': return left - right;
-                        case '*': return left * right;
-                        case '/': return left / right;
-                        case '>': return left > right;
-                        case 'greater than': return left > right;
-                        case 'more than': return left > right;
-                        case '>=': return left >= right;
-                        case 'greater than or equal to': return left >= right;
-                        case 'more than or equal to': return left >= right;
-                        case '<=': return left <= right;
-                        case 'less than or equal to': return left <= right;
-                        case 'fewer than or equal to': return left <= right;
-                        case '<': return left < right;
-                        case 'less than': return left < right;
-                        case 'fewer than': return left < right;
-                        case '==': return left == right;
-                        case 'is': return left == right;
-                        case 'equal to': return left == right;
-                        case 'are': return left == right;
-                        case '=': return left == right;
+                        case '+': return leftValue + rightValue;
+                        case '-': return leftValue - rightValue;
+                        case '*': return leftValue * rightValue;
+                        case '/': return leftValue / rightValue;
                         default: console.error(`Unknown operator: ${node.op}`);
                     }
 
