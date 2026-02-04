@@ -585,7 +585,7 @@ print x > y.
         // console.log(transitions);
         // console.log(transitionExamples);
 
-        //this.runTestsWithOutputPairs();
+        this.runTestsWithOutputPairs();
 
         const textarea = document.querySelector('#code-text-area');
         const lineNumbersEle = document.querySelector('#line-numbers');

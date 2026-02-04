@@ -2725,7 +2725,7 @@ const gamevm = Vue.createApp({
                         return {
                             type:"Action",
                             action:action,
-                            target:target,
+                            target:next,
                             amount:amount,
                             untilClause:untilClause,
                             tokenid: action.id
