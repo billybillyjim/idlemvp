@@ -45,9 +45,72 @@ print x > y.
             env: [],
             height: '',
             parsed:[],
+            validMoriExpectedOutputPairs:[
+                {
+                    mori:'Build 7 huts',
+                    previousState:{
+                        buildingdata:{
+                            Hut:0,
+                        },
+                        currencydata:{
+                            Space:70,
+                            Wood:350
+                        }
+
+                    },
+                    postState:{
+                        buildingdata:{
+                            Hut:7,
+                        },
+                    }
+                },
+                {
+                    mori:'Build a hut until there are no homeless people.',
+                    previousState:{
+                        buildingdata:{
+                            Hut:0,
+                        },
+                        currencydata:{
+                            Space:70,
+                            Wood:350
+                        },
+                        professions:{
+                            Unemployed:4
+                        }
+
+                    },
+                    postState:{
+                        buildingdata:{
+                            Hut:1,
+                        },
+                    }
+                },
+                {
+                    mori:'Build 2 huts until there are no homeless people.',
+                    previousState:{
+                        buildingdata:{
+                            Hut:0,
+                        },
+                        currencydata:{
+                            Space:70,
+                            Wood:350
+                        },
+                        professions:{
+                            Unemployed:4
+                        }
+
+                    },
+                    postState:{
+                        buildingdata:{
+                            Hut:2,
+                        },
+                    }
+                }
+            ],
             validMori:[
                 'Build 7 huts.',
                 'Build a hut until there are no homeless people.',
+                'Build 2 huts until there are no homeless people.',
                 'Build three huts.',
                 'Fire a farmer if there are any farmers.',
                 'Hire 10 farmers.',
@@ -522,6 +585,8 @@ print x > y.
         // console.log(transitions);
         // console.log(transitionExamples);
 
+        //this.runTestsWithOutputPairs();
+
         const textarea = document.querySelector('#code-text-area');
         const lineNumbersEle = document.querySelector('#line-numbers');
         const styles = window.getComputedStyle(textarea);
@@ -577,6 +642,40 @@ print x > y.
                     console.log(test.name + ': failed: ', output);
                 }
             }
+        },
+        runTestsWithOutputPairs(){
+            for(let test of this.validMoriExpectedOutputPairs){
+                
+
+                for(let [building, count] of Object.entries(test.previousState.buildingdata || [])){
+                    this.$parent.buildingdata.find(x => x.Name == building).Count = count;
+                }
+                for(let [currency, count] of Object.entries(test.previousState.currencydata || [])){
+                    this.$parent.currencydata[currency].Amount = count;
+                }
+                for(let [prof, count] of Object.entries(test.previousState.professions || [])){
+                    this.$parent.professions.find(x => x.Name == prof).Count = count;
+                }
+                this.$parent.runCode(test.mori);
+                for(let [building, count] of Object.entries(test.postState.buildingdata || [])){
+                    if(this.$parent.buildingdata.find(x => x.Name == building).Count != count){
+                        console.error("Failed to reach expected building value for ", building, count, " actual: ", this.$parent.buildingdata.find(x => x.Name == building).Count);
+                    }
+                }
+                for(let [currency, count] of Object.entries(test.postState.currencydata || [])){
+                    if(this.$parent.currencydata[currency].Amount != count){
+                        console.error("Failed to reach currency value for ", currency, count, 'actual: ', this.$parent.currencydata[currency].Amount);
+                    }
+                }
+                for(let [prof, count] of Object.entries(test.postState.professions || [])){
+                    if(this.$parent.professions.find(x => x.Name == prof).Count != count){
+                        console.error("Failed to reach expected profession value for ", prof, count, " actual: ", this.$parent.professions.find(x => x.Name == prof).Count);
+                    }
+                }
+            }
+        },
+        getCurrentState(){
+
         },
         scrollCheck() {
             const textarea = document.querySelector('#code-text-area');

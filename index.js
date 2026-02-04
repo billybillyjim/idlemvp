@@ -865,15 +865,19 @@ const gamevm = Vue.createApp({
             this.modifyDemand('Housing', (this.getPopulation() / ((this.getAvailableHousing() - this.getPopulation()) + 1)) * 5, "Base Population Housing Desire");
         },
         buildBuilding(houseType, amount = 1) {
+            console.log(houseType, amount);
             let target = this.buildingdata.find(x => x.Name.toLowerCase() == houseType.Name.toLowerCase());
+            console.log(target);
             let actual = 0;
             if (target) {
                 for (let i = 0; i < amount; i++) {
+                    console.log("Building ", i, target.Cost);
                     if (this.buy(target.Cost, 1, 'Building ' + target.Name)) {
                         target.Count++;
                         actual++;
                     }
                     else {
+                        console.log("Failed to build");
                         break;
                     }
                 }
@@ -1109,7 +1113,7 @@ const gamevm = Vue.createApp({
             this.modifyDemand('Space', baseSpaceDemand * totalPop, 'Global Demand');
             if (this.currencydata.Space.Amount == 0) {
                 this.ticksOfUnmetSpaceDemand += 1;
-                this.modifyDemand('Space', unmetSpaceDemand * totalPop * ticksOfUnmetSpaceDemand, 'Unmet Demand');
+                this.modifyDemand('Space', unmetSpaceDemand * totalPop * this.ticksOfUnmetSpaceDemand, 'Unmet Demand');
             }
             else {
                 this.ticksOfUnmetSpaceDemand = 0;
@@ -2715,6 +2719,18 @@ const gamevm = Vue.createApp({
                 if(next.type == "IDENT"){
                     //Hire 7 Farmers
                     this.consume();
+                    let optionalUntil = this.peek();
+                    if(optionalUntil.type == "UNTIL"){
+                        let untilClause = this.parseUntil();
+                        return {
+                            type:"Action",
+                            action:action,
+                            target:target,
+                            amount:amount,
+                            untilClause:untilClause,
+                            tokenid: action.id
+                        }
+                    }
                     return {
                         type:"Action",
                         action:action,
@@ -2732,6 +2748,18 @@ const gamevm = Vue.createApp({
                         action:action,
                         target:null,
                         amount:amount,
+                        tokenid: action.id
+                    }
+                }
+
+                if(next.type == "UNTIL"){
+                    let untilClause = this.parseUntil();
+                    return {
+                        type:"Action",
+                        action:action,
+                        target:target,
+                        amount:amount,
+                        untilClause:untilClause,
                         tokenid: action.id
                     }
                 }
@@ -3492,21 +3520,22 @@ const gamevm = Vue.createApp({
                     }
                     if (node.action.value == 'build') {
                         ////console.log("Building because node", node);
-                        let building = node.actionTarget.value;
-                        let outputBuildingName = node.actionTarget.value;
-                        if (node.count != 1) {
+                        let building = pluralize.singular(node.target.value);
+                        let outputBuildingName = node.target.value;
+                        let amount = parseFloat(node.amount);
+                        if (amount != 1) {
                             outputBuildingName = pluralize.plural(outputBuildingName);
                         }
-                        let actual = this.buildBuilding({ Name: building }, node.count);
+                        let actual = this.buildBuilding({ Name: building }, amount);
 
-                        if (actual == node.count) {
-                            this.consoleOutputs.push(`Built ${node.count} ${outputBuildingName}.`);
+                        if (actual == amount) {
+                            this.consoleOutputs.push(`Built ${amount} ${outputBuildingName}.`);
                         }
                         else if (actual > 0) {
-                            this.consoleOutputs.push(`Tried to build ${node.count} ${outputBuildingName}, but we were only able to build ${actual}.`);
+                            this.consoleOutputs.push(`Tried to build ${amount} ${outputBuildingName}, but we were only able to build ${actual}.`);
                         }
                         else {
-                            this.consoleOutputs.push(`Tried to build ${node.count} ${outputBuildingName}, but we don't have the materials.`);
+                            this.consoleOutputs.push(`Tried to build ${amount} ${outputBuildingName}, but we don't have the materials.`);
                         }
                     }
                     break;
