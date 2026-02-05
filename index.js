@@ -865,13 +865,10 @@ const gamevm = Vue.createApp({
             this.modifyDemand('Housing', (this.getPopulation() / ((this.getAvailableHousing() - this.getPopulation()) + 1)) * 5, "Base Population Housing Desire");
         },
         buildBuilding(houseType, amount = 1) {
-            console.log(houseType, amount);
             let target = this.buildingdata.find(x => x.Name.toLowerCase() == houseType.Name.toLowerCase());
-            console.log(target);
             let actual = 0;
             if (target) {
                 for (let i = 0; i < amount; i++) {
-                    console.log("Building ", i, target.Cost);
                     if (this.buy(target.Cost, 1, 'Building ' + target.Name)) {
                         target.Count++;
                         actual++;
@@ -2446,7 +2443,8 @@ const gamevm = Vue.createApp({
                 ['SKIP', /^[ \t\n]+/],                
                 ['SKIP', /^(a )\b/],
                 ['NUMBER', /^\d+/],
-                ['NUMBER', /^(one|two|three|four|five|six|seven|eight|nine|ten|eleven|twelve|no)\b/],
+                ['TEXT_NUMBER', /^(one|two|three|four|five|six|seven|eight|nine|ten|eleven|twelve|thirteen|fourteen|fifteen|sixteen|seventeen|eighteen|nineteen|twenty|thirty|forty|fifty|sixty|seventy|eighty|ninety|hundred|thousand)\b/],
+                ["TEXT_NUMBER", /^no\b/],
                 ['COMPARATOR', /^(greater than or equal to|less than or equal to|(is|are) greater than or equal to|(is|are) less than or equal to|greater than|less than|(is|are) greater than|(is|are) less than|(is|are) equal to)/i],
                 ['COMPARATOR', /^(is >|is <|is <=|is >=|is =|is ==|are >|are <|are <=|are >=|are =|are ==|>=|<=|>|<|==)/],
                 ['MORE', /^more/],
@@ -2495,19 +2493,57 @@ const gamevm = Vue.createApp({
             let remaining = input.toLowerCase();
             let line = 1;
             let id = 0;
+            let lastWasTextNumber = false;
+            let textNum = "";
+            console.log(tokens);
             while (remaining.length > 0) {
                 let matched = false;
-
-                for (const [type, regex] of tokenSpec) {
+                
+                
+                for (let [type, regex] of tokenSpec) {
                     const match = regex.exec(remaining);
                     if (match) {
                         matched = true;
-                        const text = match[0];
-                        const newlines = (text.match(/\n/g) || []).length;
-                        if (type !== 'SKIP') {
-                            tokens.push({ type, value: text, line: line, id: id });
-                            id++;
+                        let text = match[0];
+                        let inText = text;
+                        if(type == 'SKIP'){
+                            var newlines = (text.match(/\n/g) || []).length;
+                            line += newlines;
+                            remaining = remaining.slice(text.length);
+                            continue;
                         }
+                        if(type == "TEXT_NUMBER" && !lastWasTextNumber){
+                            textNum = inText + ' ';
+                            type = "NUMBER";
+                            lastWasTextNumber = true;
+                        }
+                        else if(type == "TEXT_NUMBER" && lastWasTextNumber){
+                            //Get whatever the number was as a number token
+                            textNum += inText + ' ';
+                            lastWasTextNumber = true;
+                            type = "NUMBER";
+                        }
+                        else if(type != "TEXT_NUMBER" && lastWasTextNumber){
+                            //Get whatever the number was as a number token
+                            console.log("Last was text", text, textNum);
+                            let numToken = this.textNumberToNumber(textNum);
+                            tokens.push({ type:"NUMBER", value: numToken, line: line, id: id });
+                            lastWasTextNumber = false;
+                            textNum = "";
+                            if (type !== 'SKIP') {
+                                tokens.push({ type, value: inText, line: line, id: id });
+                                id++;
+                            }
+                        }
+                        else{
+                            lastWasTextNumber = false;
+
+                            if (type !== 'SKIP') {
+                                tokens.push({ type, value: inText, line: line, id: id });
+                                id++;
+                            }
+                        }
+                        var newlines = (text.match(/\n/g) || []).length;
                         line += newlines;
                         remaining = remaining.slice(text.length);
                         break;
@@ -2522,6 +2558,88 @@ const gamevm = Vue.createApp({
             // console.log(tokens);
             tokens.push({ type: 'EOF' });
             return tokens;
+        },
+        textNumberToNumber(text){
+            text = text.replace(/\s+$/, '');
+            if(text == ""){
+                return '';
+            }
+            if(text == "no" || text == "zero"){
+                return "0";
+            }
+
+            let fullNumberRegex = /^((?!hundred|thousand)(?=.)(?:(one|two|three|four|five|six|seven|eight|nine)( |$)(hundred)( |$))?(?:((twenty|thirty|forty|fifty|sixty|seventy|eighty|ninety)( |$))?((one|two|three|four|five|six|seven|eight|nine)( |$))?|eleven|twelve|thirteen|fourteen|fifteen|sixteen|seventeen|eighteen|nineteen))( |$)?((?<= )thousand( (?= .))?( ((?:(one|two|three|four|five|six|seven|eight|nine)( |$)(hundred)( |$))?(?:((twenty|thirty|forty|fifty|sixty|seventy|eighty|ninety)( |$))?((one|two|three|four|five|six|seven|eight|nine)( |$))?|eleven|twelve|thirteen|fourteen|fifteen|sixteen|seventeen|eighteen|nineteen)))?)? *?$/;
+            let match = text.match(fullNumberRegex);
+            console.log("Checking text", text, match);
+            let t = match[0].toLowerCase();
+            let numDict = {
+                'one': 1, 
+                'two': 2, 
+                'three': 3, 
+                'four': 4, 
+                'five': 5, 
+                'six': 6, 
+                'seven': 7, 
+                'eight': 8, 
+                'nine': 9, 
+                'ten': 10, 
+                'eleven': 11, 
+                'twelve': 12, 
+                'thirteen': 13, 
+                'fourteen': 14, 
+                'fifteen': 15, 
+                'sixteen': 16, 
+                'seventeen': 17, 
+                'eighteen': 18, 
+                'nineteen': 19, 
+                'twenty': 20, 
+                'thirty': 30, 
+                'forty': 40, 
+                'fifty': 50, 
+                'sixty': 60, 
+                'seventy': 70, 
+                'eighty': 80, 
+                'ninety': 90,
+            }
+            let bigNumbers = {
+                    'thousand': 1000,
+                    'million': 1000000,
+                    'billion': 1000000000,
+                    'trillion': 1000000000000,
+                    'quadrillion': 1000000000000000,
+                    'quintillion': 1000000000000000000,
+                    'sextillion': 1000000000000000000000,
+                    'septillion': 1000000000000000000000000,
+                    'octillion': 1000000000000000000000000000,
+                    'nonillion': 1000000000000000000000000000000,
+                    'decillion': 1000000000000000000000000000000000,
+            }
+            let output = 0;
+            let n = 0;
+            let mag = 0;
+            for(let token of t.split(' ')){
+                let small = numDict[token];
+                console.log(token, small);
+                if(small != null){
+                    output += small;
+                }
+                else if(token == "hundred"){
+                    output *= 100;
+                }
+                else{
+                    mag = bigNumbers[token];
+                    if(mag != null){
+                        n = n + output * mag;
+                        output = 0;
+                    }
+                    else{
+                        console.error("Somehow parsed non-number:", token);
+                    }
+                }
+            }
+            console.log(n, output, mag);
+           return n + output;
+            
         },
         peek(offset = 0) {
             return this.parser.tokens[this.parser.i + offset] || {};
@@ -3301,8 +3419,8 @@ const gamevm = Vue.createApp({
                     this.parser.i++;
                 }
             }
-            console.log(tokens);
-            console.log(ast);
+            //console.log(tokens);
+            //console.log(ast);
             return ast;
         },
         evaluate(ast, act=true) {
@@ -3365,10 +3483,8 @@ const gamevm = Vue.createApp({
                     break;
 
                 case 'Evaluatable':
-                    console.log('Begin parse evaluatable', node);
-                    console.log('evaluating node...', node.lhs);
                     let left = this.evalNode(node.lhs, env);
-                    console.log('evald to : ', left);
+                    //console.log('evald to : ', left);
                     //If left is undefined, we have a variable that was never assigned.
                     if(typeof left === 'undefined'){
                         this.consoleOutputs.push(`Our scribes were surprised to see '${node.lhs.lhs.value}' on line ${node.lhs.lhs.line}. They were not sure what you meant when you wrote it.`);
@@ -3446,7 +3562,7 @@ const gamevm = Vue.createApp({
                     return conditionResult;
 
                 case 'Assignment':
-                    console.log("Assigning...", node);
+                    //console.log("Assigning...", node);
                     if (this.isReservedName(node.id.name)) {
                         console.log("Invalid assignment");
                     }
@@ -3480,7 +3596,7 @@ const gamevm = Vue.createApp({
                     }
 
                     if (node.action.value == 'hire') {
-                        // //console.log("Hiring because node", node);
+                        console.log("Hiring because node", node);
                         let prof = this.sanitizeProfName(node.actionTarget.value);
                         let outputProfName = prof.Name;
                         if (node.count != 1) {
@@ -3519,7 +3635,7 @@ const gamevm = Vue.createApp({
                         }
                     }
                     if (node.action.value == 'build') {
-                        ////console.log("Building because node", node);
+                        console.log("Building because node", node);
                         let building = pluralize.singular(node.target.value);
                         let outputBuildingName = node.target.value;
                         let amount = parseFloat(node.amount);
@@ -3616,7 +3732,7 @@ const gamevm = Vue.createApp({
                 case 'NUMBER':
                     return parseFloat(node.value);
                 case 'Expression':
-                    console.log("Begin parse Expression:", node);
+                    //console.log("Begin parse Expression:", node);
                     
                     if(!node.op){
                         //This expression is probably just a value.

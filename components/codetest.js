@@ -28,12 +28,25 @@ export default {
             // testCode:'if there are 0 lumberjacks, hire a lumberjack.',
             // testCode:'if there are more than z - 3 lumberjacks print \'oh no\'.',
 
-            testCode: `x is 5 * 5 * 5.
-            z is 10.
-            red is z.
-            print z = red.
-y is 10 + 3.
-print x > y.
+            testCode: `
+
+print one = 1.
+print one hundred = 100.
+print one hundred thirty four = 134.
+print one hundred fifty = 150.
+print eleven = 11.
+print sixteen = 16.
+print one hundred twelve = 112.
+print forty = 40.
+print forty five = 45.
+print nine hundred ninety nine = 999.
+print three thousand = 3000.
+print one thousand seventy three = 1073.
+print nine thousand nine hundred = 9900.
+print nineteen thousand one = 19001.
+print nineteen thousand nine hundred ninety = 19990.
+print three = 3.
+
 `,
             errors: [],
             content: '',
@@ -106,9 +119,27 @@ print x > y.
                         },
                     }
                 }
+                ,
+                {
+                    mori:'Build three huts.',
+                    previousState:{
+                        buildingdata:{
+                            Hut:0,
+                        },
+                        currencydata:{
+                            Space:70,
+                            Wood:350
+                        },
+                    },
+                    postState:{
+                        buildingdata:{
+                            Hut:3,
+                        },
+                    }
+                }
             ],
             validMori:[
-                'Build 7 huts.',
+                'Build three hundred huts.',
                 'Build a hut until there are no homeless people.',
                 'Build 2 huts until there are no homeless people.',
                 'Build three huts.',
