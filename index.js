@@ -2443,9 +2443,10 @@ const gamevm = Vue.createApp({
                 ['SKIP', /^[ \t\n]+/],                
                 ['SKIP', /^(a )\b/],
                 ['NUMBER', /^\d+/],
-                ['TEXT_NUMBER', /^(one|two|three|four|five|six|seven|eight|nine|ten|eleven|twelve|thirteen|fourteen|fifteen|sixteen|seventeen|eighteen|nineteen|twenty|thirty|forty|fifty|sixty|seventy|eighty|ninety|hundred|thousand)\b/],
+                ['TEXT_NUMBER', /^(one|two|three|four|five|six|seven|eight|nine|ten|eleven|twelve|thirteen|fourteen|fifteen|sixteen|seventeen|eighteen|nineteen|twenty|thirty|forty|fifty|sixty|seventy|eighty|ninety|hundred|thousand)\b/i],
                 ["TEXT_NUMBER", /^no\b/],
-                ['COMPARATOR', /^(greater than or equal to|less than or equal to|(is|are) greater than or equal to|(is|are) less than or equal to|greater than|less than|(is|are) greater than|(is|are) less than|(is|are) equal to)/i],
+                ['COMPARATOR', /^((?:is|are)* *(?:greater|more|less|fewer|equal) *(?:than)* *(?:or equal )* *(?:to|with)*)/i],
+                ['COMPARATOR', /^(is the same as|are the same as)/i],
                 ['COMPARATOR', /^(is >|is <|is <=|is >=|is =|is ==|are >|are <|are <=|are >=|are =|are ==|>=|<=|>|<|==)/],
                 ['MORE', /^more/],
                 ['LESS', /^less/],
@@ -2568,7 +2569,7 @@ const gamevm = Vue.createApp({
                 return "0";
             }
 
-            let fullNumberRegex = /^((?!hundred|thousand)(?=.)(?:(one|two|three|four|five|six|seven|eight|nine)( |$)(hundred)( |$))?(?:((twenty|thirty|forty|fifty|sixty|seventy|eighty|ninety)( |$))?((one|two|three|four|five|six|seven|eight|nine)( |$))?|eleven|twelve|thirteen|fourteen|fifteen|sixteen|seventeen|eighteen|nineteen))( |$)?((?<= )thousand( (?= .))?( ((?:(one|two|three|four|five|six|seven|eight|nine)( |$)(hundred)( |$))?(?:((twenty|thirty|forty|fifty|sixty|seventy|eighty|ninety)( |$))?((one|two|three|four|five|six|seven|eight|nine)( |$))?|eleven|twelve|thirteen|fourteen|fifteen|sixteen|seventeen|eighteen|nineteen)))?)? *?$/;
+            let fullNumberRegex = /^((?!hundred|thousand)(?=.)(?:(one|two|three|four|five|six|seven|eight|nine|ten)( |$)(hundred)( |$))?(?:((ten|twenty|thirty|forty|fifty|sixty|seventy|eighty|ninety)( |$))?((one|two|three|four|five|six|seven|eight|nine)( |$))?|ten|eleven|twelve|thirteen|fourteen|fifteen|sixteen|seventeen|eighteen|nineteen))( |$)?((?<= )thousand( (?= .))?( ((?:(one|two|three|four|five|six|seven|eight|nine)( |$)(hundred)( |$))?(?:((ten|twenty|thirty|forty|fifty|sixty|seventy|eighty|ninety)( |$))?((one|two|three|four|five|six|seven|eight|nine|ten)( |$))?|eleven|twelve|thirteen|fourteen|fifteen|sixteen|seventeen|eighteen|nineteen)))?)? *?$/;
             let match = text.match(fullNumberRegex);
             console.log("Checking text", text, match);
             let t = match[0].toLowerCase();
@@ -2600,6 +2601,9 @@ const gamevm = Vue.createApp({
                 'seventy': 70, 
                 'eighty': 80, 
                 'ninety': 90,
+            }
+            if(numDict[t]){
+                return numDict[t];
             }
             let bigNumbers = {
                     'thousand': 1000,

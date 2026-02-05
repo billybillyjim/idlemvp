@@ -30,22 +30,52 @@ export default {
 
             testCode: `
 
-print one = 1.
+print two = 2.
+print four = 4.
+print ten = 10.
+print twelve = 12.
+print nineteen = 19.
+print twenty = 20.
+print twenty one = 21.
+print twenty nine = 29.
+print thirty = 30.
+print thirty eight = 38.
+print fifty six = 56.
+print sixty = 60.
+print seventy four = 74.
+print eighty = 80.
+print ninety nine = 99.
+
 print one hundred = 100.
-print one hundred thirty four = 134.
-print one hundred fifty = 150.
-print eleven = 11.
-print sixteen = 16.
-print one hundred twelve = 112.
-print forty = 40.
-print forty five = 45.
-print nine hundred ninety nine = 999.
-print three thousand = 3000.
-print one thousand seventy three = 1073.
-print nine thousand nine hundred = 9900.
-print nineteen thousand one = 19001.
-print nineteen thousand nine hundred ninety = 19990.
-print three = 3.
+print two hundred five = 205.
+print three hundred ten = 310.
+print four hundred eighteen = 418.
+print five hundred sixty = 560.
+print six hundred ninety two = 692.
+print seven hundred one = 701.
+print eight hundred forty = 840.
+print nine hundred six = 906.
+
+print one thousand = 1000.
+print one thousand one = 1001.
+print one thousand ten = 1010.
+print one thousand ninety = 1090.
+print two thousand three hundred = 2300.
+print three thousand forty five = 3045.
+print four thousand six hundred seventy eight = 4678.
+print five thousand one hundred two = 5102.
+print seven thousand nine = 7009.
+print eight thousand eighty = 8080.
+
+print ten thousand = 10000.
+print eleven thousand eleven = 11011.
+print twelve thousand three hundred forty = 12340.
+print fifteen thousand six hundred = 15600.
+print eighteen thousand two hundred nineteen = 18219.
+print twenty thousand = 20000.
+print twenty one thousand four = 21004.
+print ninety nine thousand nine hundred ninety nine = 99999.
+
 
 `,
             errors: [],
@@ -767,7 +797,7 @@ print three = 3.
             <button class="btn btn-primary m-2" @click="inspect()">Inspect</button>
             <button class="btn btn-primary m-2" @click="endInspect()">End Inspecting</button>
         </div>
-        <div class="d-flex" style="    overflow: hidden;">
+        <div class="d-flex" style="    overflow: hidden; height:400px;">
             <div class="line-numbers" ref="lineNumbersEle" id="line-numbers" :style="getNumberLineOffsetStyle()">
                 <div v-for="(num, idx) in getLineNumbers()" :key="idx">
                     [[ num !== '' ? num + 1 : '\u00A0' ]]
