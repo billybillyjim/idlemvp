@@ -2491,22 +2491,29 @@ const gamevm = Vue.createApp({
 
 
             const tokens = [];
-            let remaining = input.toLowerCase();
+            let remaining = input;
             let line = 1;
             let id = 0;
             let lastWasTextNumber = false;
             let textNum = "";
-            console.log(tokens);
+
             while (remaining.length > 0) {
                 let matched = false;
-                
-                
+
                 for (let [type, regex] of tokenSpec) {
-                    const match = regex.exec(remaining);
+                    let lowerForMatching = remaining.toLowerCase();
+                    const match = regex.exec(lowerForMatching);
                     if (match) {
                         matched = true;
-                        let text = match[0];
+
+                        let start = match.index;
+                        let end = start + match[0].length;
+
+                        let raw = remaining.slice(start, end);
+
+                        let text = type == "STRING" ? raw : raw.toLowerCase();
                         let inText = text;
+                        
                         if(type == 'SKIP'){
                             var newlines = (text.match(/\n/g) || []).length;
                             line += newlines;
@@ -2519,14 +2526,12 @@ const gamevm = Vue.createApp({
                             lastWasTextNumber = true;
                         }
                         else if(type == "TEXT_NUMBER" && lastWasTextNumber){
-                            //Get whatever the number was as a number token
                             textNum += inText + ' ';
                             lastWasTextNumber = true;
                             type = "NUMBER";
                         }
                         else if(type != "TEXT_NUMBER" && lastWasTextNumber){
                             //Get whatever the number was as a number token
-                            console.log("Last was text", text, textNum);
                             let numToken = this.textNumberToNumber(textNum);
                             tokens.push({ type:"NUMBER", value: numToken, line: line, id: id });
                             lastWasTextNumber = false;
@@ -2571,7 +2576,7 @@ const gamevm = Vue.createApp({
 
             let fullNumberRegex = /^((?!hundred|thousand)(?=.)(?:(one|two|three|four|five|six|seven|eight|nine|ten)( |$)(hundred)( |$))?(?:((ten|twenty|thirty|forty|fifty|sixty|seventy|eighty|ninety)( |$))?((one|two|three|four|five|six|seven|eight|nine)( |$))?|ten|eleven|twelve|thirteen|fourteen|fifteen|sixteen|seventeen|eighteen|nineteen))( |$)?((?<= )thousand( (?= .))?( ((?:(one|two|three|four|five|six|seven|eight|nine)( |$)(hundred)( |$))?(?:((ten|twenty|thirty|forty|fifty|sixty|seventy|eighty|ninety)( |$))?((one|two|three|four|five|six|seven|eight|nine|ten)( |$))?|eleven|twelve|thirteen|fourteen|fifteen|sixteen|seventeen|eighteen|nineteen)))?)? *?$/;
             let match = text.match(fullNumberRegex);
-            console.log("Checking text", text, match);
+
             let t = match[0].toLowerCase();
             let numDict = {
                 'one': 1, 
@@ -2623,7 +2628,7 @@ const gamevm = Vue.createApp({
             let mag = 0;
             for(let token of t.split(' ')){
                 let small = numDict[token];
-                console.log(token, small);
+
                 if(small != null){
                     output += small;
                 }
@@ -2641,7 +2646,7 @@ const gamevm = Vue.createApp({
                     }
                 }
             }
-            console.log(n, output, mag);
+
            return n + output;
             
         },
@@ -3311,6 +3316,7 @@ const gamevm = Vue.createApp({
                     condition.elseAction = this.parsePrint();
                 }
             }
+            condition.type = "Evaluatable";
             return condition;
         },
         parseIdent(){
@@ -3423,6 +3429,7 @@ const gamevm = Vue.createApp({
                     this.parser.i++;
                 }
             }
+            this.parser.ast = ast;
             //console.log(tokens);
             //console.log(ast);
             return ast;
@@ -3503,41 +3510,49 @@ const gamevm = Vue.createApp({
                     let right = this.evalNode(node.rhs, env);
                     
                     let conditionResult = false;
+
+                    let greaterThanRegex = /((?:is|are)* *(?:greater|more) *(?:than)*)/;
+                    let greaterThanMatch = greaterThanRegex.exec(node.op.value);
+                    let lessThanRegex = /((?:is|are)* *(?:less|fewer) *(?:than)*)/;
+                    let lessThanMatch = lessThanRegex.exec(node.op.value);
+                    let isEqualRegex = /((?:is|are)+ *(?:equal|the same as)* *(?:to|with)*)/;
+                    let isEqualMatch = isEqualRegex.exec(node.op.value);
+                    let orEqualRegex = /((?:or equal )+ *(?:to|with)*)/;
+                    let orEqualMatch = orEqualRegex.exec(node.op.value);
+                    //First we check if the value is an exact match to any of the three regexes.
+                    if(greaterThanMatch && orEqualMatch){
+                        conditionResult = left >= right;
+                    }
+                    else if(greaterThanMatch){
+                        conditionResult = left > right;
+                    }
+                    else if(lessThanMatch && orEqualMatch){
+                        conditionResult = left <= right;
+                    }
+                    else if(lessThanMatch){
+                        conditionResult = left < right;
+                    }
+                    else if(isEqualMatch){
+                        conditionResult = left == right;
+                    }
+
                     switch (node.op.value) {
+                        case 'and':
+                            conditionResult = left && right;
+                            break;
+                        case 'or':
+                            conditionResult = left || right;
+                            break;
                         case '>': 
-                            conditionResult = left > right;
-                            break;
-                        case 'greater than': 
-                            conditionResult = left > right;
-                            break;
-                        case 'more than': 
                             conditionResult = left > right;
                             break;
                         case '>=':
                             conditionResult = left >= right;
                             break;
-                        case 'greater than or equal to': 
-                            conditionResult = left >= right;
-                            break;
-                        case 'more than or equal to': 
-                            conditionResult = left >= right;
-                            break;
                         case '<=': 
                             conditionResult = left <= right;
                             break;
-                        case 'less than or equal to': 
-                            conditionResult = left <= right;
-                            break;
-                        case 'fewer than or equal to': 
-                            conditionResult = left <= right;
-                            break;
                         case '<': 
-                            conditionResult = left < right;
-                            break;
-                        case 'less than': 
-                            conditionResult = left < right;
-                            break;
-                        case 'fewer than': 
                             conditionResult = left < right;
                             break;
                         case '==': 
@@ -3546,8 +3561,6 @@ const gamevm = Vue.createApp({
                         case 'is': 
                             conditionResult = left == right;
                             break;
-                        case 'equal to': 
-                            conditionResult = left == right;
                         case 'are': 
                             conditionResult = left == right;
                             break;
@@ -3560,8 +3573,8 @@ const gamevm = Vue.createApp({
                         return this.evalNode(node.action, env);
                     }
 
-                    if (!conditionResult && node.else) {
-                        return this.evalNode(node.else, env);
+                    if (!conditionResult && node.elseAction) {
+                        return this.evalNode(node.elseAction, env);
                     }
                     return conditionResult;
 
@@ -3599,47 +3612,35 @@ const gamevm = Vue.createApp({
                         }
                     }
 
-                    if (node.action.value == 'hire') {
-                        console.log("Hiring because node", node);
-                        let prof = this.sanitizeProfName(node.actionTarget.value);
+                    if (node.action.value == 'hire' || node.action.value == 'fire') {
+                        //console.log("Hiring because node", node);
+                        let prof = this.sanitizeProfName(node.target.value);
                         let outputProfName = prof.Name;
-                        if (node.count != 1) {
+                        let amount = parseFloat(node.amount);
+                        if (amount != 1) {
                             outputProfName = pluralize.plural(outputProfName);
                         }
-                        let actual = this.hire(prof, node.count);
+                        let actual = 0;
+                        if (node.action.value == 'hire'){
+                            actual = this.hire(prof, amount);
+                        }
+                        else{
+                            actual = this.fire(prof, amount);
+                        }
 
-                        if (actual == node.count) {
-                            this.consoleOutputs.push(`Hired ${node.count} ${outputProfName}.`);
+                        if (actual == amount) {
+                            this.consoleOutputs.push(`${node.action.value}d ${amount} ${outputProfName}.`);
                         }
                         else if (actual > 0) {
-                            this.consoleOutputs.push(`Tried to hire ${node.count} ${outputProfName}, but we were only able to hire ${actual}.`);
+                            this.consoleOutputs.push(`Tried to ${node.action.value} ${amount} ${outputProfName}, but we were only able to ${node.action.value} ${actual}.`);
                         }
                         else {
-                            this.consoleOutputs.push(`Tried to hire ${node.count} ${outputProfName}, but we don't have the resources.`);
+                            this.consoleOutputs.push(`Tried to ${node.action.value} ${amount} ${outputProfName}, but we don't have the resources.`);
                         }
                     }
 
-                    if (node.action.value == 'fire') {
-                        // //console.log("Firing because node", node);
-                        let prof = this.sanitizeProfName(node.actionTarget.value);
-                        let outputProfName = prof.Name;
-                        if (node.count != 1) {
-                            outputProfName = pluralize.plural(outputProfName);
-                        }
-                        let actual = this.fire(prof, node.count);
-
-                        if (actual == node.count) {
-                            this.consoleOutputs.push(`Fired ${node.count} ${outputProfName}.`);
-                        }
-                        else if (actual > 0) {
-                            this.consoleOutputs.push(`Tried to fire ${node.count} ${outputProfName}, but we were only able to fire ${actual}.`);
-                        }
-                        else {
-                            this.consoleOutputs.push(`Tried to fire ${node.count} ${outputProfName}, but we don't have any.`);
-                        }
-                    }
                     if (node.action.value == 'build') {
-                        console.log("Building because node", node);
+                        //console.log("Building because node", node);
                         let building = pluralize.singular(node.target.value);
                         let outputBuildingName = node.target.value;
                         let amount = parseFloat(node.amount);
@@ -3660,7 +3661,6 @@ const gamevm = Vue.createApp({
                     }
                     break;
                 case 'Print':
-                    //console.log(node);
                     if (node.output.type == 'STRING') {
                         this.consoleOutputs.push('Line ' + node.line + ': ' + node.output.value.slice(1, -1));
                         break;
@@ -3675,8 +3675,6 @@ const gamevm = Vue.createApp({
                     else{
                         num = parseFloat(node.output.value);
                     }
-
-                    
 
                     if (num !== null) {
                         this.consoleOutputs.push('Line ' + node.line + ': ' + num);
@@ -3731,7 +3729,7 @@ const gamevm = Vue.createApp({
                     return false;
                     
                 case 'IDENT':
-                    console.log(env, node.value, env[node.value]);
+                    //console.log(env, node.value, env[node.value]);
                     return env[node.value];
                 case 'NUMBER':
                     return parseFloat(node.value);
@@ -3740,7 +3738,7 @@ const gamevm = Vue.createApp({
                     
                     if(!node.op){
                         //This expression is probably just a value.
-                        console.log("NO op in this expression:" , node);
+                        //console.log("NO op in this expression:" , node);
                         //current problem is you can get here with an expresssion that has a value and one that has not value layer.
                         return this.evalNode(node.lhs, env);
                     }

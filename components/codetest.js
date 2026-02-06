@@ -148,8 +148,7 @@ print ninety nine thousand nine hundred ninety nine = 99999.
                             Hut:2,
                         },
                     }
-                }
-                ,
+                },
                 {
                     mori:'Build three huts.',
                     previousState:{
@@ -165,6 +164,121 @@ print ninety nine thousand nine hundred ninety nine = 99999.
                         buildingdata:{
                             Hut:3,
                         },
+                    }
+                },
+                {
+                    mori:'Fire a farmer if there are any farmers.',
+                    previousState:{
+                        professions:{
+                            Farmer:2
+                        }
+                    },
+                    postState:{
+                        professions:{
+                            Farmer:1
+                        }
+                    }
+                },
+                {
+                    mori:'Hire 7 Farmers.',
+                    previousState:{
+                        professions:{
+                            Farmer:0,
+                            Unemployed:7,
+                        }
+                    },
+                    postState:{
+                        professions:{
+                            Farmer:7,
+                            Unemployed:0
+                        }
+                    }
+                },
+                {
+                    mori:'Hire 7 Farmers.',
+                    previousState:{
+                        professions:{
+                            Farmer:2,
+                            Unemployed:5,
+                        }
+                    },
+                    postState:{
+                        professions:{
+                            Farmer:7,
+                            Unemployed:0
+                        }
+                    }
+                },
+                {
+                    mori:'Hire a farmer if there are any unemployed people.',
+                    previousState:{
+                        professions:{
+                            Farmer:2,
+                            Unemployed:0,
+                        }
+                    },
+                    postState:{
+                        professions:{
+                            Farmer:2,
+                            Unemployed:0
+                        }
+                    }
+                },
+                {
+                    mori:'Hire a farmer until there are no unemployed people.',
+                    previousState:{
+                        professions:{
+                            Farmer:2,
+                            Unemployed:1,
+                        }
+                    },
+                    postState:{
+                        professions:{
+                            Farmer:3,
+                            Unemployed:0
+                        }
+                    }
+                },
+                {
+                    mori:'Hire a farmer until there are no unemployed people.',
+                    previousState:{
+                        professions:{
+                            Farmer:2,
+                            Unemployed:0,
+                        }
+                    },
+                    postState:{
+                        professions:{
+                            Farmer:2,
+                            Unemployed:0
+                        }
+                    }
+                },
+                {
+                    mori:'If food is greater than 10 and 5 is equal to 7 then print "ok" otherwise print "Nope".',
+                    previousState:{
+
+                    },
+                    postState:{
+                        printOutputs:[
+                            'Line 1: Nope'
+                        ]
+                    }
+                },
+                {
+                    mori:'If food is greater than 10 then print "ok" otherwise print "Nope".',
+                    previousState:{
+                        currencydata:{
+                            Food:11
+                        }
+                    },
+                    postState:{
+                        printOutputs:[
+                            'Line 1: ok'
+                        ],
+                        currencydata:{
+                            Food:11
+                        }
                     }
                 }
             ],
@@ -208,6 +322,44 @@ print ninety nine thousand nine hundred ninety nine = 99999.
                 `y is 7.`,
                 `x = y is > 7.`,
                 `y is x + 5.`,
+            ],
+            equalityTests:[
+                "print 2 greater than 1.",
+                "print 2 greater than or equal to 2.",
+                "print 2 greater than or equal with 2.",
+                "print 2 is greater than 1.",
+                "print 2 is greater than or equal to 2.",
+                "print 2 is greater than or equal with 2.",
+                "print 2 are greater than 1.",
+                "print 2 are greater than or equal to 2.",
+                "print 2 are greater than or equal with 2.",
+                "print 2 more than 1.",
+                "print 2 is more than 1.",
+                "print 2 are more than 1.",
+                "print 2 is more than or equal to 2.",
+                "print 2 are more than or equal to 2.",
+                "print 2 is more than or equal with 2.",
+                "print 2 are more than or equal with 2.",
+                "print 1 less than 2.",
+                "print 1 is less than 2.",
+                "print 1 are less than 2.",
+                "print 1 is less than or equal to 1.",
+                "print 1 are less than or equal to 1.",
+                "print 1 is less than or equal with 1.",
+                "print 1 are less than or equal with 1.",
+                "print 1 fewer than 2.",
+                "print 1 is fewer than 2.",
+                "print 1 are fewer than 2.",
+                "print 1 is fewer than or equal to 1.",
+                "print 1 is fewer than or equal with 1.",
+                "print 1 are fewer than or equal to 1.",
+                "print 1 are fewer than or equal with 1.",
+                "print 2 is equal to 2.",
+                "print 2 are equal to 2.",
+                "print 2 is equal with 2.",
+                "print 2 are equal with 2.",
+                "print 2 are the same as 2.",
+                "print 2 is the same as 2."
             ],
             tests: [
                 {
@@ -625,8 +777,8 @@ print ninety nine thousand nine hundred ninety nine = 99999.
             let ast = this.$parent.parse(tokens);
             asts.push(ast);
         }
-        console.log(asts);
-        console.log(this.parsed);
+        //console.log(asts);
+        //console.log(this.parsed);
         const transitions = {};
         const transitionExamples = {};
 
@@ -705,6 +857,15 @@ print ninety nine thousand nine hundred ninety nine = 99999.
             }
         },
         runTestsWithOutputPairs(){
+            let index = 0;
+            for(let test of this.equalityTests){
+                console.log(test);
+                this.$parent.runCode(test);
+                if(this.$parent.consoleOutputs[0] != 'Line 1: true'){
+                    console.error("Failed to evaluate truth for test", this.$parent.consoleOutputs[0]);
+                }
+            }
+
             for(let test of this.validMoriExpectedOutputPairs){
                 
 
@@ -718,21 +879,41 @@ print ninety nine thousand nine hundred ninety nine = 99999.
                     this.$parent.professions.find(x => x.Name == prof).Count = count;
                 }
                 this.$parent.runCode(test.mori);
+                let anyError = false;
                 for(let [building, count] of Object.entries(test.postState.buildingdata || [])){
                     if(this.$parent.buildingdata.find(x => x.Name == building).Count != count){
+                        anyError = true;
                         console.error("Failed to reach expected building value for ", building, count, " actual: ", this.$parent.buildingdata.find(x => x.Name == building).Count);
                     }
                 }
                 for(let [currency, count] of Object.entries(test.postState.currencydata || [])){
                     if(this.$parent.currencydata[currency].Amount != count){
+                        anyError = true;
                         console.error("Failed to reach currency value for ", currency, count, 'actual: ', this.$parent.currencydata[currency].Amount);
                     }
                 }
                 for(let [prof, count] of Object.entries(test.postState.professions || [])){
                     if(this.$parent.professions.find(x => x.Name == prof).Count != count){
+                        anyError = true;
                         console.error("Failed to reach expected profession value for ", prof, count, " actual: ", this.$parent.professions.find(x => x.Name == prof).Count);
                     }
                 }
+                for(let output of (test.postState.printOutputs || [])){
+                    for(let actualOutput of this.$parent.consoleOutputs){
+                        if(output != actualOutput){
+                            anyError = true;
+                            console.error("Failed to print correct output for ", index, "\ngiven: " + output + "\nactual: ", actualOutput);
+
+                        }
+                    }
+                }
+                if(anyError){
+                    console.log(this.$parent.parser);
+                }
+                else{
+                    console.log(`Test ${index} passed with no errors.`);
+                }
+                index++;
             }
         },
         getCurrentState(){
