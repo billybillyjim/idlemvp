@@ -280,6 +280,21 @@ print ninety nine thousand nine hundred ninety nine = 99999.
                             Food:11
                         }
                     }
+                },
+                {
+                    mori:'y is 1. hire 1 farmers.',
+                    previousState:{
+                        professions:{
+                            Farmer:0,
+                            Unemployed:6
+                        }
+                    },
+                    postState:{
+                        professions:{
+                            Farmer:1,
+                            Unemployed:5
+                        }
+                    }
                 }
             ],
             validMori:[

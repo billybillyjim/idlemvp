@@ -2684,6 +2684,10 @@ const gamevm = Vue.createApp({
                 //In this case, we should always assume it's the direct object, a target of what we are trying to do.
 
                 let ident = this.next();
+                //This identity could either be a variable or the target you wanna grab. Maybe
+                //The smart thing to do is check if the ident is a reserved keyword or not
+                //TODO:check if its a reserved keyword. If it is, do this
+                //Otherwise we might have an expression here
                 //Assume the target is this identity
                 //Hire farmer
                 target = ident;
@@ -2710,6 +2714,8 @@ const gamevm = Vue.createApp({
                 if(next.type == "ARITHMETIC"){
                     //Hire farmer +
                     //We have an equation to solve for the amount
+                    //At this point it's too late, I should have already done the math somewhere else. if We have a +, 
+                    // It will try to parse the expression with lhs as + and it will make no sense.
                     let amount = this.parseExpression();
                     //Hire farmer + 7 farmers
                     let target = this.peek();
