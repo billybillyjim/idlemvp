@@ -343,6 +343,36 @@ print ninety nine thousand nine hundred ninety nine = 99999.
                             'Line 1: nope'
                         ],
                     }
+                },
+                {
+                    mori:"If there are no farmers, hire one.",
+                    previousState:{
+                        professions:{
+                            Farmer:0,
+                            Unemployed:1
+                        }
+                    },
+                    postState:{
+                        professions:{
+                            Farmer:1,
+                            Unemployed:0
+                        },
+                    }
+                },
+                {
+                    mori:"If there are no farmers, hire one.",
+                    previousState:{
+                        professions:{
+                            Farmer:1,
+                            Unemployed:1
+                        }
+                    },
+                    postState:{
+                        professions:{
+                            Farmer:1,
+                            Unemployed:1
+                        },
+                    }
                 }
             ],
             validMori:[

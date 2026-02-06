@@ -385,7 +385,7 @@ const gamevm = Vue.createApp({
             if (outputAST) {
                 console.log(ast);
             }
-            let output = this.evaluate(ast);
+            let output = this.evaluate(ast, tokens);
             if (outputOutput) {
                 console.log(output);
             }
@@ -3469,7 +3469,7 @@ const gamevm = Vue.createApp({
             //console.log(ast);
             return ast;
         },
-        evaluate(ast, act=true) {
+        evaluate(ast, tokens, act=true) {
             this.consoleOutputs = [];
             let env = {};
             for (let [good, data] of Object.entries(this.currencydata)) {
@@ -3492,7 +3492,7 @@ const gamevm = Vue.createApp({
             env['unemployed people'] = this.getAvailableWorkers();
             env['total housing'] = this.getAvailableHousing();
             env['available housing'] = this.getAvailableHousing();
-
+            env['__TOKENS__'] = tokens;
             if(act){
                 //console.log(env);
                 for (const node of ast) {
@@ -3651,9 +3651,20 @@ const gamevm = Vue.createApp({
                             return;
                         }
                     }
-
+                    console.log(env);
                     if (node.action.value == 'hire' || node.action.value == 'fire') {
                         console.log("Hiring because node", node);
+                        if(!node.target){
+                            //Gotta get the antecedent token
+                            for(let token of env['__TOKENS__']){
+                                if(token.type == "IDENT" && this.professionReservedNames.has(token.value.toLowerCase())){
+                                    node.target = {
+                                        value:token.value
+                                    }
+                                }
+                            }
+                        }
+                        console.log(node);
                         let prof = this.sanitizeProfName(node.target.value);
                         let outputProfName = prof.Name;
                         let amount = 0;
