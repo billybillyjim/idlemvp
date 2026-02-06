@@ -179,6 +179,7 @@ const gamevm = Vue.createApp({
             reservedNames: new Set(),
             currencyReservedNames: new Set(),
             professionReservedNames: new Set(),
+            buildingReservedNames:new Set(),
             parser: {
                 i: 0,
                 tokens: [],
@@ -344,6 +345,15 @@ const gamevm = Vue.createApp({
                 this.professionReservedNames.add(lower);
                 this.professionReservedNames.add(pluralize.plural(lower));
                 this.professionReservedNames.add(pluralize.singular(lower));
+            }
+            for (let building of this.buildingdata) {
+                let lower = building.Name.toLowerCase();
+                this.reservedNames.add(lower);
+                this.reservedNames.add(pluralize.plural(lower));
+                this.reservedNames.add(pluralize.singular(lower));
+                this.buildingReservedNames.add(lower);
+                this.buildingReservedNames.add(pluralize.plural(lower));
+                this.buildingReservedNames.add(pluralize.singular(lower));
             }
             for (let unlockable of this.unlockablesdata) {
                 let lower = unlockable.Name.toLowerCase();
@@ -1469,6 +1479,10 @@ const gamevm = Vue.createApp({
             this.currencydata[currencyName].Amount += amount;
         },
         payCurrency(currencyName, amount, reason, payEvenIfYouCantAfford = false) {
+            if (isNaN(amount)) {
+                console.error("bad(NaN) value for pay currency", currencyName, reason);
+                return false;
+            }
             this.currencyPotentialChange[currencyName] = (this.currencyPotentialChange[currencyName] ?? 0) - amount;
             if (!this.currencydata[currencyName]) {
                 console.error(currencyName, 'is not in the currency data.');
@@ -1486,10 +1500,7 @@ const gamevm = Vue.createApp({
             if (payEvenIfYouCantAfford && amount > this.currencydata[currencyName].Amount) {
                 amount = this.currencydata[currencyName].Amount
             }
-            if (isNaN(amount)) {
-                console.error("bad(NaN) value for pay currency", currencyName, reason);
-                return false;
-            }
+            
             this.currencydata[currencyName].Amount -= amount;
 
             return amount;
@@ -1894,6 +1905,9 @@ const gamevm = Vue.createApp({
             }
         },
         tryHire(profession, amount = 1) {
+            if(isNaN(amount)){
+                return false;
+            }
             let maxPossible = Math.min(amount, this.getAvailableWorkers());
             if (maxPossible == 0) {
                 if (!this.missingProfessionCounts[profession.Name]) {
@@ -1908,6 +1922,9 @@ const gamevm = Vue.createApp({
             }
         },
         hire(profession, amount = 1) {
+            if(isNaN(amount)){
+                return false;
+            }
             let maxPossible = Math.min(amount, this.getAvailableWorkers());
             if (profession.RequiredBuilding) {
                 let building = this.buildingdata.find(x => x.Name == profession.RequiredBuilding);
@@ -1929,6 +1946,9 @@ const gamevm = Vue.createApp({
             return maxPossible;
         },
         hireInfo(profession, amount = 1) {
+            if(isNaN(amount)){
+                return '';
+            }
             let maxPossible = Math.min(amount, this.getAvailableWorkers());
             if (profession.RequiredBuilding) {
                 let building = this.buildingdata.find(x => x.Name == profession.RequiredBuilding);
@@ -2683,14 +2703,22 @@ const gamevm = Vue.createApp({
                 //If an identity follows a number, it references the type of population. Otherwise it references the amount of population.
                 //In this case, we should always assume it's the direct object, a target of what we are trying to do.
 
-                let ident = this.next();
+                
                 //This identity could either be a variable or the target you wanna grab. Maybe
                 //The smart thing to do is check if the ident is a reserved keyword or not
                 //TODO:check if its a reserved keyword. If it is, do this
                 //Otherwise we might have an expression here
                 //Assume the target is this identity
                 //Hire farmer
-                target = ident;
+                if(this.isReservedName(next.value)){
+                    console.log("Using reserved keyword", next.value);
+                    target = next;
+                    this.consume();
+                }
+                else{
+                    console.log("Identity is not reserved:", next.value);
+                    amount = this.parseExpression();
+                }
 
                 //Hire Y ___
                 next = this.peek();
@@ -2817,12 +2845,13 @@ const gamevm = Vue.createApp({
 
                 if(next.type == "IDENT"){
                     //Hire Y farmers.
+                    target = next;
                     this.consume();
                     return {
                         type:"Action",
                         action:action,
                         target:next,
-                        amount:target,
+                        amount:amount,
                         tokenid: action.id
                     }
                 }
@@ -3619,10 +3648,16 @@ const gamevm = Vue.createApp({
                     }
 
                     if (node.action.value == 'hire' || node.action.value == 'fire') {
-                        //console.log("Hiring because node", node);
+                        console.log("Hiring because node", node);
                         let prof = this.sanitizeProfName(node.target.value);
                         let outputProfName = prof.Name;
-                        let amount = parseFloat(node.amount);
+                        let amount = 0;
+                        if(node.amount.type == "Expression"){
+                            amount = this.evalNode(node.amount, env);
+                        }else{
+                            amount = parseFloat(node.amount);
+                        }
+
                         if (amount != 1) {
                             outputProfName = pluralize.plural(outputProfName);
                         }
@@ -3646,10 +3681,16 @@ const gamevm = Vue.createApp({
                     }
 
                     if (node.action.value == 'build') {
-                        //console.log("Building because node", node);
+                        console.log("Building because node", node);
                         let building = pluralize.singular(node.target.value);
                         let outputBuildingName = node.target.value;
-                        let amount = parseFloat(node.amount);
+                        let amount = 0;
+                        if(node.amount.type == "Expression"){
+                            amount = this.evalNode(node.amount, env);
+                        }else{
+                            amount = parseFloat(node.amount);
+                        }
+                        
                         if (amount != 1) {
                             outputBuildingName = pluralize.plural(outputBuildingName);
                         }

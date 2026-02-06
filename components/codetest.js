@@ -282,7 +282,7 @@ print ninety nine thousand nine hundred ninety nine = 99999.
                     }
                 },
                 {
-                    mori:'y is 1. hire 1 farmers.',
+                    mori:'y is 1. hire y + 1 farmers.',
                     previousState:{
                         professions:{
                             Farmer:0,
@@ -291,8 +291,8 @@ print ninety nine thousand nine hundred ninety nine = 99999.
                     },
                     postState:{
                         professions:{
-                            Farmer:1,
-                            Unemployed:5
+                            Farmer:2,
+                            Unemployed:4
                         }
                     }
                 }
