@@ -295,6 +295,54 @@ print ninety nine thousand nine hundred ninety nine = 99999.
                             Unemployed:4
                         }
                     }
+                },
+                {
+                    mori:'y is 3 + 1. hire y - 2 farmers.',
+                    previousState:{
+                        professions:{
+                            Farmer:0,
+                            Unemployed:6
+                        }
+                    },
+                    postState:{
+                        professions:{
+                            Farmer:2,
+                            Unemployed:4
+                        }
+                    }
+                },
+                {
+                    mori:"If there are 8 farmers, hire a farmer otherwise print 'nope'.",
+                    previousState:{
+                        professions:{
+                            Farmer:8,
+                            Unemployed:1
+                        }
+                    },
+                    postState:{
+                        professions:{
+                            Farmer:9,
+                            Unemployed:0
+                        }
+                    }
+                },
+                {
+                    mori:"If there are 7 farmers, hire a farmer otherwise print 'nope'.",
+                    previousState:{
+                        professions:{
+                            Farmer:8,
+                            Unemployed:1
+                        }
+                    },
+                    postState:{
+                        professions:{
+                            Farmer:8,
+                            Unemployed:1
+                        },
+                        printOutputs:[
+                            'Line 1: nope'
+                        ],
+                    }
                 }
             ],
             validMori:[

@@ -2796,7 +2796,7 @@ const gamevm = Vue.createApp({
                     else if(next.type == "PRINT"){
                         let elseAction = this.parsePrint();
                         return {
-                            type:"Print",
+                            type:"Action",
                             action:action,
                             target:target,
                             amount:amount,
@@ -3550,7 +3550,7 @@ const gamevm = Vue.createApp({
                     let greaterThanMatch = greaterThanRegex.exec(node.op.value);
                     let lessThanRegex = /((?:is|are)* *(?:less|fewer) *(?:than)*)/;
                     let lessThanMatch = lessThanRegex.exec(node.op.value);
-                    let isEqualRegex = /((?:is|are)+ *(?:equal|the same as)* *(?:to|with)*)/;
+                    let isEqualRegex = /((?:is|are)+ *(?:equal|the same as)+ *(?:to|with)*)/;
                     let isEqualMatch = isEqualRegex.exec(node.op.value);
                     let orEqualRegex = /((?:or equal )+ *(?:to|with)*)/;
                     let orEqualMatch = orEqualRegex.exec(node.op.value);
@@ -3570,46 +3570,51 @@ const gamevm = Vue.createApp({
                     else if(isEqualMatch){
                         conditionResult = left == right;
                     }
-
-                    switch (node.op.value) {
-                        case 'and':
-                            conditionResult = left && right;
-                            break;
-                        case 'or':
-                            conditionResult = left || right;
-                            break;
-                        case '>': 
-                            conditionResult = left > right;
-                            break;
-                        case '>=':
-                            conditionResult = left >= right;
-                            break;
-                        case '<=': 
-                            conditionResult = left <= right;
-                            break;
-                        case '<': 
-                            conditionResult = left < right;
-                            break;
-                        case '==': 
-                            conditionResult = left == right;
-                            break;
-                        case 'is': 
-                            conditionResult = left == right;
-                            break;
-                        case 'are': 
-                            conditionResult = left == right;
-                            break;
-                        case '=': 
-                            conditionResult = left == right;
-                            break;
+                    else{
+                        if(node.op.value.startsWith('is') && node.op.value != 'is'){
+                            node.op.value = node.op.value.substring(3);
+                        }
+                        switch (node.op.value) {
+                            case 'and':
+                                conditionResult = left && right;
+                                break;
+                            case 'or':
+                                conditionResult = left || right;
+                                break;
+                            case '>': 
+                                conditionResult = left > right;
+                                break;
+                            case '>=':
+                                conditionResult = left >= right;
+                                break;
+                            case '<=': 
+                                conditionResult = left <= right;
+                                break;
+                            case '<': 
+                                conditionResult = left < right;
+                                break;
+                            case '==': 
+                                conditionResult = left == right;
+                                break;
+                            case 'is': 
+                                conditionResult = left == right;
+                                break;
+                            case 'are': 
+                                conditionResult = left == right;
+                                break;
+                            case '=': 
+                                conditionResult = left == right;
+                                break;
+                        }
                     }
+                    
                     //console.log(node, conditionResult);
                     if (conditionResult && node.action) {
                         return this.evalNode(node.action, env);
                     }
 
-                    if (!conditionResult && node.elseAction) {
-                        return this.evalNode(node.elseAction, env);
+                    if (!conditionResult && node.action?.elseAction) {
+                        return this.evalNode(node.action.elseAction, env);
                     }
                     return conditionResult;
 
@@ -3690,7 +3695,7 @@ const gamevm = Vue.createApp({
                         }else{
                             amount = parseFloat(node.amount);
                         }
-                        
+
                         if (amount != 1) {
                             outputBuildingName = pluralize.plural(outputBuildingName);
                         }
@@ -3708,6 +3713,7 @@ const gamevm = Vue.createApp({
                     }
                     break;
                 case 'Print':
+                    console.log(node);
                     if (node.output.type == 'STRING') {
                         this.consoleOutputs.push('Line ' + node.line + ': ' + node.output.value.slice(1, -1));
                         break;
