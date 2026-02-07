@@ -37,9 +37,10 @@
                     <div>Why is it called Mori?</div>
                     <div>Well the game is called Vanitasia, which is named after an art style called Vanitas which is about the inevitability of death. Memento Mori is a artistic trope about death along the same lines, but it also means "forest" in Japanese, which makes it a cool name.</div>
                     <div>What does Mori look like? Here are some examples:</div>
-                    <pre class="documentation-code-block mx-2">x is 7.</pre>
-                    <pre class="documentation-code-block mx-2">if there are 0 farmers, hire 1.</pre>
-                    <pre class="documentation-code-block mx-2">if food production is less than food consumption and there are more than 5 unemployed people, hire a farmer.</pre>
+                    <pre class="documentation-code-block mx-2">
+x is 7.
+if there are no farmers, hire one.
+if food production is less than food consumption and there are more than 5 unemployed people, hire a farmer.</pre>
                     <div>How does Mori work?</div>
                     <div>It's just a simple parser I wrote in Javascript. The main goal is to be as forgiving and accepting as possible. As much as possible syntax errors should be clear as to what word caused the error and what kinds of words the parser was expecting.</div>
 
@@ -51,6 +52,208 @@
 
                         </div>
                     </div>
+                    <div class="my-3">
+                        <h3>Keywords and Tokens</h3>
+                        <div class="mx-2">
+                            Here's a summary of the tokens that are currently allowed by Mori and what they do:
+
+                            <div class="mt-3">
+                                <h4>Skipped Tokens</h4>
+                                <div class="px-4">
+                                    <div class="my-2">Mori will ignore any commas, tabs, newlines, and the indefinite article "a". You can add these for readability and clarity. For example, the following two commands are identical. </div>
+                                    <pre class="documentation-code-block">SKIP: , \t \n (a )</pre>
+                                    <pre class="documentation-code-block">    if there are any farmers, hire a lumberack.
+if there are any farmers hire lumberjack.</pre>
+                                </div>
+
+                            </div>
+                            <div class="mt-3">
+                                <h4>Numbers</h4>
+                                <div class="px-4">
+                                    <div class="my-2">Mori uses Javascript floats for numbers, but requires integers, since the period marks the end of a command. For example, you can't hire 3.15 farmers. </div>
+                                    <pre class="documentation-code-block">NUMBER: /^\d+/ (Any digit numbers)</pre>
+                                    
+                                    <pre class="documentation-code-block">VALID: x is 7.
+INVALID: x is 7.5.</pre>
+                                </div>
+                            </div>
+                            <div class="mt-3">
+                                <h4>Text Numbers</h4>
+                                <div class="px-4">
+                                    <div class="my-2">Mori can also understand textual numbers. A pre-processing step converts any text numbers into numbers. For example, the following two equations are identical.</div>
+                                    <pre class="documentation-code-block">TEXT NUMBER: Any word number below 999 Quadrillion, as well as the word "no" to mean 0.</pre>
+                                    
+                                    <pre class="documentation-code-block">x is seven + five.
+y = 7 + 5.
+
+//Outputs true.
+print x = y.
+
+//Outputs true if farmers = 0.
+if there are no farmers, print 'true'.</pre>
+                                </div>
+                            </div>
+                            <div class="mt-3">
+                                <h4>Comparators</h4>
+                                <div class="px-4">
+                                    <div class="my-2">Mori allows for a number of different comparator keywords, as well as some mixing and matching.</div>
+                                    <pre class="documentation-code-block">COMPARATOR: ((?:is|are)* *(?:greater|more|less|fewer|equal) *(?:than)* *(?:or equal )* *(?:to|with)*)
+(is the same as|are the same as)
+(is >|is <|is <=|is >=|is =|is ==|are >|are <|are <=|are >=|are =|are ==|>=|<=|>|<|==)</pre>
+                                    <pre class="documentation-code-block">//Outputs true.
+print 9 is greater than or equal to 8.
+
+//Outputs false.
+print nine is the same as seven.
+</pre>
+                                </div>
+                    </div>
+                    <div class="mt-3">
+                        <h4>Special Comparators</h4>
+                        <div class="px-4">
+                            <div class="my-2">Mori allows for a few special comparators when you want to use more natural English in your commands. These are the MORE and LESS tokens.</div>
+                            <pre class="documentation-code-block">MORE: more
+LESS: less
+LESS: fewer
+</pre>
+                            <pre class="documentation-code-block">//This converts to farmers > lumberjacks and lumberjacks > farmers respectively.
+If there are more farmers than lumberjacks hire lumberjacks until there are more lumberjacks than farmers.
+
+//This will print 'we not okay' if food production < food consumption.
+If there is less food production than food consumption print 'we not okay'.
+</pre>
+                        </div>
+                    </div>
+                    <div class="mt-3">
+                        <h4>Than</h4>
+                        <div class="px-4">
+                            <div class="my-2">You can use the than keyword when comparing with more or less or fewer comparators, but Mori understands without them too if you wanna make it sound weird.</div>
+                            <pre class="documentation-code-block">//These thans are not required, Mori will parse it regardless, but it reads a lot more clearly with the thans.
+
+//These two give the exact same output.
+If there are more farmers than lumberjacks hire lumberjacks until there are more lumberjacks than farmers.
+If there are more farmers lumberjacks hire lumberjacks until there are more lumberjacks farmers.
+
+//These two also give the exact same output.
+If there is less food production than food consumption print 'we not okay'.
+If there is less food production food consumption print 'we not okay'.
+</pre>
+                        </div>
+                    </div>
+<div class="mt-3">
+                    <h4>And And Or</h4>
+                    <div class="px-4">
+                        <div class="my-2">Mori allows for And and Or operations.</div>
+                        <pre class="documentation-code-block">//Only prints if both are true.
+If food is greater than 10 and food production is equal to 7 then print "ok" otherwise print "Nope".
+</pre>
+                    </div>
+                </div>
+                <div class="mt-3">
+                    <h4>Not</h4>
+                    <div class="px-4">
+                        <div class="my-2">Mori is supposed to handle Nots but I changed things and at the time of writing this Not does not do anything.</div>
+                        <pre class="documentation-code-block">//Not is parsed but it will not change things (yet).
+If food is not greater than 7 print "uh oh".
+</pre>
+                    </div>
+                </div>
+                <div class="mt-3">
+                    <h4>Xor</h4>
+                    <div class="px-4">
+                        <div class="my-2">Mori is supposed to handle Xors but I changed things and at the time of writing this Xor does not do anything.</div>
+                        <pre class="documentation-code-block">//Xor is parsed but it will not change things (yet).
+If food is greater than 7 xor there are fewer than 7 farmers print "uh oh".
+</pre>
+                    </div>
+                </div>
+<div class="mt-3">
+                    <h4>Assignment</h4>
+                    <div class="px-4">
+                        <div class="my-2">You can assign a value to a variable in a few ways.</div>
+                        <pre class="documentation-code-block">ASSIGN: is = are
+x is 7.
+y = 5.
+zs are 15.
+
+//Outputs 27.
+print x + y + zs.
+</pre>
+                    </div>
+                </div>
+<div class="mt-3">
+                    <h4>Printing</h4>
+                    <div class="px-4">
+                        <div class="my-2">Print statements can output either a number, variable, or any given string.</div>
+                        <pre class="documentation-code-block">
+x is 7.
+
+//Outputs 7 four different ways.
+print x.
+print 7.
+print "7".
+print '7'.
+</pre>
+                    </div>
+                </div>
+<div class="mt-3">
+                    <h4>Arithmetic</h4>
+                    <div class="px-4">
+                        <div class="my-2">Mori supports addition, multiplication, subtraction, division and modulus operators.</div>
+                        <pre class="documentation-code-block">w is 7 % 4.
+x is 7 + 3.
+y is 4 - 3.
+z is 10 / 2.
+
+//Outputs 3, 10, 1, and 5.
+print w.
+print x.
+print y.
+print z.
+
+</pre>
+                    </div>
+                </div>
+<div class="mt-3">
+                    <h4>Parentheses</h4>
+                    <div class="px-4">
+                        <div class="my-2">Mori can see parentheses, but as of right now they will only break the parser.</div>
+                        <pre class="documentation-code-block">w is (7 % 4).//Syntax error.
+</pre>
+                    </div>
+                </div>
+<div class="mt-3">
+                    <h4>Conditionals</h4>
+                    <div class="px-4">
+                        <div class="my-2">A conditional in Mori can start with either if or when, else, otherwise, or until, depending on where in the command it is.</div>
+                        <pre class="documentation-code-block">If there are 0 lumberjacks, hire a lumberjack.
+When there are 0 lumberjacks, hire a lumberjack.
+If there are any lumberjacks, hire a farmer, else hire a lumberjack.
+When there are no farmers, hire a farmer, otherwise print 'we already got a farmer.'. 
+Hire lumberjacks until there are 10. //Hires one lumberjack per game tick until the until condition is met.
+</pre>
+                    </div>
+                </div>
+                <div class="mt-3">
+                    <h4>None</h4>
+                    <div class="px-4">
+                        <div class="my-2">None operator currently isn't implemented and probably need to get the axe.</div>
+                    </div>
+                </div>
+                <div class="mt-3">
+                    <h4>There Are</h4>
+                    <div class="px-4">
+                        <div class="my-2">You can use there are in a conditional to compare two values in a way that is more idomatic in english.</div>
+                        <pre class="documentation-code-block">//These are the same code.
+If there are 0 lumberjacks, hire a lumberjack. 
+If lumberjacks = 0 hire 1 lumberjack.
+
+If there are any lumberjacks, print 'We have lumberjacks'.
+If lumberjacks > 0 print 'We have lumberjacks'.
+</pre>
+                </div>
+            </div>
+        </div>
                     <div class="my-3">
                        <h2>Actions</h2>
                        <div class="mx-2">
@@ -112,8 +315,7 @@
                                 <hr>
                                 <div class="px-3 m-3">
                                     <pre class="documentation-code-block">
-If Available Housing is 0, then build a hut.
-                                    </pre>
+If Available Housing is 0, then build a hut.</pre>
                                     <div>
                                         This will build a hut whenever more huts are needed because there is no other housing available.
                                     </div>
@@ -135,14 +337,20 @@ If Available Housing is 0, then build a hut.
                         </div>
                     </div>
                     <div>
-                        Reserved Currencies:
-                        <div v-for="reservedKeyword in currencyReservedNames">
+                        <h4>Reserved Currencies:</h4>
+                        <div class="mx-3"  v-for="reservedKeyword in currencyReservedNames">
                             [[reservedKeyword]]
                         </div>
                     </div>
                     <div>
-                        Reserved Professions:
-                        <div v-for="reservedKeyword in currencyReservedNames">
+                        <h4>Reserved Professions:</h4>
+                        <div class="mx-3"  v-for="reservedKeyword in professionReservedNames">
+                            [[reservedKeyword]]
+                        </div>
+                    </div>
+                    <div>
+                        <h4>Reserved Buildings:</h4>
+                        <div class="mx-3" v-for="reservedKeyword in buildingReservedNames">
                             [[reservedKeyword]]
                         </div>
                     </div>

@@ -2484,6 +2484,7 @@ const gamevm = Vue.createApp({
                 ['ARITHMETIC', /^-/],
                 ['ARITHMETIC', /^\*/],
                 ['ARITHMETIC', /^\//],
+                ['ARITHMETIC', /^%/],
                 ['LPAREN', /^\(/],
                 ['RPAREN', /^\)/],
                 ['CONDITIONAL', /^(if|when)/],
@@ -2497,7 +2498,7 @@ const gamevm = Vue.createApp({
                 ['PRINT', /^print\b/],
                 ['THERE_ARE', /^(there are|there is)\b/],
                 ['IT_IS', /^it is\b/],
-                ['ACTION', /^(hire|fire|build)\b/],
+                ['ACTION', /^(hire|fire|build|demolish)\b/],
                 ['IDENT', /^(construction worker|construction workers)\b/],
                 ['IDENT', /^(homeless people|homeless person)\b/],
                 ['IDENT', /^(unemployed people)\b/],
@@ -3611,6 +3612,9 @@ const gamevm = Vue.createApp({
                     if (!conditionResult && node.action?.elseAction) {
                         return this.evalNode(node.action.elseAction, env);
                     }
+                    if (!conditionResult && node.elseAction) {
+                        return this.evalNode(node.elseAction, env);
+                    }
                     else if(!conditionResult && node.action?.action){
                         this.consoleOutputs.push(`Line ${node.action.action.line}: The people did not ${node.action.action.value} because your specified conditions were not met.`);
                     }
@@ -3701,8 +3705,8 @@ const gamevm = Vue.createApp({
                         }
                     }
 
-                    if (node.action.value == 'build') {
-                        console.log("Building because node", node);
+                    if (node.action.value == 'build' || node.action.value == 'demolish') {
+                        console.log(node.action.value, "because node", node);
                         if(!node.target){
                             //Gotta get the antecedent token
                             let anyAntecedentFound = false;
@@ -3734,16 +3738,24 @@ const gamevm = Vue.createApp({
                         if (amount != 1) {
                             outputBuildingName = pluralize.plural(outputBuildingName);
                         }
-                        let actual = this.buildBuilding({ Name: building }, amount);
+                        let actual = 0;
+                        if(node.action.value == "build"){
+                            actual = this.buildBuilding({ Name: building }, amount);
+                        }
+                        else if(node.action.value == "demolish"){
+                            actual = this.demolishBuilding({ Name: building }, amount);
+                        }
+
+                        
                         console.log(actual, amount);
                         if (actual == amount) {
-                            this.consoleOutputs.push(`Built ${amount} ${outputBuildingName}.`);
+                            this.consoleOutputs.push(`${node.action.value} ${amount} ${outputBuildingName}.`);
                         }
                         else if (actual > 0) {
-                            this.consoleOutputs.push(`Tried to build ${amount} ${outputBuildingName}, but we were only able to build ${actual}.`);
+                            this.consoleOutputs.push(`Tried to ${node.action.value} ${amount} ${outputBuildingName}, but we were only able to ${node.action.value} ${actual}.`);
                         }
                         else {
-                            this.consoleOutputs.push(`Tried to build ${amount} ${outputBuildingName}, but we don't have the materials.`);
+                            this.consoleOutputs.push(`Tried to ${node.action.value} ${amount} ${outputBuildingName}, but we don't have the materials.`);
                         }
                     }
                     break;
@@ -3852,6 +3864,7 @@ const gamevm = Vue.createApp({
                         case '-': return leftValue - rightValue;
                         case '*': return leftValue * rightValue;
                         case '/': return leftValue / rightValue;
+                        case '%': return leftValue % rightValue;
                         default: console.error(`Unknown operator: ${node.op}`);
                     }
 
