@@ -2465,6 +2465,7 @@ const gamevm = Vue.createApp({
                 ['NUMBER', /^\d+/],
                 ['TEXT_NUMBER', /^(one|two|three|four|five|six|seven|eight|nine|ten|eleven|twelve|thirteen|fourteen|fifteen|sixteen|seventeen|eighteen|nineteen|twenty|thirty|forty|fifty|sixty|seventy|eighty|ninety|hundred|thousand)\b/i],
                 ["TEXT_NUMBER", /^no\b/],
+                ["TEXT_NUMBER", /^eleventyleven\b/],
                 ['COMPARATOR', /^((?:is|are)* *(?:greater|more|less|fewer|equal) *(?:than)* *(?:or equal )* *(?:to|with)*)/i],
                 ['COMPARATOR', /^(is the same as|are the same as)/i],
                 ['COMPARATOR', /^(is >|is <|is <=|is >=|is =|is ==|are >|are <|are <=|are >=|are =|are ==|>=|<=|>|<|==)/],
@@ -2500,6 +2501,7 @@ const gamevm = Vue.createApp({
                 ['IDENT', /^(construction worker|construction workers)\b/],
                 ['IDENT', /^(homeless people|homeless person)\b/],
                 ['IDENT', /^(unemployed people)\b/],
+                ['IDENT', /^(large (?:hut|huts))\b/],
                 ['IDENT', /^(available housing)\b/],
                 ['IDENT', /^(total housing)\b/],
                 ['IDENT', /^(total population)\b/],
@@ -2592,6 +2594,9 @@ const gamevm = Vue.createApp({
             }
             if(text == "no" || text == "zero"){
                 return "0";
+            }
+            if(text == "eleventyleven"){
+                return 1111;
             }
 
             let fullNumberRegex = /^((?!hundred|thousand)(?=.)(?:(one|two|three|four|five|six|seven|eight|nine|ten)( |$)(hundred)( |$))?(?:((ten|twenty|thirty|forty|fifty|sixty|seventy|eighty|ninety)( |$))?((one|two|three|four|five|six|seven|eight|nine)( |$))?|ten|eleven|twelve|thirteen|fourteen|fifteen|sixteen|seventeen|eighteen|nineteen))( |$)?((?<= )thousand( (?= .))?( ((?:(one|two|three|four|five|six|seven|eight|nine)( |$)(hundred)( |$))?(?:((ten|twenty|thirty|forty|fifty|sixty|seventy|eighty|ninety)( |$))?((one|two|three|four|five|six|seven|eight|nine|ten)( |$))?|eleven|twelve|thirteen|fourteen|fifteen|sixteen|seventeen|eighteen|nineteen)))?)? *?$/;
@@ -3475,9 +3480,10 @@ const gamevm = Vue.createApp({
             for (let [good, data] of Object.entries(this.currencydata)) {
                 let goodLower = good.toLowerCase();
                 env[goodLower] = data.Amount;
-                let preCostAmount = this.preCostTickCurrencyValues[good]?.Amount;
+                let preCostAmount = this.preCostTickCurrencyValues[good]?.Amount ?? 0;
                 let beginTickAmount = this.beginTickCurrencyValues[good]?.Amount;
                 let endAmount = this.endTickCurrencyValues[good]?.Amount;
+
                 env[goodLower + ' production'] = preCostAmount - beginTickAmount;
                 env[goodLower + ' consumption'] = preCostAmount - endAmount;
 
@@ -3487,12 +3493,18 @@ const gamevm = Vue.createApp({
                 env[pluralize.plural(lowername)] = prof.Count;
                 env[pluralize.singular(lowername)] = prof.Count;
             }
+            for (let building of this.buildingdata) {
+                let lowername = building.Name.toLowerCase();
+                env[pluralize.plural(lowername)] = building.Count;
+                env[pluralize.singular(lowername)] = building.Count;
+            }
             env['current population'] = this.getPopulation();
             env['total population'] = this.getPopulation();
             env['unemployed people'] = this.getAvailableWorkers();
             env['total housing'] = this.getAvailableHousing();
             env['available housing'] = this.getAvailableHousing();
             env['__TOKENS__'] = tokens;
+            console.log(env);
             if(act){
                 //console.log(env);
                 for (const node of ast) {
@@ -3530,7 +3542,7 @@ const gamevm = Vue.createApp({
 
                 case 'Evaluatable':
                     let left = this.evalNode(node.lhs, env);
-                    //console.log('evald to : ', left);
+                    console.log(node, 'evald to : ', left);
                     //If left is undefined, we have a variable that was never assigned.
                     if(typeof left === 'undefined'){
                         this.consoleOutputs.push(`Our scribes were surprised to see '${node.lhs.lhs.value}' on line ${node.lhs.lhs.line}. They were not sure what you meant when you wrote it.`);
@@ -3579,7 +3591,7 @@ const gamevm = Vue.createApp({
                                 conditionResult = left && right;
                                 break;
                             case 'or':
-                                conditionResult = left || right;
+                                conditionResult = left || (right ? right : false);
                                 break;
                             case '>': 
                                 conditionResult = left > right;
@@ -3607,14 +3619,15 @@ const gamevm = Vue.createApp({
                                 break;
                         }
                     }
-                    
-                    //console.log(node, conditionResult);
+
                     if (conditionResult && node.action) {
                         return this.evalNode(node.action, env);
                     }
-
                     if (!conditionResult && node.action?.elseAction) {
                         return this.evalNode(node.action.elseAction, env);
+                    }
+                    else if(!conditionResult && node.action?.action){
+                        this.consoleOutputs.push(`Line ${node.action.action.line}: The people did not ${node.action.action.value} because your specified conditions were not met.`);
                     }
                     return conditionResult;
 
@@ -3651,20 +3664,27 @@ const gamevm = Vue.createApp({
                             return;
                         }
                     }
-                    console.log(env);
                     if (node.action.value == 'hire' || node.action.value == 'fire') {
-                        console.log("Hiring because node", node);
                         if(!node.target){
                             //Gotta get the antecedent token
+                            let anyAntecedentFound = false;
                             for(let token of env['__TOKENS__']){
                                 if(token.type == "IDENT" && this.professionReservedNames.has(token.value.toLowerCase())){
+                                    if(anyAntecedentFound){
+                                        //We have two possible antecedents and cannot continue, throw an error
+                                        console.error("TWO ANTECEDENTS OH NOOO", node);
+                                        this.consoleOutputs.push(`Line ${node.action.line}: Our scribes were not sure which of the antecedents in this command you were referring to, ${node.target.value} or ${token.value}.`);
+                                        return;
+                                    }
                                     node.target = {
                                         value:token.value
                                     }
+
+                                    anyAntecedentFound = true;
                                 }
                             }
                         }
-                        console.log(node);
+
                         let prof = this.sanitizeProfName(node.target.value);
                         let outputProfName = prof.Name;
                         let amount = 0;
@@ -3698,6 +3718,25 @@ const gamevm = Vue.createApp({
 
                     if (node.action.value == 'build') {
                         console.log("Building because node", node);
+                        if(!node.target){
+                            //Gotta get the antecedent token
+                            let anyAntecedentFound = false;
+                            for(let token of env['__TOKENS__']){
+                                if(token.type == "IDENT" && this.buildingReservedNames.has(token.value.toLowerCase())){
+                                    if(anyAntecedentFound){
+                                        //We have two possible antecedents and cannot continue, throw an error
+                                        console.error("TWO ANTECEDENTS OH NOOO", node);
+                                        this.consoleOutputs.push(`Line ${node.action.line}: Our scribes were not sure which of the antecedents in this command you were referring to, ${node.target.value} or ${token.value}.`);
+                                        return;
+                                    }
+                                    node.target = {
+                                        value:token.value
+                                    }
+
+                                    anyAntecedentFound = true;
+                                }
+                            }
+                        }
                         let building = pluralize.singular(node.target.value);
                         let outputBuildingName = node.target.value;
                         let amount = 0;
@@ -3711,7 +3750,7 @@ const gamevm = Vue.createApp({
                             outputBuildingName = pluralize.plural(outputBuildingName);
                         }
                         let actual = this.buildBuilding({ Name: building }, amount);
-
+                        console.log(actual, amount);
                         if (actual == amount) {
                             this.consoleOutputs.push(`Built ${amount} ${outputBuildingName}.`);
                         }
