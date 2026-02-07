@@ -1,2 +1,2 @@
-# idlemvp
-vue based idle game with custom programming language syntax for laws and complex tech graph.
+# Vanitasia
+vue based idle game with custom programming language syntax called Mori for laws and complex tech graph.
