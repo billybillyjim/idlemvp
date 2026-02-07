@@ -2463,7 +2463,7 @@ const gamevm = Vue.createApp({
                 ['SKIP', /^[ \t\n]+/],                
                 ['SKIP', /^(a )\b/],
                 ['NUMBER', /^\d+/],
-                ['TEXT_NUMBER', /^(one|two|three|four|five|six|seven|eight|nine|ten|eleven|twelve|thirteen|fourteen|fifteen|sixteen|seventeen|eighteen|nineteen|twenty|thirty|forty|fifty|sixty|seventy|eighty|ninety|hundred|thousand)\b/i],
+                ['TEXT_NUMBER', /^(one|two|three|four|five|six|seven|eight|nine|ten|eleven|twelve|thirteen|fourteen|fifteen|sixteen|seventeen|eighteen|nineteen|twenty|thirty|forty|fifty|sixty|seventy|eighty|ninety|hundred|thousand|million|billion|trillion|quadrillion|quintillion)\b/i],
                 ["TEXT_NUMBER", /^no\b/],
                 ["TEXT_NUMBER", /^eleventyleven\b/],
                 ['COMPARATOR', /^((?:is|are)* *(?:greater|more|less|fewer|equal) *(?:than)* *(?:or equal )* *(?:to|with)*)/i],
@@ -2599,80 +2599,65 @@ const gamevm = Vue.createApp({
                 return 1111;
             }
 
-            let fullNumberRegex = /^((?!hundred|thousand)(?=.)(?:(one|two|three|four|five|six|seven|eight|nine|ten)( |$)(hundred)( |$))?(?:((ten|twenty|thirty|forty|fifty|sixty|seventy|eighty|ninety)( |$))?((one|two|three|four|five|six|seven|eight|nine)( |$))?|ten|eleven|twelve|thirteen|fourteen|fifteen|sixteen|seventeen|eighteen|nineteen))( |$)?((?<= )thousand( (?= .))?( ((?:(one|two|three|four|five|six|seven|eight|nine)( |$)(hundred)( |$))?(?:((ten|twenty|thirty|forty|fifty|sixty|seventy|eighty|ninety)( |$))?((one|two|three|four|five|six|seven|eight|nine|ten)( |$))?|eleven|twelve|thirteen|fourteen|fifteen|sixteen|seventeen|eighteen|nineteen)))?)? *?$/;
-            let match = text.match(fullNumberRegex);
-
-            let t = match[0].toLowerCase();
             let numDict = {
-                'one': 1, 
-                'two': 2, 
-                'three': 3, 
-                'four': 4, 
-                'five': 5, 
-                'six': 6, 
-                'seven': 7, 
-                'eight': 8, 
-                'nine': 9, 
-                'ten': 10, 
-                'eleven': 11, 
-                'twelve': 12, 
-                'thirteen': 13, 
-                'fourteen': 14, 
-                'fifteen': 15, 
-                'sixteen': 16, 
-                'seventeen': 17, 
-                'eighteen': 18, 
-                'nineteen': 19, 
-                'twenty': 20, 
-                'thirty': 30, 
-                'forty': 40, 
-                'fifty': 50, 
-                'sixty': 60, 
-                'seventy': 70, 
-                'eighty': 80, 
-                'ninety': 90,
+                'one': [1, 1],
+                'two': [2, 1], 
+                'three': [3, 1], 
+                'four': [4, 1], 
+                'five': [5, 1], 
+                'six': [6, 1], 
+                'seven': [7, 1], 
+                'eight': [8, 1], 
+                'nine': [9, 1], 
+                'ten': [10, 1], 
+                'eleven': [11, 1], 
+                'twelve': [12, 1], 
+                'thirteen': [13, 1], 
+                'fourteen': [14, 1], 
+                'fifteen': [15, 1], 
+                'sixteen': [16, 1], 
+                'seventeen': [17, 1], 
+                'eighteen': [18, 1], 
+                'nineteen': [19, 1], 
+                'twenty': [20, 1], 
+                'thirty': [30, 1], 
+                'forty': [40, 1], 
+                'fifty': [50, 1], 
+                'sixty': [60, 1], 
+                'seventy': [70, 1], 
+                'eighty': [80, 1], 
+                'ninety': [90, 1],
+                'hundred': [0, 100],
+                'thousand': [0, 1000],
+                'million': [0, 1000000],
+                'billion': [0, 1000000000],
+                'trillion': [0, 1000000000000],
+                'quadrillion': [0, 1000000000000000],
+                'quintillion': [0, 1000000000000000000],
+                'sextillion': [0, 1000000000000000000000],
+                'septillion': [0, 1000000000000000000000000],
+                'octillion': [0, 1000000000000000000000000000],
+                'nonillion': [0, 1000000000000000000000000000000],
+                'decillion': [0, 1000000000000000000000000000000000],
             }
-            if(numDict[t]){
-                return numDict[t];
+            if(numDict[text]){
+                return numDict[text];
             }
-            let bigNumbers = {
-                    'thousand': 1000,
-                    'million': 1000000,
-                    'billion': 1000000000,
-                    'trillion': 1000000000000,
-                    'quadrillion': 1000000000000000,
-                    'quintillion': 1000000000000000000,
-                    'sextillion': 1000000000000000000000,
-                    'septillion': 1000000000000000000000000,
-                    'octillion': 1000000000000000000000000000,
-                    'nonillion': 1000000000000000000000000000000,
-                    'decillion': 1000000000000000000000000000000000,
-            }
-            let output = 0;
-            let n = 0;
-            let mag = 0;
-            for(let token of t.split(' ')){
-                let small = numDict[token];
-
-                if(small != null){
-                    output += small;
+            let numWords = text.split(' ');
+            let current = 0;
+            let result = 0;
+            for(let word of numWords){
+                let num = numDict[word];
+                if(!num){
+                    console.error("somehow we got a non-number in the textNumberToNumber......");
                 }
-                else if(token == "hundred"){
-                    output *= 100;
-                }
-                else{
-                    mag = bigNumbers[token];
-                    if(mag != null){
-                        n = n + output * mag;
-                        output = 0;
-                    }
-                    else{
-                        console.error("Somehow parsed non-number:", token);
-                    }
+                current = current * num[1] + num[0];
+                if(num[1] > 100){
+                    result += current;
+                    current = 0;
                 }
             }
-
-           return n + output;
+            return result + current;
             
         },
         peek(offset = 0) {
