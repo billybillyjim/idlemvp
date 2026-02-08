@@ -25,7 +25,7 @@
 
                 <ul class="navbar-nav w-100 justify-content-between gap-2">
                     <li class="nav-item my-3" style="color:white">
-                        <a class="text-light" href="./index.html">Play the Game</a>
+                        <a class="text-light" href="./index.html">Play Vanitasia</a>
                     </li>
                 </ul>
             </div>
@@ -33,16 +33,17 @@
         <main class="container-fluid py-4">
             <div class="mt-5">
                     <h1>Welcome to Mori</h1>
-                    <div>What is Mori? It's a programming language written to allow players to automatic decisionmaking for the game Vanitasia, which is the idle game hosted here.</div>
+                    <div>What is Mori?</div>
+                    <div class="mx-3">It's a programming language written to allow players to automatic decisionmaking for the game <a class="text-light" href="./index.html">Vanitasia</a>, which is the idle game hosted here.</div>
                     <div>Why is it called Mori?</div>
-                    <div>Well the game is called Vanitasia, which is named after an art style called Vanitas which is about the inevitability of death. Memento Mori is a artistic trope about death along the same lines, but it also means "forest" in Japanese, which makes it a cool name.</div>
+                    <div class="mx-3">Well the game is called Vanitasia, which is named after an art style called Vanitas which is about the inevitability of death. Memento Mori is a artistic trope about death along the same lines, but it also means "forest" in Japanese, which makes it a cool name.</div>
                     <div>What does Mori look like? Here are some examples:</div>
                     <pre class="documentation-code-block mx-2">
 x is 7.
 if there are no farmers, hire one.
 if food production is less than food consumption and there are more than 5 unemployed people, hire a farmer.</pre>
                     <div>How does Mori work?</div>
-                    <div>It's just a simple parser I wrote in Javascript. The main goal is to be as forgiving and accepting as possible. As much as possible syntax errors should be clear as to what word caused the error and what kinds of words the parser was expecting.</div>
+                    <div class="mx-3">It's just a simple parser I wrote in Javascript. The main goal is to be as forgiving and accepting as possible. As much as possible syntax errors should be clear as to what word caused the error and what kinds of words the parser was expecting.</div>
 
                     <div class="my-3">
                         <h3>Basic Syntax</h3>
@@ -62,7 +63,8 @@ if food production is less than food consumption and there are more than 5 unemp
                                 <div class="px-4">
                                     <div class="my-2">Mori will ignore any commas, tabs, newlines, and the indefinite article "a". You can add these for readability and clarity. For example, the following two commands are identical. </div>
                                     <pre class="documentation-code-block">SKIP: , \t \n (a )</pre>
-                                    <pre class="documentation-code-block">    if there are any farmers, hire a lumberack.
+                                    <pre class="documentation-code-block">//These are identical to the parser.
+    if there are any farmers, hire a lumberack.
 if there are any farmers hire lumberjack.</pre>
                                 </div>
 
@@ -113,8 +115,7 @@ print nine is the same as seven.
                         <div class="px-4">
                             <div class="my-2">Mori allows for a few special comparators when you want to use more natural English in your commands. These are the MORE and LESS tokens.</div>
                             <pre class="documentation-code-block">MORE: more
-LESS: less
-LESS: fewer
+LESS: less|fewer
 </pre>
                             <pre class="documentation-code-block">//This converts to farmers > lumberjacks and lumberjacks > farmers respectively.
 If there are more farmers than lumberjacks hire lumberjacks until there are more lumberjacks than farmers.
@@ -128,9 +129,7 @@ If there is less food production than food consumption print 'we not okay'.
                         <h4>Than</h4>
                         <div class="px-4">
                             <div class="my-2">You can use the than keyword when comparing with more or less or fewer comparators, but Mori understands without them too if you wanna make it sound weird.</div>
-                            <pre class="documentation-code-block">//These thans are not required, Mori will parse it regardless, but it reads a lot more clearly with the thans.
-
-//These two give the exact same output.
+                            <pre class="documentation-code-block">//These two give the exact same output.
 If there are more farmers than lumberjacks hire lumberjacks until there are more lumberjacks than farmers.
 If there are more farmers lumberjacks hire lumberjacks until there are more lumberjacks farmers.
 

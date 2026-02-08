@@ -3023,6 +3023,7 @@ const gamevm = Vue.createApp({
                                     op.type == 'ACTION' || 
                                     op.type == 'AND' || 
                                     op.type == 'OR' || 
+                                    op.type == 'XOR' || 
                                     op.type == "THEN" || 
                                     op.type == "PRINT" || 
                                     op.type == "ELSE" || 
@@ -3127,7 +3128,7 @@ const gamevm = Vue.createApp({
             }
             let evaluatable = this.parseEvaluatable();
             let next = this.peek();
-            while(next.type == "AND" || next.type == "OR"){
+            while(next.type == "AND" || next.type == "OR" || next.type == "XOR"){
                 next = this.next();
                 
                 let newEvaluatable = {
@@ -3286,6 +3287,23 @@ const gamevm = Vue.createApp({
                 if(next.type == "IDENT" || next.type == "NUMBER"){
                     rhs = this.parseExpression();
                 }
+                
+                next = this.peek();
+                if(next.type == "AND" || next.type == "OR" || next.type == "XOR"){
+                    this.consume();
+                    let currentEvaluatable = {
+                        type:"Evaluatable",
+                        lhs:lhs,
+                        op:operator,
+                        rhs:rhs
+                    }
+                    return {
+                        type:"Evaluatable",
+                        lhs:currentEvaluatable,
+                        op:next,
+                        rhs:this.parseEvaluatable()
+                    }
+                }
             }
 
             return {
@@ -3304,7 +3322,7 @@ const gamevm = Vue.createApp({
             let condition = this.parseEvaluatable();
             let next = this.peek();
             
-            while(next.type == "AND" || next.type == "OR"){
+            while(next.type == "AND" || next.type == "OR" || next.type == "XOR"){
                 next = this.next();
                 
                 let newCondition = {
