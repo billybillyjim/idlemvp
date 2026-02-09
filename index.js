@@ -2702,12 +2702,12 @@ const gamevm = Vue.createApp({
                 //Assume the target is this identity
                 //Hire farmer
                 if(this.isReservedName(next.value)){
-                    console.log("Using reserved keyword", next.value);
+                    //console.log("Using reserved keyword", next.value);
                     target = next;
                     this.consume();
                 }
                 else{
-                    console.log("Identity is not reserved:", next.value);
+                    //console.log("Identity is not reserved:", next.value);
                     amount = this.parseExpression();
                 }
 
@@ -2829,7 +2829,7 @@ const gamevm = Vue.createApp({
                         action:action,
                         target:target,
                         amount:amount,
-                        conditional:conditionalClause,
+                        condition:conditionalClause,
                         tokenid: action.id
                     }
                 }
@@ -3508,11 +3508,11 @@ const gamevm = Vue.createApp({
             env['total housing'] = this.getAvailableHousing();
             env['available housing'] = this.getAvailableHousing();
             env['__TOKENS__'] = tokens;
-            console.log(env);
+
             if(act){
                 //console.log(env);
                 for (const node of ast) {
-                    console.log(this.evalNode(node, env));
+                    this.evalNode(node, env);
                 }
             }
             
@@ -3546,7 +3546,7 @@ const gamevm = Vue.createApp({
 
                 case 'Evaluatable':
                     let left = this.evalNode(node.lhs, env);
-                    console.log(node, 'evald to : ', left);
+                    //console.log(node, 'evald to : ', left);
                     //If left is undefined, we have a variable that was never assigned.
                     if(typeof left === 'undefined'){
                         this.consoleOutputs.push(`Our scribes were surprised to see '${node.lhs.lhs.value}' on line ${node.lhs.lhs.line}. They were not sure what you meant when you wrote it.`);
@@ -3656,7 +3656,7 @@ const gamevm = Vue.createApp({
                         if(value.type == "Evaluatable"){
                             value = this.evalNode(value, env);
                         }
-                        console.log("Setting value", value);
+                        //console.log("Setting value", value);
                         env[node.id.name] = value;
                     }
                     else if (node.init.type == "Identifier") {
@@ -3724,7 +3724,7 @@ const gamevm = Vue.createApp({
                     }
 
                     if (node.action.value == 'build' || node.action.value == 'demolish') {
-                        console.log(node.action.value, "because node", node);
+                        //console.log(node.action.value, "because node", node);
                         if(!node.target){
                             //Gotta get the antecedent token
                             let anyAntecedentFound = false;
@@ -3764,10 +3764,8 @@ const gamevm = Vue.createApp({
                             actual = this.demolishBuilding({ Name: building }, amount);
                         }
 
-                        
-                        console.log(actual, amount);
                         if (actual == amount) {
-                            this.consoleOutputs.push(`${node.action.value} ${amount} ${outputBuildingName}.`);
+                            this.consoleOutputs.push(`${node.action.value == "build" ? 'Built' : 'Demolished'} ${amount} ${outputBuildingName}.`);
                         }
                         else if (actual > 0) {
                             this.consoleOutputs.push(`Tried to ${node.action.value} ${amount} ${outputBuildingName}, but we were only able to ${node.action.value} ${actual}.`);
@@ -3778,7 +3776,7 @@ const gamevm = Vue.createApp({
                     }
                     break;
                 case 'Print':
-                    console.log(node);
+                    //console.log(node);
                     if (node.output.type == 'STRING') {
                         this.consoleOutputs.push('Line ' + node.line + ': ' + node.output.value.slice(1, -1));
                         break;
