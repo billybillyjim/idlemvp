@@ -373,6 +373,171 @@ print ninety nine thousand nine hundred ninety nine = 99999.
                             Unemployed:1
                         },
                     }
+                },
+                {
+                    mori:"If 1 < 2 and 2 > 1 and 3 = 3 then hire a farmer.",
+                    previousState:{
+                        professions:{
+                            Farmer:1,
+                            Unemployed:1
+                        }
+                    },
+                    postState:{
+                        professions:{
+                            Farmer:2,
+                            Unemployed:0
+                        },
+                    }
+                },
+                {
+                    mori:"If 1 < 2 and 2 > 1 and 3 = 1 then hire a farmer.",
+                    previousState:{
+                        professions:{
+                            Farmer:1,
+                            Unemployed:1
+                        }
+                    },
+                    postState:{
+                        professions:{
+                            Farmer:1,
+                            Unemployed:1
+                        },
+                    }
+                },
+                {
+                    mori:"If 1 < 2 or 1 > 2 and 3 = 1 then hire a farmer.",
+                    previousState:{
+                        professions:{
+                            Farmer:1,
+                            Unemployed:1
+                        }
+                    },
+                    postState:{
+                        professions:{
+                            Farmer:2,
+                            Unemployed:0
+                        },
+                    }
+                },
+                {
+                    mori:"If 1 < 2 or 1 > 2 hire a farmer.",
+                    previousState:{
+                        professions:{
+                            Farmer:1,
+                            Unemployed:1
+                        }
+                    },
+                    postState:{
+                        professions:{
+                            Farmer:2,
+                            Unemployed:0
+                        },
+                    }
+                },
+                {
+                    mori:"Hire a farmer if 2 > 1.",
+                    previousState:{
+                        professions:{
+                            Farmer:1,
+                            Unemployed:1
+                        }
+                    },
+                    postState:{
+                        professions:{
+                            Farmer:2,
+                            Unemployed:0
+                        },
+                    }
+                },
+                {
+                    mori:"Hire a farmer if 1 > 2.",
+                    previousState:{
+                        professions:{
+                            Farmer:1,
+                            Unemployed:1
+                        }
+                    },
+                    postState:{
+                        professions:{
+                            Farmer:1,
+                            Unemployed:1
+                        },
+                    }
+                },
+                {
+                    mori:"Hire a farmer until 1 > 2.",
+                    previousState:{
+                        professions:{
+                            Farmer:1,
+                            Unemployed:1
+                        }
+                    },
+                    postState:{
+                        professions:{
+                            Farmer:2,
+                            Unemployed:0
+                        },
+                    }
+                },
+                {
+                    mori:"Hire a farmer until 2 > 1.",
+                    previousState:{
+                        professions:{
+                            Farmer:1,
+                            Unemployed:1
+                        }
+                    },
+                    postState:{
+                        professions:{
+                            Farmer:1,
+                            Unemployed:1
+                        },
+                    }
+                },
+                {
+                    mori:"Hire two + four farmer.",
+                    previousState:{
+                        professions:{
+                            Farmer:1,
+                            Unemployed:5
+                        }
+                    },
+                    postState:{
+                        professions:{
+                            Farmer:6,
+                            Unemployed:0
+                        },
+                    }
+                },
+                {
+                    mori:"Hire two + four farmer.",
+                    previousState:{
+                        professions:{
+                            Farmer:1,
+                            Unemployed:7
+                        }
+                    },
+                    postState:{
+                        professions:{
+                            Farmer:7,
+                            Unemployed:1
+                        },
+                    }
+                },
+                {
+                    mori:"x is 7. y is 6. z is x - y. hire z + 1 farmers.",
+                    previousState:{
+                        professions:{
+                            Farmer:1,
+                            Unemployed:2
+                        }
+                    },
+                    postState:{
+                        professions:{
+                            Farmer:3,
+                            Unemployed:0
+                        },
+                    }
                 }
             ],
             validMori:[
@@ -952,7 +1117,7 @@ print ninety nine thousand nine hundred ninety nine = 99999.
         runTestsWithOutputPairs(){
             let index = 0;
             for(let test of this.equalityTests){
-                console.log(test);
+                //console.log(test);
                 this.$parent.runCode(test);
                 if(this.$parent.consoleOutputs[0] != 'Line 1: true'){
                     console.error("Failed to evaluate truth for test", this.$parent.consoleOutputs[0]);

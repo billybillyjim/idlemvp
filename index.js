@@ -2866,8 +2866,8 @@ const gamevm = Vue.createApp({
             }
             else if(next.type == 'NUMBER'){
                 //Hire 7
-                next = this.next();
-                amount = next.value;
+                next = this.parseExpression();
+                amount = next;
                 next = this.peek();
                 if(next.type == "IDENT"){
                     //Hire 7 Farmers
@@ -3668,6 +3668,11 @@ const gamevm = Vue.createApp({
                 case 'Action':
                     if (node.condition) {
                         if (!this.evalNode(node.condition, env)) {
+                            return;
+                        }
+                    }
+                    if(node.untilClause){
+                        if (this.evalNode(node.untilClause, env)) {
                             return;
                         }
                     }
