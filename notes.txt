@@ -50,4 +50,53 @@ Notes 3.
 6. There should be one or two more good farming techs early on.
 7. If writing takes food for example, the hint should include storehouses.
 
-Current code issues:
+Notes 4.
+Idea groups:
+Food sources:
+Agrarian vs Coastal
+Buildings:
+One that boosts buildings output, lowers their cost, etc.
+One that boosts population, lowers their cost, etc.
+
+
+These ideas can be added after release, this is scope creep
+Governmental Ideas, pick 1:
+Plutocratic vs Aristocratic vs Democratic vs Republic vs Autocratic vs Anarchic
+(Choice unlocks specific government type, switching types changes the bonuses available)
+Technology Ideas:
+Innovative vs Luddism
+(increase knowledge and sources of knowledge or increase happiness and sources of happiness)
+Societal
+Caste system, feudalism, 
+
+What currently exists as modifiers?
+Population (Not really)
+Add Professions
+Add Buildings
+Profession cost
+Profession Output
+Building Cost
+Building Output
+Technology Cost
+Production Modifiers
+Homelessness?
+Stockpiles
+
+Kind of missing some useful layer of modifiers
+EU4 has modifiers for currency, stats, and every kind of cost. Vanitasia lacks currency use outside of the physical world.
+Ideas need a cost as well, so there is a need to add more to the game to make ideas worth it.
+What layer could make sense as society forms?
+
+TODO:
+Build a government layer and a society layer that are essentially totally disconnected from the others aside from modifiers.
+
+What should a government screen look like?
+governments create laws, collect taxes, provide services
+
+
+Societal screen?
+A second layer of pops related to population but not professions. Some basic stratification at the start, some way for mobility between castes.
+
+Playthrough notes 2/13/26
+1. It isn't clear what progress is being made and whether or not my people are eating enough or anything. These ideas need to be more visible to the player so there's a good feedback from making a decision.
+2. The Main tab should show the important stockpiles, population summary, and allow for teching up and building buildings etc.

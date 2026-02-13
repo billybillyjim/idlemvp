@@ -42,7 +42,7 @@ const gamevm = Vue.createApp({
             sunlight: 1,
             basePopulationGrowthChance: 0.03,
             civilizationName: "",
-            currentMenu: "Laws",
+            currentMenu: "Main",
             menus: ["Main", "Population", "Stockpiles", "Buildings", "Technology", "Laws", "Modifiers", "Log", "Charts", "Settings"],
             currentDate: new Date(2000, 0, 1),
             populationMenu: {
@@ -58,6 +58,9 @@ const gamevm = Vue.createApp({
             chartMenu: {
                 currentChart: '',
                 chartTime: 'Every Tick',
+            },
+            stockpileMenu:{
+                importantStockpiles:['Food', 'Water'],
             },
             log: [],
             consoleOutputs: [],
@@ -192,6 +195,7 @@ const gamevm = Vue.createApp({
             historicalValuesMinute: {},
             historicalValuesHour: {},
             maxHistory: 1000,
+            testMode:false,
             charts: [{ Name: 'UnmetDemands' }, { Name: 'Currencies' }, { Name: 'Population' }, { Name: 'Real Production' }, { Name: 'Uncapped Production' }],
             keyColors: {
                 'Space': 'rgba(224, 224, 224, 1)',
@@ -214,8 +218,8 @@ const gamevm = Vue.createApp({
         this.beginTickCurrencyValues = JSON.parse(JSON.stringify(this.currencydata));
         for (let tech of this.technologies) {
             this.techDict[tech.Name] = tech;
-            if (location.hostname === "localhost" || location.hostname === "127.0.0.1") {
-                tech.Unlock(this);
+            if ((location.hostname === "localhost" || location.hostname === "127.0.0.1") && this.testMode) {
+                 tech.Unlock(this);
             }
         }
         const input = `
@@ -249,15 +253,12 @@ const gamevm = Vue.createApp({
             }
         },
         getAvailableMenus() {
-            if (true) {
+            if (this.testMode) {
                 return this.menus;
             }
-            let alwaysAvailable = ["Main", "Population", "Technology"];
+            let alwaysAvailable = ["Main", "Population", "Stockpiles", "Technology"];
             if (this.hasTechnology('Firemaking')) {
                 alwaysAvailable.push("Buildings");
-            }
-            if (this.hasTechnology('Pottery')) {
-                alwaysAvailable.push('Stockpiles');
             }
             if (this.hasTechnology('Basic Societal Structure')) {
                 alwaysAvailable.push('Laws');

@@ -1066,6 +1066,7 @@ print ninety nine thousand nine hundred ninety nine = 99999.
         });
     },
     methods: {
+        
         inspect() {
             this.tokens = this.$parent.tokenize(this.testCode);
             this.ast = this.$parent.parse(this.tokens);
@@ -1104,6 +1105,9 @@ print ninety nine thousand nine hundred ninety nine = 99999.
             this.$refs.lineNumbers.scrollTop = this.$refs.textarea.scrollTop;
         },
         runTests() {
+            if(this.$parent.testMode == false){
+                return false;
+            }
             for (let test of this.tests) {
                 let output = this.$parent.testCode(test.type, test.code, JSON.parse(JSON.stringify(test.expected)))
                 if (output === true) {
@@ -1115,6 +1119,9 @@ print ninety nine thousand nine hundred ninety nine = 99999.
             }
         },
         runTestsWithOutputPairs(){
+            if(this.$parent.testMode == false){
+                return false;
+            }
             let index = 0;
             for(let test of this.equalityTests){
                 //console.log(test);
