@@ -401,6 +401,31 @@ export default [
             this.isLocked = false;
         },
         isLocked: true,
+    },
+    {
+        "Name": "Government Worker",
+        "Type": "Profession",
+        "Cost": { "Food": 100 },
+        "Requirements": { "Technologies": ["Basic Government"] },
+        "BaseDemand": { 'Food': 2 },
+        "ModifiedDemand": {},
+        Unlock(vm) {
+            vm.professions.push(
+                {
+                    Name: 'Government Worker',
+                    Count: 0,
+                    Cost: { 'Food': 2 },
+                    Produces: { },
+                    Unlocked: true,
+                    Visible: true,
+                    "BaseDemand": { 'Food': 2 },
+                    "ModifiedDemand": {},
+                }
+            )
+            vm.logit("Someone can run the government offices.");
+            this.isLocked = false;
+        },
+        isLocked: true,
     }
 
 ];
