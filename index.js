@@ -43,7 +43,7 @@ const gamevm = Vue.createApp({
             basePopulationGrowthChance: 0.03,
             civilizationName: "",
             currentMenu: "Main",
-            menus: ["Main", "Population", "Stockpiles", "Buildings", "Technology", "Laws", "Modifiers", "Log", "Charts", "Settings"],
+            menus: ["Main", "Population", "Stockpiles", "Buildings", "Technology", "Government", "Laws", "Modifiers", "Log", "Charts", "Settings"],
             currentDate: new Date(2000, 0, 1),
             populationMenu: {
                 amount: 1,
@@ -59,8 +59,41 @@ const gamevm = Vue.createApp({
                 currentChart: '',
                 chartTime: 'Every Tick',
             },
-            stockpileMenu:{
-                importantStockpiles:['Food', 'Water'],
+            stockpileMenu: {
+                importantStockpiles: ['Food', 'Water'],
+            },
+            settingsMenu: {
+                enableCharts: true,
+                logsDisabled: false,
+                renderDate: true,
+                renderWeather: true,
+            },
+            government: {
+                currentLeader: {
+                    Name: null,
+                    isDead: true,
+                    trueApproval: 60
+                },
+                currentLeaders: [],
+                type: "Tribal",
+                currency: "Pottery",
+                currencyStockpile: 0,
+                stockpileMaxSize: 100,
+                taxRate: 0.001,
+
+            },
+            governmentTypes: {
+                Tribal: {
+                    baseEfficiency: 0.5,
+                    efficiencyPerCapita: 0.01,
+                    efficiencyPerEmployee: 0.1,
+                    collapse: this.collapseTribalGovernment()
+                }
+            },
+            debug: {
+                calculateTickTime: true,
+                previousTickTime: null,
+                pastHundredTicks: [],
             },
             log: [],
             consoleOutputs: [],
@@ -182,20 +215,142 @@ const gamevm = Vue.createApp({
             reservedNames: new Set(),
             currencyReservedNames: new Set(),
             professionReservedNames: new Set(),
-            buildingReservedNames:new Set(),
+            buildingReservedNames: new Set(),
             parser: {
                 i: 0,
                 tokens: [],
             },
             pluralizer: pluralize,
             previousWeather: null,
-            overcrowdspacing: 1,
             checkHistoricalValues: true,
             historicalValues: {},
             historicalValuesMinute: {},
             historicalValuesHour: {},
             maxHistory: 1000,
-            testMode:false,
+            testMode: false,
+            technologyEnhancedSurvivability: 30,
+            ageDeathProbabilityTable: [
+                0.006064,
+                0.000491,
+                0.000309,
+                0.000248,
+                0.000199,
+                0.000167,
+                0.000143,
+                0.000126,
+                0.000121,
+                0.000121,
+                0.000127,
+                0.000143,
+                0.000171,
+                0.000227,
+                0.000320,
+                0.000451,
+                0.000622,
+                0.000826,
+                0.001026,
+                0.001182,
+                0.001301,
+                0.001404,
+                0.001498,
+                0.001586,
+                0.001679,
+                0.001776,
+                0.001881,
+                0.001985,
+                0.002095,
+                0.002219,
+                0.002332,
+                0.002445,
+                0.002562,
+                0.002653,
+                0.002716,
+                0.002791,
+                0.002894,
+                0.002994,
+                0.003091,
+                0.003217,
+                0.003353,
+                0.003499,
+                0.003642,
+                0.003811,
+                0.003996,
+                0.004175,
+                0.004388,
+                0.004666,
+                0.004973,
+                0.005305,
+                0.005666,
+                0.006069,
+                0.006539,
+                0.007073,
+                0.007675,
+                0.008348,
+                0.009051,
+                0.009822,
+                0.010669,
+                0.011548,
+                0.012458,
+                0.013403,
+                0.014450,
+                0.015571,
+                0.016737,
+                0.017897,
+                0.019017,
+                0.020213,
+                0.021569,
+                0.023088,
+                0.024828,
+                0.026705,
+                0.028761,
+                0.031116,
+                0.033861,
+                0.037088,
+                0.041126,
+                0.045241,
+                0.049793,
+                0.054768,
+                0.060660,
+                0.067027,
+                0.073999,
+                0.081737,
+                0.090458,
+                0.100525,
+                0.111793,
+                0.124494,
+                0.138398,
+                0.153207,
+                0.169704,
+                0.187963,
+                0.208395,
+                0.230808,
+                0.253914,
+                0.277402,
+                0.300882,
+                0.324326,
+                0.347332,
+                0.369430,
+                0.391927,
+                0.414726,
+                0.437722,
+                0.460800,
+                0.483840,
+                0.508032,
+                0.533434,
+                0.560105,
+                0.588111,
+                0.617516,
+                0.648392,
+                0.680812,
+                0.714852,
+                0.750595,
+                0.788125,
+                0.827531,
+                0.868907,
+                0.912353,
+                0.957970,
+                1.000000
+            ],
             charts: [{ Name: 'UnmetDemands' }, { Name: 'Currencies' }, { Name: 'Population' }, { Name: 'Real Production' }, { Name: 'Uncapped Production' }],
             keyColors: {
                 'Space': 'rgba(224, 224, 224, 1)',
@@ -219,7 +374,7 @@ const gamevm = Vue.createApp({
         for (let tech of this.technologies) {
             this.techDict[tech.Name] = tech;
             if ((location.hostname === "localhost" || location.hostname === "127.0.0.1") && this.testMode) {
-                 tech.Unlock(this);
+                tech.Unlock(this);
             }
         }
         const input = `
@@ -231,6 +386,9 @@ const gamevm = Vue.createApp({
         this.gameProcess = setInterval(this.gameTick, this.tickspeed);
     },
     methods: {
+        getCardClass() {
+            return 'col';
+        },
         setCurrentChart(menuName) {
             this.chartMenu.currentChart = menuName;
             if (this.chartMenu.chartTime == 'Every Tick') {
@@ -256,7 +414,7 @@ const gamevm = Vue.createApp({
             if (this.testMode) {
                 return this.menus;
             }
-            let alwaysAvailable = ["Main", "Population", "Stockpiles", "Technology"];
+            let alwaysAvailable = ["Main", "Population", "Stockpiles", "Technology", "Government"];
             if (this.hasTechnology('Firemaking')) {
                 alwaysAvailable.push("Buildings");
             }
@@ -431,10 +589,47 @@ const gamevm = Vue.createApp({
                 return count + ' ' + profession.Name + 's';
             }
         },
-        setSpeed(value) {
+        async setSpeed(value, ticksPerTick) {
+
             clearInterval(this.gameProcess);
-            this.tickspeed = value;
-            this.gameProcess = setInterval(this.gameTick, this.tickspeed);
+            if (value >= 1) {
+                this.tickspeed = value;
+                this.gameProcess = setInterval(this.gameTick, this.tickspeed);
+                if (value == 1) {
+                    this.checkHistoricalValues = false;
+                }
+            }
+            else {
+                this.tickspeed = 1;
+
+                let multiTick = () => {
+                    let start = performance.now();
+                    for (let i = 0; i < ticksPerTick; i++) {
+
+                        this.gameTick();
+                    }
+                    let stop = performance.now();
+                    this.debug.previousTickTime = stop - start;
+                    this.debug.pastHundredTicks.push(this.debug.previousTickTime);
+                    if (this.debug.pastHundredTicks.length > 100) {
+                        this.debug.pastHundredTicks.shift();
+                    }
+                }
+
+                this.gameProcess = setInterval(multiTick, this.tickspeed);
+                this.settingsMenu.logsDisabled = true;
+                this.settingsMenu.renderDate = false;
+                this.settingsMenu.renderWeather = false;
+                this.checkHistoricalValues = false;
+
+
+            }
+        },
+        collapseTribalGovernment() {
+
+        },
+        wait(ms) {
+            new Promise(resolve => setTimeout(resolve, ms));
         },
         getTechnologies(sort = false, includeResearched = false) {
             //const allTechByName = Object.fromEntries(this.technologies.map(t => [t.Name, t]));
@@ -600,6 +795,7 @@ const gamevm = Vue.createApp({
                     }
                 }
             }
+
             requireable.IsUnlocked = true;
             return true;
         },
@@ -628,6 +824,9 @@ const gamevm = Vue.createApp({
         //     return `${year} ${month} ${day}`;
         // },
         logit(msg) {
+            if (this.settingsMenu.logsDisabled) {
+                return;
+            }
             if (typeof msg === 'string') {
                 msg = { message: msg };
             }
@@ -656,6 +855,7 @@ const gamevm = Vue.createApp({
             this.currencyConsumptionDescriptions = {};
             this.processBaseGrowth();
             this.processProductionModifiers();
+            this.processGovernment();
             this.processProfessions();
             this.processBuildings();
             this.processTechnology();
@@ -668,16 +868,107 @@ const gamevm = Vue.createApp({
             this.processDemand();
             this.processPopulation();
             this.processLaws();
+
             this.processDeaths();
             if (this.currentTick % 100 == 0) {
                 this.saveState(this.$data);
             }
-            if (this.checkHistoricalValues) {
+            if (this.checkHistoricalValues && this.settingsMenu.enableCharts) {
                 this.processHistoricalValues();
                 if (this.chartMenu.currentChart) {
                     this.setCurrentChart(this.chartMenu.currentChart);
                 }
             }
+        },
+        processGovernment() {
+            if (this.government.type == "Oligarchy") {
+                if (this.government.currentLeaders.length != 3) {
+                    this.government.currentLeaders = [
+                        this.generateRandomPerson(),
+                        this.generateRandomPerson(),
+                        this.generateRandomPerson()
+                    ];
+                }
+                for (let leader of this.government.currentLeaders) {
+                    if (leader.isDead) {
+                        this.logit(leader.Name + " has died.");
+                        console.log(leader.Name + " has died at age " + leader.Age + ".");
+                        this.getNewGovernmentLeader();
+                    }
+                }
+
+
+            }
+            else {
+                if (this.government.currentLeader.isDead) {
+                    this.logit(this.government.currentLeader.Name + " has died.");
+                    console.log(this.government.currentLeader.Name + " has died at age " + this.government.currentLeader.Age + ".");
+                    this.getNewGovernmentLeader();
+                }
+                else {
+                    //assumes every game tick is still one hour
+                    this.government.currentLeader.Age += 0.000114;
+                    //Technology can reduce this, but it's a 3x chance to die compared to the modern numbers
+                    let yearlyDeathChance = this.ageDeathProbabilityTable[Math.floor(this.government.currentLeader.Age)] * this.technologyEnhancedSurvivability;
+                    let ticklyDeathChance = 0;
+                    if (yearlyDeathChance == 1) {
+                        ticklyDeathChance = 1;
+                    }
+                    else {
+                        //8760 ticks per year
+                        ticklyDeathChance = 1 - Math.pow(1 - yearlyDeathChance, 1 / 8760);
+                    }
+                    if (Math.random() < ticklyDeathChance) {
+                        this.government.currentLeader.isDead = true;
+                    }
+                }
+            }
+
+
+            let taxIncome = this.currencyDailyChange[this.government.currency] * this.government.taxRate;
+            taxIncome = Math.min(taxIncome, this.government.stockpileMaxSize - this.government.currencyStockpile);
+
+            if (taxIncome > 0) {
+                let income = this.payCurrency(this.government.currency, taxIncome);
+                this.government.currencyStockpile += income;
+                if (this.government.currencyStockpile > this.government.stockpileMaxSize) {
+                    this.government.currencyStockpile = this.government.stockpileMaxSize;
+                }
+            }
+        },
+        getNewGovernmentLeader() {
+            if (this.government.type == "Tribal") {
+                let leader = this.generateRandomPerson();
+                this.government.currentLeader = leader;
+            }
+            if (this.government.type == "Oligarchy") {
+                let leader0 = this.government.currentLeaders[0]?.isDead ? this.generateRandomPerson() : this.government.currentLeaders[0];
+                let leader1 = this.government.currentLeaders[1]?.isDead ? this.generateRandomPerson() : this.government.currentLeaders[1];
+                let leader2 = this.government.currentLeaders[2]?.isDead ? this.generateRandomPerson() : this.government.currentLeaders[2];
+                this.government.currentLeaders = [
+                    leader0,
+                    leader1,
+                    leader2
+                ]
+            }
+        },
+        getGovernmentEfficiency(){
+            if(!this.government || !this.government.baseEfficiency){
+                return 0;
+            }
+            let base = this.government.baseEfficiency;
+            let reduction = this.population * this.government.efficiencyPerCapita;
+            let boost = this.professions['Government Worker'].Amount * this.government.efficiencyPerEmployee;
+            let calculated = base - reduction + boost;
+            return Math.max(calculated, 0);
+        },
+        generateRandomPerson(minAge = 30, maxAge = 60) {
+            let person = {
+                Name: this.getVillagerName(),
+                Age: Math.random() * (maxAge - minAge) + minAge,
+                isDead: false,
+            }
+            return person;
         },
         processHistoricalValues() {
             let pairs = [
@@ -1501,7 +1792,7 @@ const gamevm = Vue.createApp({
             if (payEvenIfYouCantAfford && amount > this.currencydata[currencyName].Amount) {
                 amount = this.currencydata[currencyName].Amount
             }
-            
+
             this.currencydata[currencyName].Amount -= amount;
 
             return amount;
@@ -1780,7 +2071,7 @@ const gamevm = Vue.createApp({
             for (let prod of this.productionModifiers) {
                 if (prod.IsUnlocked) {
                     for (let boost of prod.Boosts) {
-                        if (boost.Name == name) {
+                        if (boost.Name == name || boost.Name == "Global") {
                             if (boost.ModifierType == "Additive") {
                                 if (!additiveModifiers[boost.Currency]) {
                                     additiveModifiers[boost.Currency] = boost.Amount;
@@ -1906,7 +2197,7 @@ const gamevm = Vue.createApp({
             }
         },
         tryHire(profession, amount = 1) {
-            if(isNaN(amount)){
+            if (isNaN(amount)) {
                 return false;
             }
             let maxPossible = Math.min(amount, this.getAvailableWorkers());
@@ -1923,7 +2214,7 @@ const gamevm = Vue.createApp({
             }
         },
         hire(profession, amount = 1) {
-            if(isNaN(amount)){
+            if (isNaN(amount)) {
                 return false;
             }
             let maxPossible = Math.min(amount, this.getAvailableWorkers());
@@ -1947,7 +2238,7 @@ const gamevm = Vue.createApp({
             return maxPossible;
         },
         hireInfo(profession, amount = 1) {
-            if(isNaN(amount)){
+            if (isNaN(amount)) {
                 return '';
             }
             let maxPossible = Math.min(amount, this.getAvailableWorkers());
@@ -2039,6 +2330,14 @@ const gamevm = Vue.createApp({
                 && this.getAvailableWorkers() > 0;
         },
         canAfford(cost, amount = 1) {
+            for (const c in cost) {
+                const req = cost[c] * amount;
+                const current = this.currencydata[c]?.Amount;
+                if (current < req) {
+                    return false;
+                }
+            }
+            return true;
             return Object.entries(cost).every(([k, v]) =>
                 this.currencydata[k]?.Amount >= v * amount
             );
@@ -2461,7 +2760,7 @@ const gamevm = Vue.createApp({
         tokenize(input) {
             const tokenSpec = [
                 ['SKIP', /^,/],
-                ['SKIP', /^[ \t\n]+/],                
+                ['SKIP', /^[ \t\n]+/],
                 ['SKIP', /^(a )\b/],
                 ['NUMBER', /^\d+/],
                 ['TEXT_NUMBER', /^(one|two|three|four|five|six|seven|eight|nine|ten|eleven|twelve|thirteen|fourteen|fifteen|sixteen|seventeen|eighteen|nineteen|twenty|thirty|forty|fifty|sixty|seventy|eighty|ninety|hundred|thousand|million|billion|trillion|quadrillion|quintillion)\b/i],
@@ -2510,7 +2809,7 @@ const gamevm = Vue.createApp({
                 ['IDENT', /^(current population)\b/],
                 ['IDENT', /^[a-zA-Z_]\w*\s*(consumption|production)/],
                 ['IDENT', /^[a-zA-Z_]\w*/],
-                
+
             ];
 
 
@@ -2537,27 +2836,27 @@ const gamevm = Vue.createApp({
 
                         let text = type == "STRING" ? raw : raw.toLowerCase();
                         let inText = text;
-                        
-                        if(type == 'SKIP'){
+
+                        if (type == 'SKIP') {
                             var newlines = (text.match(/\n/g) || []).length;
                             line += newlines;
                             remaining = remaining.slice(text.length);
                             continue;
                         }
-                        if(type == "TEXT_NUMBER" && !lastWasTextNumber){
+                        if (type == "TEXT_NUMBER" && !lastWasTextNumber) {
                             textNum = inText + ' ';
                             type = "NUMBER";
                             lastWasTextNumber = true;
                         }
-                        else if(type == "TEXT_NUMBER" && lastWasTextNumber){
+                        else if (type == "TEXT_NUMBER" && lastWasTextNumber) {
                             textNum += inText + ' ';
                             lastWasTextNumber = true;
                             type = "NUMBER";
                         }
-                        else if(type != "TEXT_NUMBER" && lastWasTextNumber){
+                        else if (type != "TEXT_NUMBER" && lastWasTextNumber) {
                             //Get whatever the number was as a number token
                             let numToken = this.textNumberToNumber(textNum);
-                            tokens.push({ type:"NUMBER", value: numToken, line: line, id: id });
+                            tokens.push({ type: "NUMBER", value: numToken, line: line, id: id });
                             lastWasTextNumber = false;
                             textNum = "";
                             if (type !== 'SKIP') {
@@ -2565,7 +2864,7 @@ const gamevm = Vue.createApp({
                                 id++;
                             }
                         }
-                        else{
+                        else {
                             lastWasTextNumber = false;
 
                             if (type !== 'SKIP') {
@@ -2589,45 +2888,45 @@ const gamevm = Vue.createApp({
             tokens.push({ type: 'EOF' });
             return tokens;
         },
-        textNumberToNumber(text){
+        textNumberToNumber(text) {
             text = text.replace(/\s+$/, '');
-            if(text == ""){
+            if (text == "") {
                 return '';
             }
-            if(text == "no" || text == "zero"){
+            if (text == "no" || text == "zero") {
                 return "0";
             }
-            if(text == "eleventyleven"){
+            if (text == "eleventyleven") {
                 return 1111;
             }
 
             let numDict = {
                 'one': [1, 1],
-                'two': [2, 1], 
-                'three': [3, 1], 
-                'four': [4, 1], 
-                'five': [5, 1], 
-                'six': [6, 1], 
-                'seven': [7, 1], 
-                'eight': [8, 1], 
-                'nine': [9, 1], 
-                'ten': [10, 1], 
-                'eleven': [11, 1], 
-                'twelve': [12, 1], 
-                'thirteen': [13, 1], 
-                'fourteen': [14, 1], 
-                'fifteen': [15, 1], 
-                'sixteen': [16, 1], 
-                'seventeen': [17, 1], 
-                'eighteen': [18, 1], 
-                'nineteen': [19, 1], 
-                'twenty': [20, 1], 
-                'thirty': [30, 1], 
-                'forty': [40, 1], 
-                'fifty': [50, 1], 
-                'sixty': [60, 1], 
-                'seventy': [70, 1], 
-                'eighty': [80, 1], 
+                'two': [2, 1],
+                'three': [3, 1],
+                'four': [4, 1],
+                'five': [5, 1],
+                'six': [6, 1],
+                'seven': [7, 1],
+                'eight': [8, 1],
+                'nine': [9, 1],
+                'ten': [10, 1],
+                'eleven': [11, 1],
+                'twelve': [12, 1],
+                'thirteen': [13, 1],
+                'fourteen': [14, 1],
+                'fifteen': [15, 1],
+                'sixteen': [16, 1],
+                'seventeen': [17, 1],
+                'eighteen': [18, 1],
+                'nineteen': [19, 1],
+                'twenty': [20, 1],
+                'thirty': [30, 1],
+                'forty': [40, 1],
+                'fifty': [50, 1],
+                'sixty': [60, 1],
+                'seventy': [70, 1],
+                'eighty': [80, 1],
                 'ninety': [90, 1],
                 'hundred': [0, 100],
                 'thousand': [0, 1000],
@@ -2642,25 +2941,25 @@ const gamevm = Vue.createApp({
                 'nonillion': [0, 1000000000000000000000000000000],
                 'decillion': [0, 1000000000000000000000000000000000],
             }
-            if(numDict[text]){
+            if (numDict[text]) {
                 return numDict[text];
             }
             let numWords = text.split(' ');
             let current = 0;
             let result = 0;
-            for(let word of numWords){
+            for (let word of numWords) {
                 let num = numDict[word];
-                if(!num){
+                if (!num) {
                     console.error("somehow we got a non-number in the textNumberToNumber......");
                 }
                 current = current * num[1] + num[0];
-                if(num[1] > 100){
+                if (num[1] > 100) {
                     result += current;
                     current = 0;
                 }
             }
             return result + current;
-            
+
         },
         peek(offset = 0) {
             return this.parser.tokens[this.parser.i + offset] || {};
@@ -2681,7 +2980,7 @@ const gamevm = Vue.createApp({
         isReservedName(name) {
             return this.reservedNames.has(name);
         },
-        parseAction(){
+        parseAction() {
             //Hire, fire, or build
             let action = this.next();
             //Actions can be followed by identities or numbers.
@@ -2690,24 +2989,24 @@ const gamevm = Vue.createApp({
             let amount = 1;
             //Hire Y
             //Hire Farmer
-            if(next.type == 'IDENT'){
+            if (next.type == 'IDENT') {
                 //IDENT is either a value or a reference to a population type.
                 //If an identity follows a number, it references the type of population. Otherwise it references the amount of population.
                 //In this case, we should always assume it's the direct object, a target of what we are trying to do.
 
-                
+
                 //This identity could either be a variable or the target you wanna grab. Maybe
                 //The smart thing to do is check if the ident is a reserved keyword or not
                 //TODO:check if its a reserved keyword. If it is, do this
                 //Otherwise we might have an expression here
                 //Assume the target is this identity
                 //Hire farmer
-                if(this.isReservedName(next.value)){
+                if (this.isReservedName(next.value)) {
                     //console.log("Using reserved keyword", next.value);
                     target = next;
                     this.consume();
                 }
-                else{
+                else {
                     //console.log("Identity is not reserved:", next.value);
                     amount = this.parseExpression();
                 }
@@ -2715,7 +3014,7 @@ const gamevm = Vue.createApp({
                 //Hire Y ___
                 next = this.peek();
 
-                if(next.type == "THEN"){
+                if (next.type == "THEN") {
                     //THEN is only valid inside a conditional
                     //Hire farmer then
                     //Syntax error
@@ -2723,7 +3022,7 @@ const gamevm = Vue.createApp({
                     return error;
                 }
 
-                if(next.type == "THAN"){
+                if (next.type == "THAN") {
                     //THAN is only valid inside a comparison
                     //Hire farmer than
                     //Syntax error
@@ -2731,7 +3030,7 @@ const gamevm = Vue.createApp({
                     return error;
                 }
 
-                if(next.type == "ARITHMETIC"){
+                if (next.type == "ARITHMETIC") {
                     //Hire farmer +
                     //We have an equation to solve for the amount
                     //At this point it's too late, I should have already done the math somewhere else. if We have a +, 
@@ -2739,21 +3038,21 @@ const gamevm = Vue.createApp({
                     let amount = this.parseExpression();
                     //Hire farmer + 7 farmers
                     let target = this.peek();
-                    if(target.type != 'IDENT'){
+                    if (target.type != 'IDENT') {
                         let error = this.getSyntaxErrorFromToken(next);
                         return error;
                     }
                     this.consume();
                     return {
-                        type:"Action",
-                        action:action,
-                        target:target,
-                        amount:amount,
+                        type: "Action",
+                        action: action,
+                        target: target,
+                        amount: amount,
                         tokenid: action.id
                     }
                 }
 
-                if(next.type == "PRINT"){
+                if (next.type == "PRINT") {
                     //PRINT can only be the main action or an otherwise or result of an evaluatable
                     //Hire farmer print
                     //Syntax error
@@ -2761,7 +3060,7 @@ const gamevm = Vue.createApp({
                     return error;
                 }
 
-                if(next.type == "ASSIGN"){
+                if (next.type == "ASSIGN") {
                     //ASSIGN can only be the main action or an otherwise or result of an evaluatable
                     //Hire farmer print
                     //Syntax error
@@ -2769,211 +3068,211 @@ const gamevm = Vue.createApp({
                     return error;
                 }
 
-                if(next.type == "ELSE"){
+                if (next.type == "ELSE") {
                     //If there are 8 farmers hire y farmers else print 'nope'
                     //Syntax error
                     this.consume();
                     next = this.peek();
-                    if(next.type == "ACTION"){
+                    if (next.type == "ACTION") {
                         let elseAction = this.parseAction();
                         return {
-                            type:"Action",
-                            action:action,
-                            target:target,
-                            amount:amount,
-                            elseAction:elseAction,
+                            type: "Action",
+                            action: action,
+                            target: target,
+                            amount: amount,
+                            elseAction: elseAction,
                             tokenid: action.id
                         }
                     }
-                    else if(next.type == "PRINT"){
+                    else if (next.type == "PRINT") {
                         let elseAction = this.parsePrint();
                         return {
-                            type:"Action",
-                            action:action,
-                            target:target,
-                            amount:amount,
-                            elseAction:elseAction,
+                            type: "Action",
+                            action: action,
+                            target: target,
+                            amount: amount,
+                            elseAction: elseAction,
                             tokenid: action.id
                         }
                     }
-                    
+
 
                 }
-                
-                if(next.type == 'DOT'){
+
+                if (next.type == 'DOT') {
                     //We are done. Hire Y Farmers.
                     return {
-                        type:"Action",
-                        action:action,
-                        target:target,
-                        amount:amount,
-                        tokenid: action.id
-                    }
-                }
-                
-                if(next.type == "UNTIL"){
-                    let untilClause = this.parseUntil();
-                    return {
-                        type:"Action",
-                        action:action,
-                        target:target,
-                        amount:amount,
-                        untilClause:untilClause,
-                        tokenid: action.id
-                    }
-                }
-                
-                if(next.type == "CONDITIONAL"){
-                    let conditionalClause = this.parseConditional();
-                    return {
-                        type:"Action",
-                        action:action,
-                        target:target,
-                        amount:amount,
-                        condition:conditionalClause,
+                        type: "Action",
+                        action: action,
+                        target: target,
+                        amount: amount,
                         tokenid: action.id
                     }
                 }
 
-                if(next.type == "IDENT"){
+                if (next.type == "UNTIL") {
+                    let untilClause = this.parseUntil();
+                    return {
+                        type: "Action",
+                        action: action,
+                        target: target,
+                        amount: amount,
+                        untilClause: untilClause,
+                        tokenid: action.id
+                    }
+                }
+
+                if (next.type == "CONDITIONAL") {
+                    let conditionalClause = this.parseConditional();
+                    return {
+                        type: "Action",
+                        action: action,
+                        target: target,
+                        amount: amount,
+                        condition: conditionalClause,
+                        tokenid: action.id
+                    }
+                }
+
+                if (next.type == "IDENT") {
                     //Hire Y farmers.
                     target = next;
                     this.consume();
                     return {
-                        type:"Action",
-                        action:action,
-                        target:next,
-                        amount:amount,
+                        type: "Action",
+                        action: action,
+                        target: next,
+                        amount: amount,
                         tokenid: action.id
                     }
                 }
 
-                if(next.type == "COMPARATOR"){
+                if (next.type == "COMPARATOR") {
                     //Hire Y > 
                     //Syntax error
                     let error = this.getSyntaxErrorFromToken(next);
                     return error;
                 }
 
-                if(next.type == "ACTION"){
+                if (next.type == "ACTION") {
                     //Hire Y Fire
                     let error = this.getSyntaxErrorFromToken(next);
                     return error;
                 }
 
-                
+
                 //Identities can be followed by almost anything normally.
 
             }
-            else if(next.type == 'NUMBER'){
+            else if (next.type == 'NUMBER') {
                 //Hire 7
                 next = this.parseExpression();
                 amount = next;
                 next = this.peek();
-                if(next.type == "IDENT"){
+                if (next.type == "IDENT") {
                     //Hire 7 Farmers
                     this.consume();
                     let optionalUntil = this.peek();
-                    if(optionalUntil.type == "UNTIL"){
+                    if (optionalUntil.type == "UNTIL") {
                         let untilClause = this.parseUntil();
                         return {
-                            type:"Action",
-                            action:action,
-                            target:next,
-                            amount:amount,
-                            untilClause:untilClause,
+                            type: "Action",
+                            action: action,
+                            target: next,
+                            amount: amount,
+                            untilClause: untilClause,
                             tokenid: action.id
                         }
                     }
                     return {
-                        type:"Action",
-                        action:action,
-                        target:next,
-                        amount:amount,
+                        type: "Action",
+                        action: action,
+                        target: next,
+                        amount: amount,
                         tokenid: action.id
                     }
                 }
 
-                if(next.type == "DOT"){
+                if (next.type == "DOT") {
                     //Hire 7.
                     //This is technically a syntax error but we can probably figure it out from context.
                     return {
-                        type:"Action",
-                        action:action,
-                        target:null,
-                        amount:amount,
+                        type: "Action",
+                        action: action,
+                        target: null,
+                        amount: amount,
                         tokenid: action.id
                     }
                 }
 
-                if(next.type == "UNTIL"){
+                if (next.type == "UNTIL") {
                     let untilClause = this.parseUntil();
                     return {
-                        type:"Action",
-                        action:action,
-                        target:target,
-                        amount:amount,
-                        untilClause:untilClause,
+                        type: "Action",
+                        action: action,
+                        target: target,
+                        amount: amount,
+                        untilClause: untilClause,
                         tokenid: action.id
                     }
                 }
 
-                if(next.type == "AND"){
+                if (next.type == "AND") {
                     //Hire 7 and
                     //Syntax error.
                     let error = this.getSyntaxErrorFromToken(next);
                     return error;
                 }
 
-                if(next.type == "COMPARATOR"){
+                if (next.type == "COMPARATOR") {
                     //Hire 7 >
                     //Syntax error.
                     let error = this.getSyntaxErrorFromToken(next);
                     return error;
                 }
 
-                if(next.type == "THEN"){
+                if (next.type == "THEN") {
                     //Hire 7 then
                     //Syntax error.
                     let error = this.getSyntaxErrorFromToken(next);
                     return error;
                 }
 
-                if(next.type == "ASSIGN"){
+                if (next.type == "ASSIGN") {
                     //Hire 7 =
                     //Syntax error.
                     let error = this.getSyntaxErrorFromToken(next);
                     return error;
                 }
 
-                if(next.type == "CONDITIONAL"){
+                if (next.type == "CONDITIONAL") {
                     //Hire 7 if
                     //Syntax error.
                     let error = this.getSyntaxErrorFromToken(next);
                     return error;
                 }
 
-                if(next.type == "ARITHMETIC"){
+                if (next.type == "ARITHMETIC") {
                     //Hire 7 +
                     //Time to do math
                     amount = this.parseExpression();
                     let target = this.peek();
-                    if(target.type != 'IDENT'){
+                    if (target.type != 'IDENT') {
                         let error = this.getSyntaxErrorFromToken(next);
                         return error;
                     }
                     this.consume();
                     return {
-                        type:"Action",
-                        action:action,
-                        target:target,
-                        amount:amount,
+                        type: "Action",
+                        action: action,
+                        target: target,
+                        amount: amount,
                         tokenid: action.id
                     }
                 }
 
             }
-            else{
+            else {
                 //Hire (Anything but NUMBER or IDENT)
                 //Syntax error.
                 let error = this.getSyntaxErrorFromToken(next);
@@ -2981,23 +3280,23 @@ const gamevm = Vue.createApp({
             }
 
             return {
-                "type":"Action",
-                action:action,
-                target:target,
-                amount:amount,
+                "type": "Action",
+                action: action,
+                target: target,
+                amount: amount,
                 tokenid: action.id
             }
         },
-        parseNumber(){
+        parseNumber() {
             let value = this.next();
             return {
-                type:"Number",
+                type: "Number",
                 value,
             }
         },
-        parseExpression(){
+        parseExpression() {
             //3 + 7 - farmers > x + 1 / 4
-            
+
             //3
             let lhs = this.next();
             let rhs = null;
@@ -3006,10 +3305,10 @@ const gamevm = Vue.createApp({
 
             let safety = 1000;
             let iterator = 0;
-            while(iterator < safety){
+            while (iterator < safety) {
                 iterator++;
 
-                if(value){
+                if (value) {
                     lhs = value;
                 }
                 op = this.peek();
@@ -3018,63 +3317,63 @@ const gamevm = Vue.createApp({
                 // or this expression will be compared somehow, 
                 // or this expression is the second half of a comparison and will be followed up with an action
                 // so we end.
-                let endOfCommand =  op.type == "DOT" || 
-                                    op.type == 'EOF' || 
-                                    op.type == 'COMPARATOR' || 
-                                    op.type == 'ACTION' || 
-                                    op.type == 'AND' || 
-                                    op.type == 'OR' || 
-                                    op.type == 'XOR' || 
-                                    op.type == "THEN" || 
-                                    op.type == "PRINT" || 
-                                    op.type == "ELSE" || 
-                                    op.type == "CONDITIONAL" || 
-                                    op.type == "THAN";
+                let endOfCommand = op.type == "DOT" ||
+                    op.type == 'EOF' ||
+                    op.type == 'COMPARATOR' ||
+                    op.type == 'ACTION' ||
+                    op.type == 'AND' ||
+                    op.type == 'OR' ||
+                    op.type == 'XOR' ||
+                    op.type == "THEN" ||
+                    op.type == "PRINT" ||
+                    op.type == "ELSE" ||
+                    op.type == "CONDITIONAL" ||
+                    op.type == "THAN";
                 // 3 + 
                 let isArithmetic = op.type == "ARITHMETIC";
 
-                if(op.type == 'IDENT' || op.type == "NUMBER" || endOfCommand){
+                if (op.type == 'IDENT' || op.type == "NUMBER" || endOfCommand) {
                     //could be something like 
                     //no homeless people
                     // here we need to return an ident or a number
-                    
-                    if(!value){
+
+                    if (!value) {
                         value = {
-                            lhs:lhs,
-                            rhs:null,
-                            op:null,
+                            lhs: lhs,
+                            rhs: null,
+                            op: null,
                         }
                     }
                     break;
                 }
-                if(op.type == "ASSIGN"){
+                if (op.type == "ASSIGN") {
                     //This has now changed from an expression to an evaluatable.
                     //7 + 1 = 8 + y
                     //I think we return an evaluatable, with the other half being another expression.
-                    if(!value){
+                    if (!value) {
                         value = {
-                            lhs:lhs,
-                            rhs:null,
-                            op:null,
+                            lhs: lhs,
+                            rhs: null,
+                            op: null,
                         }
                     }
                     this.consume();
                     let leftExpression = {
-                        type:"Expression",
+                        type: "Expression",
                         tokenid: lhs.id || lhs.tokenid,
-                        lhs:value.lhs,
-                        op:value.op,
-                        rhs:value.rhs,
+                        lhs: value.lhs,
+                        op: value.op,
+                        rhs: value.rhs,
                     }
-                    let newOp = { type:"COMPARATOR", value:"==", id: op.id, line: op.line };
+                    let newOp = { type: "COMPARATOR", value: "==", id: op.id, line: op.line };
                     return {
-                        type:"Evaluatable",
-                        lhs:leftExpression,
-                        op:newOp,
-                        rhs:this.parseExpression()
+                        type: "Evaluatable",
+                        lhs: leftExpression,
+                        op: newOp,
+                        rhs: this.parseExpression()
                     }
                 }
-                else if(!isArithmetic){
+                else if (!isArithmetic) {
                     //This could be the point where we hit something like
                     //Hire farmers until there are 10.
                     //Maybe I can pretend it's find and catch it later?
@@ -3093,7 +3392,7 @@ const gamevm = Vue.createApp({
                 rhs = this.peek();
 
                 let rhsIsValid = rhs.type == "IDENT" || rhs.type == "NUMBER";
-                if(!rhsIsValid){
+                if (!rhsIsValid) {
                     let error = this.getSyntaxErrorFromToken(rhs);
                     return error;
                 }
@@ -3105,44 +3404,44 @@ const gamevm = Vue.createApp({
                 //rhs = 7
                 //If there is another round, we want lhs to be the value, then rhs is rhs and op is op
                 value = {
-                    lhs:lhs,
-                    rhs:rhs,
-                    op:op,
-                    type:"Expression"
+                    lhs: lhs,
+                    rhs: rhs,
+                    op: op,
+                    type: "Expression"
                 }
             }
 
-            if(iterator == safety){
+            if (iterator == safety) {
                 console.error("Infinite Loop in parse expression");
             }
             return {
-                type:"Expression",
-                lhs:value.lhs,
-                op:value.op,
-                rhs:value.rhs,
+                type: "Expression",
+                lhs: value.lhs,
+                op: value.op,
+                rhs: value.rhs,
             }
         },
-        parseUntil(){
+        parseUntil() {
             let until = this.next();
-            if(until.type != 'UNTIL'){
+            if (until.type != 'UNTIL') {
                 console.error("Ran parse until but the token is not an until. Did you next when you meant to peek?");
             }
             let evaluatable = this.parseEvaluatable();
             let next = this.peek();
-            while(next.type == "AND" || next.type == "OR" || next.type == "XOR"){
+            while (next.type == "AND" || next.type == "OR" || next.type == "XOR") {
                 next = this.next();
-                
+
                 let newEvaluatable = {
-                    lhs:evaluatable,
-                    op:next,
-                    rhs:this.parseEvaluatable(),
-                    type:"Evaluatable"
+                    lhs: evaluatable,
+                    op: next,
+                    rhs: this.parseEvaluatable(),
+                    type: "Evaluatable"
                 }
                 evaluatable = newEvaluatable;
             }
-            return evaluatable; 
+            return evaluatable;
         },
-        parseEvaluatable(){
+        parseEvaluatable() {
             //anything that will eventually evaluate to a true/false
             let operator = null;
             let rhs = null;
@@ -3157,11 +3456,11 @@ const gamevm = Vue.createApp({
                 //e.g. If there are more than 0 homeless vs if there are any farmers.
                 //The former needs to be a > 0, the latter, = 0
                 let optionalComparator = this.peek();
-                if(optionalComparator.type == "COMPARATOR"){
+                if (optionalComparator.type == "COMPARATOR") {
                     optionalComparator = this.next();
                     operator = optionalComparator;
                 }
-                else if(optionalComparator.type == "MORE"){
+                else if (optionalComparator.type == "MORE") {
                     this.consume();
                     operator = {
                         type: "COMPARATOR",
@@ -3169,7 +3468,7 @@ const gamevm = Vue.createApp({
                         id: tokenid
                     };
                 }
-                else if(optionalComparator.type == "LESS"){
+                else if (optionalComparator.type == "LESS") {
                     this.consume();
                     operator = {
                         type: "COMPARATOR",
@@ -3177,18 +3476,18 @@ const gamevm = Vue.createApp({
                         id: tokenid
                     };
                 }
-                else{
+                else {
                     operator = {
                         type: "COMPARATOR",
                         value: "=",
                         id: tokenid
                     };
                 }
-                
+
                 //There are can be followed by a number, any, a comparator, or an identity
 
                 //There are 7
-                
+
                 // There are two other possibilities if we find a THAN , either this is 
                 // There are more than 7 farmers, or
                 // There are more farmers than lumberjacks.
@@ -3196,43 +3495,43 @@ const gamevm = Vue.createApp({
 
                 next = this.peek();
 
-                if(next.type == "NUMBER"){
+                if (next.type == "NUMBER") {
                     //Could be an expression
                     //There are 7( + 1 farmers)
                     //Same as 7 + 1 == farmers
                     lhs = this.parseExpression();
-                    
+
                     //Until there are no homeless people
                     //lhs is an expression,
                     //op is known
                     //rhs needs to be gotten
                     next = this.peek();
-                    if(next.type == "THAN"){
+                    if (next.type == "THAN") {
                         this.consume();
                     }
                     rhs = this.parseExpression();
                 }
-                else if(next.type == "IDENT"){
+                else if (next.type == "IDENT") {
                     lhs = this.parseExpression();
-                    
+
                     //Until there are no homeless people
                     //lhs is an expression,
                     //op is known
                     //rhs needs to be gotten
                     next = this.peek();
-                    if(next.type == "THAN"){
+                    if (next.type == "THAN") {
                         this.consume();
                     }
 
                     rhs = this.parseExpression();
                 }
-                else if(next.type == "ANY"){
+                else if (next.type == "ANY") {
                     //We need to change the check from = to > 0
                     //If there are any farmers
                     //farmers > 0
                     this.consume();
                     next = this.peek();
-                    if(next.type != "IDENT"){
+                    if (next.type != "IDENT") {
                         let error = this.getSyntaxErrorFromToken(next);
                         return error;
                     }
@@ -3241,157 +3540,157 @@ const gamevm = Vue.createApp({
                         type: "COMPARATOR",
                         value: ">",
                         id: next.id,
-                        line:next.line,
+                        line: next.line,
                     }
                     rhs = {
-                        id:next.id,
-                        type:"NUMBER",
-                        value:0,
-                        line:next.line,
+                        id: next.id,
+                        type: "NUMBER",
+                        value: 0,
+                        line: next.line,
                     }
                     return {
-                        type:"Evaluatable",
-                        lhs:lhs,
-                        op:operator,
-                        rhs:rhs
+                        type: "Evaluatable",
+                        lhs: lhs,
+                        op: operator,
+                        rhs: rhs
                     }
                 }
-                else if(next.type == "THAN"){
+                else if (next.type == "THAN") {
                     // There are more than 7 farmers
                     // now we compare a evaluatables
                     this.consume();
                     lhs = this.parseExpression();
                     rhs = this.parseExpression();
                 }
-                    
+
                 return {
-                    type:"Evaluatable",
-                    lhs:lhs,
-                    op:operator,
-                    rhs:rhs
+                    type: "Evaluatable",
+                    lhs: lhs,
+                    op: operator,
+                    rhs: rhs
                 }
 
             }
 
             next = this.peek();
 
-            if(next.type == "IDENT" || next.type == "NUMBER"){
+            if (next.type == "IDENT" || next.type == "NUMBER") {
 
                 lhs = this.parseExpression();
                 next = this.peek();
                 //op should be in the middle
-                if(next.type == "COMPARATOR"){
+                if (next.type == "COMPARATOR") {
                     operator = this.next();
                 }
                 next = this.peek();
 
-                if(next.type == "IDENT" || next.type == "NUMBER"){
+                if (next.type == "IDENT" || next.type == "NUMBER") {
                     rhs = this.parseExpression();
                 }
-                
+
                 next = this.peek();
-                if(next.type == "AND" || next.type == "OR" || next.type == "XOR"){
+                if (next.type == "AND" || next.type == "OR" || next.type == "XOR") {
                     this.consume();
                     let currentEvaluatable = {
-                        type:"Evaluatable",
-                        lhs:lhs,
-                        op:operator,
-                        rhs:rhs
+                        type: "Evaluatable",
+                        lhs: lhs,
+                        op: operator,
+                        rhs: rhs
                     }
                     return {
-                        type:"Evaluatable",
-                        lhs:currentEvaluatable,
-                        op:next,
-                        rhs:this.parseEvaluatable()
+                        type: "Evaluatable",
+                        lhs: currentEvaluatable,
+                        op: next,
+                        rhs: this.parseEvaluatable()
                     }
                 }
             }
 
             return {
-                type:"Evaluatable",
-                lhs:lhs,
-                op:operator,
-                rhs:rhs
+                type: "Evaluatable",
+                lhs: lhs,
+                op: operator,
+                rhs: rhs
             }
 
         },
-        parseConditional(){
+        parseConditional() {
             let ifWhenToken = this.next();
-            if(ifWhenToken.type != 'CONDITIONAL'){
+            if (ifWhenToken.type != 'CONDITIONAL') {
                 console.error("Ran parse if but the token is not an if or when. Did you next when you meant to peek?");
             }
             let condition = this.parseEvaluatable();
             let next = this.peek();
-            
-            while(next.type == "AND" || next.type == "OR" || next.type == "XOR"){
+
+            while (next.type == "AND" || next.type == "OR" || next.type == "XOR") {
                 next = this.next();
-                
+
                 let newCondition = {
-                    lhs:condition,
-                    op:next,
-                    rhs:this.parseEvaluatable()
+                    lhs: condition,
+                    op: next,
+                    rhs: this.parseEvaluatable()
                 }
                 condition = newCondition;
                 next = this.peek();
-                if(next.type == 'THEN'){
+                if (next.type == 'THEN') {
                     this.consume();
 
                     break;
                 }
             }
             next = this.peek();
-            if(next.type == "THEN"){
+            if (next.type == "THEN") {
                 this.consume();
             }
             let optionalAction = this.peek();
-            if(optionalAction.type == "ACTION"){
+            if (optionalAction.type == "ACTION") {
                 condition.action = this.parseAction();
             }
-            if(optionalAction.type == "PRINT"){
+            if (optionalAction.type == "PRINT") {
                 condition.action = this.parsePrint();
             }
             let optionalElse = this.peek();
-            if(optionalElse.type == "ELSE"){
+            if (optionalElse.type == "ELSE") {
                 this.consume();
                 let optionalElseAction = this.peek();
-                if(optionalElseAction.type == "ACTION"){
+                if (optionalElseAction.type == "ACTION") {
                     condition.elseAction = this.parseAction();
                 }
-                if(optionalElseAction.type == "PRINT"){
+                if (optionalElseAction.type == "PRINT") {
                     condition.elseAction = this.parsePrint();
                 }
             }
             condition.type = "Evaluatable";
             return condition;
         },
-        parseIdent(){
+        parseIdent() {
             let ident = this.next();
             let name = ident.value;
-           
+
             let next = this.peek();
-            if(next.type == "ASSIGN"){
+            if (next.type == "ASSIGN") {
                 //Simple assignment.
                 //Not valid to assign a reserved keyword
-                 if(this.isReservedName(name)){
+                if (this.isReservedName(name)) {
                     return this.throwSyntaxError('Identifier', name, this.getSyntaxErrorFromToken(ident), ident.id);
                 }
                 this.consume();
                 let rhs = this.parseEvaluatable();
                 return {
-                    type:"Assignment",
-                    init:{
-                        type:"Number",
-                        value:rhs
+                    type: "Assignment",
+                    init: {
+                        type: "Number",
+                        value: rhs
                     },
-                    id:{
-                        type:"Identifier",
+                    id: {
+                        type: "Identifier",
                         name
                     }
                 }
             }
-            else if(next.type == "COMPARATOR"){
+            else if (next.type == "COMPARATOR") {
                 return {
-                    
+
                 }
             }
         },
@@ -3412,25 +3711,25 @@ const gamevm = Vue.createApp({
             let printCommand = this.next();
             let output = this.peek();
             let outputid = output.id;
-            if(output.type == "NUMBER" || output.type == "IDENT"){
+            if (output.type == "NUMBER" || output.type == "IDENT") {
                 output = this.parseEvaluatable();
             }
-            else if(output.type == "STRING"){
+            else if (output.type == "STRING") {
                 this.consume();
             }
 
             let optionalConditional = this.peek();
             let conditional = null;
-            if(optionalConditional.type == "CONDITIONAL"){
-                conditional = this.parseConditional();                
+            if (optionalConditional.type == "CONDITIONAL") {
+                conditional = this.parseConditional();
             }
 
             return {
                 type: 'Print',
                 output: output,
                 line: printCommand.line,
-                tokenid:outputid,
-                conditional:conditional
+                tokenid: outputid,
+                conditional: conditional
             }
         },
         parsePrimary() {
@@ -3479,7 +3778,7 @@ const gamevm = Vue.createApp({
             //console.log(ast);
             return ast;
         },
-        evaluate(ast, tokens, act=true) {
+        evaluate(ast, tokens, act = true) {
             this.consoleOutputs = [];
             let env = {};
             for (let [good, data] of Object.entries(this.currencydata)) {
@@ -3510,20 +3809,20 @@ const gamevm = Vue.createApp({
             env['available housing'] = this.getAvailableHousing();
             env['__TOKENS__'] = tokens;
 
-            if(act){
+            if (act) {
                 //console.log(env);
                 for (const node of ast) {
                     this.evalNode(node, env);
                 }
             }
-            
+
             return env;
         },
         evalNode(node, env) {
             if (!node) {
                 console.error('Node was null', env);
             }
-            if(!env){
+            if (!env) {
                 console.error("You forgot to pass in the env......");
             }
             switch (node.type) {
@@ -3549,18 +3848,18 @@ const gamevm = Vue.createApp({
                     let left = this.evalNode(node.lhs, env);
                     //console.log(node, 'evald to : ', left);
                     //If left is undefined, we have a variable that was never assigned.
-                    if(typeof left === 'undefined'){
+                    if (typeof left === 'undefined') {
                         this.consoleOutputs.push(`Our scribes were surprised to see '${node.lhs.lhs.value}' on line ${node.lhs.lhs.line}. They were not sure what you meant when you wrote it.`);
                         return;
                     }
-                    if(left.type == "Expression" && node.op == null){
+                    if (left.type == "Expression" && node.op == null) {
                         return this.evalNode(left, env);
                     }
-                    if(node.op == null){
+                    if (node.op == null) {
                         return left;
                     }
                     let right = this.evalNode(node.rhs, env);
-                    
+
                     let conditionResult = false;
 
                     let greaterThanRegex = /((?:is|are)* *(?:greater|more) *(?:than)*)/;
@@ -3572,23 +3871,23 @@ const gamevm = Vue.createApp({
                     let orEqualRegex = /((?:or equal )+ *(?:to|with)*)/;
                     let orEqualMatch = orEqualRegex.exec(node.op.value);
                     //First we check if the value is an exact match to any of the three regexes.
-                    if(greaterThanMatch && orEqualMatch){
+                    if (greaterThanMatch && orEqualMatch) {
                         conditionResult = left >= right;
                     }
-                    else if(greaterThanMatch){
+                    else if (greaterThanMatch) {
                         conditionResult = left > right;
                     }
-                    else if(lessThanMatch && orEqualMatch){
+                    else if (lessThanMatch && orEqualMatch) {
                         conditionResult = left <= right;
                     }
-                    else if(lessThanMatch){
+                    else if (lessThanMatch) {
                         conditionResult = left < right;
                     }
-                    else if(isEqualMatch){
+                    else if (isEqualMatch) {
                         conditionResult = left == right;
                     }
-                    else{
-                        if(node.op.value.startsWith('is') && node.op.value != 'is'){
+                    else {
+                        if (node.op.value.startsWith('is') && node.op.value != 'is') {
                             node.op.value = node.op.value.substring(3);
                         }
                         switch (node.op.value) {
@@ -3598,28 +3897,28 @@ const gamevm = Vue.createApp({
                             case 'or':
                                 conditionResult = left || (right ? right : false);
                                 break;
-                            case '>': 
+                            case '>':
                                 conditionResult = left > right;
                                 break;
                             case '>=':
                                 conditionResult = left >= right;
                                 break;
-                            case '<=': 
+                            case '<=':
                                 conditionResult = left <= right;
                                 break;
-                            case '<': 
+                            case '<':
                                 conditionResult = left < right;
                                 break;
-                            case '==': 
+                            case '==':
                                 conditionResult = left == right;
                                 break;
-                            case 'is': 
+                            case 'is':
                                 conditionResult = left == right;
                                 break;
-                            case 'are': 
+                            case 'are':
                                 conditionResult = left == right;
                                 break;
-                            case '=': 
+                            case '=':
                                 conditionResult = left == right;
                                 break;
                         }
@@ -3634,7 +3933,7 @@ const gamevm = Vue.createApp({
                     if (!conditionResult && node.elseAction) {
                         return this.evalNode(node.elseAction, env);
                     }
-                    else if(!conditionResult && node.action?.action){
+                    else if (!conditionResult && node.action?.action) {
                         this.consoleOutputs.push(`Line ${node.action.action.line}: The people did not ${node.action.action.value} because your specified conditions were not met.`);
                     }
                     return conditionResult;
@@ -3652,9 +3951,9 @@ const gamevm = Vue.createApp({
                         let value = this.evalNode(node.init.value, env);
                         env[node.id.name] = value;
                     }
-                    else if(node.init.type == "Number"){
+                    else if (node.init.type == "Number") {
                         let value = node.init.value;
-                        if(value.type == "Evaluatable"){
+                        if (value.type == "Evaluatable") {
                             value = this.evalNode(value, env);
                         }
                         //console.log("Setting value", value);
@@ -3672,25 +3971,25 @@ const gamevm = Vue.createApp({
                             return;
                         }
                     }
-                    if(node.untilClause){
+                    if (node.untilClause) {
                         if (this.evalNode(node.untilClause, env)) {
                             return;
                         }
                     }
                     if (node.action.value == 'hire' || node.action.value == 'fire') {
-                        if(!node.target){
+                        if (!node.target) {
                             //Gotta get the antecedent token
                             let anyAntecedentFound = false;
-                            for(let token of env['__TOKENS__']){
-                                if(token.type == "IDENT" && this.professionReservedNames.has(token.value.toLowerCase())){
-                                    if(anyAntecedentFound){
+                            for (let token of env['__TOKENS__']) {
+                                if (token.type == "IDENT" && this.professionReservedNames.has(token.value.toLowerCase())) {
+                                    if (anyAntecedentFound) {
                                         //We have two possible antecedents and cannot continue, throw an error
                                         console.error("TWO ANTECEDENTS OH NOOO", node);
                                         this.consoleOutputs.push(`Line ${node.action.line}: Our scribes were not sure which of the antecedents in this command you were referring to, ${node.target.value} or ${token.value}.`);
                                         return;
                                     }
                                     node.target = {
-                                        value:token.value
+                                        value: token.value
                                     }
 
                                     anyAntecedentFound = true;
@@ -3701,9 +4000,9 @@ const gamevm = Vue.createApp({
                         let prof = this.sanitizeProfName(node.target.value);
                         let outputProfName = prof.Name;
                         let amount = 0;
-                        if(node.amount.type == "Expression"){
+                        if (node.amount.type == "Expression") {
                             amount = this.evalNode(node.amount, env);
-                        }else{
+                        } else {
                             amount = parseFloat(node.amount);
                         }
 
@@ -3711,10 +4010,10 @@ const gamevm = Vue.createApp({
                             outputProfName = pluralize.plural(outputProfName);
                         }
                         let actual = 0;
-                        if (node.action.value == 'hire'){
+                        if (node.action.value == 'hire') {
                             actual = this.hire(prof, amount);
                         }
-                        else{
+                        else {
                             actual = this.fire(prof, amount);
                         }
 
@@ -3731,19 +4030,19 @@ const gamevm = Vue.createApp({
 
                     if (node.action.value == 'build' || node.action.value == 'demolish') {
                         //console.log(node.action.value, "because node", node);
-                        if(!node.target){
+                        if (!node.target) {
                             //Gotta get the antecedent token
                             let anyAntecedentFound = false;
-                            for(let token of env['__TOKENS__']){
-                                if(token.type == "IDENT" && this.buildingReservedNames.has(token.value.toLowerCase())){
-                                    if(anyAntecedentFound){
+                            for (let token of env['__TOKENS__']) {
+                                if (token.type == "IDENT" && this.buildingReservedNames.has(token.value.toLowerCase())) {
+                                    if (anyAntecedentFound) {
                                         //We have two possible antecedents and cannot continue, throw an error
                                         console.error("TWO ANTECEDENTS OH NOOO", node);
                                         this.consoleOutputs.push(`Line ${node.action.line}: Our scribes were not sure which of the antecedents in this command you were referring to, ${node.target.value} or ${token.value}.`);
                                         return;
                                     }
                                     node.target = {
-                                        value:token.value
+                                        value: token.value
                                     }
 
                                     anyAntecedentFound = true;
@@ -3753,9 +4052,9 @@ const gamevm = Vue.createApp({
                         let building = pluralize.singular(node.target.value);
                         let outputBuildingName = node.target.value;
                         let amount = 0;
-                        if(node.amount.type == "Expression"){
+                        if (node.amount.type == "Expression") {
                             amount = this.evalNode(node.amount, env);
-                        }else{
+                        } else {
                             amount = parseFloat(node.amount);
                         }
 
@@ -3763,10 +4062,10 @@ const gamevm = Vue.createApp({
                             outputBuildingName = pluralize.plural(outputBuildingName);
                         }
                         let actual = 0;
-                        if(node.action.value == "build"){
+                        if (node.action.value == "build") {
                             actual = this.buildBuilding({ Name: building }, amount);
                         }
-                        else if(node.action.value == "demolish"){
+                        else if (node.action.value == "demolish") {
                             actual = this.demolishBuilding({ Name: building }, amount);
                         }
 
@@ -3788,13 +4087,13 @@ const gamevm = Vue.createApp({
                         break;
                     }
                     let num = null;
-                    if(node.output.type == "Expression"){
+                    if (node.output.type == "Expression") {
                         num = this.evalNode(node.output, env);
                     }
-                    else if(node.output.type == "Evaluatable"){
+                    else if (node.output.type == "Evaluatable") {
                         num = this.evalNode(node.output, env);
                     }
-                    else{
+                    else {
                         num = parseFloat(node.output.value);
                     }
 
@@ -3849,7 +4148,7 @@ const gamevm = Vue.createApp({
                         return true;
                     }
                     return false;
-                    
+
                 case 'IDENT':
                     //console.log(env, node.value, env[node.value]);
                     return env[node.value];
@@ -3857,8 +4156,8 @@ const gamevm = Vue.createApp({
                     return parseFloat(node.value);
                 case 'Expression':
                     //console.log("Begin parse Expression:", node);
-                    
-                    if(!node.op){
+
+                    if (!node.op) {
                         //This expression is probably just a value.
                         //console.log("NO op in this expression:" , node);
                         //current problem is you can get here with an expresssion that has a value and one that has not value layer.
@@ -3867,17 +4166,17 @@ const gamevm = Vue.createApp({
 
                     let leftValue = 0;
                     let rightValue = 0;
-                    if(node.lhs.type == "NUMBER"){
+                    if (node.lhs.type == "NUMBER") {
                         leftValue = parseFloat(node.lhs.value);
                     }
-                    else{
+                    else {
                         leftValue = this.evalNode(node.lhs, env);
                     }
-                    
-                    if(node.rhs.type == "NUMBER"){
+
+                    if (node.rhs.type == "NUMBER") {
                         rightValue = parseFloat(node.rhs.value);
                     }
-                    else{
+                    else {
                         rightValue = this.evalNode(node.rhs, env);
                     }
 

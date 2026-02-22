@@ -100,3 +100,39 @@ A second layer of pops related to population but not professions. Some basic str
 Playthrough notes 2/13/26
 1. It isn't clear what progress is being made and whether or not my people are eating enough or anything. These ideas need to be more visible to the player so there's a good feedback from making a decision.
 2. The Main tab should show the important stockpiles, population summary, and allow for teching up and building buildings etc.
+3. Add the setting for disabling charts -- It's the current majority of gametick time just keeping the data up-to-date.
+4. Maybe add an option for setting the max history size so players can still get small charts if they want.
+Some kind of defacto currency for the govt, pulls from stockpile via tax, used to enact policies
+
+Differentiation between government types
+Each govt type should have a different failure state, different actions, and some kind of intrinsic bonus.
+
+Tribal:
+fail - Lose half your pops, half your stockpile, double approval rating
+actions - 
+bonuses - Happiness and something else
+
+Democracy:
+fail - Become an oligarchy if approval is low or Monarchy if approval is high
+bonuses - Approval boost 
+has a democratic tradition that decides if it fails, based on leaders continuing to rule for too long
+no real leader, generic bonuses
+
+Republic:
+same as democracy but has a leader with bonuses
+
+Oligarchy:
+fail - bureaucracy or meritocracy, there are 3 leaders and if two die heirless it changes to a Monarchy
+bonuses - govt sucks and is hard to get rid of, bonuses for wealthy classes
+
+Feudalism:
+
+
+Monarchy:
+
+
+Bureaucracy:
+
+
+Meritocracy:
+
