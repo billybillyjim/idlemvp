@@ -259,7 +259,7 @@ const gamevm = Vue.createApp({
             historicalValuesMinute: {},
             historicalValuesHour: {},
             maxHistory: 1000,
-            testMode: true,
+            testMode: false,
             technologyEnhancedSurvivability: 30,
             monthlyAgeBuckets:[
                 0,0,0,

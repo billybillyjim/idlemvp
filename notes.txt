@@ -104,6 +104,17 @@ Playthrough notes 2/13/26
 4. Maybe add an option for setting the max history size so players can still get small charts if they want.
 Some kind of defacto currency for the govt, pulls from stockpile via tax, used to enact policies
 
+TODO:
+1. I should move the Mori parse/eval code to a separate file.
+2. Make sure relocate works in code with other syntax forms.
+3. Figure out a good way to handle the parent age bracket being empty causing the whole population to die off.
+4. Fix bug where tech sometimes disappears when you lose the reqs.
+5. Add a button to select stockpiles for main tab.
+6. Rework tech reqs to make it easier to get to numbers.
+7. All numbers need rebalancing to support early game. It should feel good to grow and make sense why it is happening. Pottery especially is in a bad spot and required for Numbers
+8. unlockablesdata should probably get renamed.
+9. Clear up the many different stockpile snapshots (Production, consumption, last tick, etc.). There are a ton and I really probably only need a few.
+
 Differentiation between government types
 Each govt type should have a different failure state, different actions, and some kind of intrinsic bonus.
 
