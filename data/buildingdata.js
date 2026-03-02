@@ -6,7 +6,7 @@ export default[
         Count: 2, 
         Cost: 
         { 
-            Wood: 50, 
+            Wood: 150, 
             Space: 10 
         }, 
         Houses: 3, 
@@ -71,11 +71,11 @@ export default[
         Name: 'Large Hut', 
         Description:"A larger hut. It should safely house about 12 people.", 
         Type: "Housing", 
-        Count: 0, 
+        Count: 1, 
         Cost: 
         { 
-            Wood: 500, 
-            Space: 25 
+            Wood: 1500, 
+            Space: 35 
         }, 
         Houses: 12, 
         Unlocked: true, 

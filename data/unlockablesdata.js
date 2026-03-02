@@ -15,6 +15,7 @@ export default [
                     Produces: { 'Wood': 1.5 },
                     Unlocked: true,
                     Visible: true,
+                    Mortal:true,
                     "BaseDemand": { 'Food': 1.5, 'Stone': 0.1 },
                     "ModifiedDemand": {},
                 }
@@ -40,6 +41,7 @@ export default [
                     Produces: { 'Food': 1.5 },
                     Unlocked: true,
                     Visible: true,
+                    Mortal:true,
                     BaseDemand: { 'Food': 1.5 },
                     ModifiedDemand: {},
                     RequiredBuilding:'Mill',
@@ -66,6 +68,7 @@ export default [
                     Produces: { 'Food': 2 },
                     Unlocked: true,
                     Visible: true,
+                    Mortal:true,
                     "BaseDemand": { 'Food': 1.2, 'Rope': 0.1 },
                     "ModifiedDemand": {},
                 }
@@ -91,6 +94,7 @@ export default [
                     Produces: { 'Furniture': 0.1 },
                     Unlocked: true,
                     Visible: true,
+                    Mortal:true,
                     "BaseDemand": { 'Food': 1.8, 'Wood': 4 },
                     "ModifiedDemand": {},
                 }
@@ -116,6 +120,7 @@ export default [
                     Produces: { 'Hides': 2 },
                     Unlocked: true,
                     Visible: true,
+                    Mortal:true,
                     "BaseDemand": { 'Food': 1.2 },
                     "ModifiedDemand": {},
                 }
@@ -141,6 +146,7 @@ export default [
                     Produces: { 'Coordinated Labor': 2 },
                     Unlocked: true,
                     Visible: true,
+                    Mortal:true,
                     "BaseDemand": { 'Food': 3 },
                     "ModifiedDemand": {},
                 }
@@ -166,6 +172,7 @@ export default [
                     Produces: { 'Fertile Soil': 2 },
                     Unlocked: true,
                     Visible: true,
+                    Mortal:true,
                     "BaseDemand": { 'Food': 2 },
                     "ModifiedDemand": {},
                 }
@@ -191,6 +198,7 @@ export default [
                     Produces: { 'Knowledge': 2 },
                     Unlocked: true,
                     Visible: true,
+                    Mortal:true,
                     "BaseDemand": { 'Food': 1.7 },
                     "ModifiedDemand": {},
                 }
@@ -204,7 +212,7 @@ export default [
         "Name": "Miner",
         "Type": "Profession",
         "Cost": { "Food": 100 },
-        "Requirements": { "Technologies": ["Stone Tools"] },
+        "Requirements": { "Technologies": ["Mining"] },
         "BaseDemand": { 'Food': 2, 'Stone': 0.1 },
         "ModifiedDemand": {},
         Unlock(vm) {
@@ -216,6 +224,7 @@ export default [
                     Produces: { 'Ore': 2, 'Clay': 10, 'Stone':3 },
                     Unlocked: true,
                     Visible: true,
+                    Mortal:true,
                     "BaseDemand": { 'Food': 2, 'Stone': 0.1 },
                     "ModifiedDemand": {},
                 }
@@ -241,6 +250,7 @@ export default [
                     Produces: { 'Bronze': 0.65 },
                     Unlocked: true,
                     Visible: true,
+                    Mortal:true,
                     "BaseDemand": { 'Food': 1.5, 'Ore': 1 },
                     "ModifiedDemand": {},
                 }
@@ -266,6 +276,7 @@ export default [
                     Produces: { 'Bronze Tools': 0.25 },
                     Unlocked: true,
                     Visible: true,
+                    Mortal:true,
                     "BaseDemand": { 'Food': 1.5, 'Bronze': 1 },
                     "ModifiedDemand": {},
                 }
@@ -291,6 +302,7 @@ export default [
                     Produces: { 'Iron': 0.15 },
                     Unlocked: true,
                     Visible: true,
+                    Mortal:true,
                     "BaseDemand": { 'Food': 1.5, 'Ore': 5 },
                     "ModifiedDemand": {},
                 }
@@ -316,6 +328,7 @@ export default [
                     Produces: { 'Space': 0.1 },
                     Unlocked: true,
                     Visible: true,
+                    Mortal:true,
                     "BaseDemand": { 'Food': 1.1, },
                     "ModifiedDemand": {},
                 }
@@ -337,12 +350,13 @@ export default [
                 {
                     Name: 'Potter',
                     Count: 0,
-                    Cost: { 'Food': 2.1, 'Clay': 1 },
+                    Cost: { 'Food': 1.3 },
                     CostIsRequiredForOutput:{'Pottery':true, 'Clay':false},
-                    Produces: { 'Pottery': 0.5, 'Clay': 0.45 },
+                    Produces: { 'Pottery': 1.5, 'Clay': 1.45 },
                     Unlocked: true,
                     Visible: true,
-                    "BaseDemand": { 'Food': 1.1, 'Clay': 0.1 },
+                    Mortal:true,
+                    "BaseDemand": { 'Food': 1.3 },
                     "ModifiedDemand": {},
                 }
             )
@@ -368,6 +382,7 @@ export default [
                     Produces: { 'Food': 7.5 },
                     Unlocked: true,
                     Visible: true,
+                    Mortal:true,
                     "BaseDemand": { 'Food': 1.1, 'Grain': 3 },
                     "ModifiedDemand": {},
                 }
@@ -393,6 +408,7 @@ export default [
                     Produces: { 'Housing': 1 },
                     Unlocked: true,
                     Visible: true,
+                    Mortal:true,
                     "BaseDemand": { 'Food': 2, 'Wood': 1, 'Stone': 1 },
                     "ModifiedDemand": {},
                 }
@@ -418,6 +434,7 @@ export default [
                     Produces: { },
                     Unlocked: true,
                     Visible: true,
+                    Mortal:true,
                     "BaseDemand": { 'Food': 2 },
                     "ModifiedDemand": {},
                 }

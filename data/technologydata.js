@@ -2,7 +2,7 @@ export default [
     {
         Name: "Stone Tools",
         Description: "Other nations seem to have figured this out ages ago. But not to worry, we will catch up!",
-        Cost: { "Food": 50 },
+        Cost: { "Food": 0 },
         Requirements: {Populations:{Farmer:1}},
         Progress: 0,
         Visible: false,
@@ -77,7 +77,7 @@ export default [
         Name: "Hide Tanning",
         Description: "There's gotta be something we can do with all these animal skins.",
         Cost: { "Food": 200 },
-        Requirements: { Technologies: ["Stone Tools"] },
+        Requirements: { Technologies: ["Stone Tools"], Populations:{Farmer:7} },
         Progress: 0,
         Visible: false,
         Complexity: 150,
@@ -135,7 +135,7 @@ export default [
         Requirements: { Technologies: ["Firemaking"] },
         Progress: 0,
         Visible: false,
-        Complexity: 10,
+        Complexity: 7,
         isLocked: true,
         demandModifiers: {
             Global: {},
@@ -151,11 +151,11 @@ export default [
     {
         Name: "Pottery Wheel",
         Description: "Spin the wheeeeel.",
-        Cost: { "Clay": 1000 },
+        Cost: { "Clay": 300 },
         Requirements: { Technologies: ["The Wheel"] },
         Progress: 0,
         Visible: false,
-        Complexity: 500,
+        Complexity: 50,
         isLocked: true,
         demandModifiers: {
             Global: {},
@@ -173,7 +173,7 @@ export default [
         Requirements: { Technologies: ["Stone Tools", "Rope", "Basic Woodworking"] },
         Progress: 0,
         Visible: false,
-        Complexity: 800,
+        Complexity: 80,
         isLocked: true,
         demandModifiers: {
             Global: {},
@@ -267,7 +267,7 @@ export default [
         Requirements: { Technologies: ["Stone Tools"] },
         Progress: 0,
         Visible: false,
-        Complexity: 200,
+        Complexity: 60,
         isLocked: true,
         demandModifiers: {
             Global: {},
@@ -285,7 +285,7 @@ export default [
         Requirements: { Technologies: ["Copper Metal"] },
         Progress: 0,
         Visible: false,
-        Complexity: 200,
+        Complexity: 100,
         isLocked: true,
         demandModifiers: {
             Global: {},
@@ -303,7 +303,7 @@ export default [
         Requirements: { Technologies: ["Stone Tools"] },
         Progress: 0,
         Visible: false,
-        Complexity: 80,
+        Complexity: 40,
         isLocked: true,
         demandModifiers: {
             Global: {},
@@ -321,7 +321,7 @@ export default [
         Requirements: { Technologies: ["Stone Tools", "Rope"] },
         Progress: 0,
         Visible: false,
-        Complexity: 300,
+        Complexity: 200,
         isLocked: true,
         demandModifiers: {
             Global: {},
@@ -664,7 +664,7 @@ export default [
         Progress: 0,
         Visible: false,
         Complexity: 1234,
-        isLocked: true,
+        isLocked: false,
         demandModifiers: {
             Global: {},
             PerCapita: {},

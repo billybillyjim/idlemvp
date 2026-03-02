@@ -148,6 +148,25 @@
                     <div :class="getCardClass()">
                         <div style="cursor:pointer;" @click="setMenu('Population')">Population Summary</div>
                         <div>There are [[formatNumber(getPopulation(), true)]] people in your nation.</div>
+                        <div>
+                            Monthly:
+                            <span v-for="bucket in monthlyAgeBuckets">
+                                [[bucket]], 
+                            </span>
+                        </div>
+                        <div>
+                            Yearly:
+                            <br/>
+                            <span v-for="bucket, index in yearlyAgeBuckets.slice(0, 28)">
+                                <span v-if="index == 15" style="color:red">
+                                    [[bucket]], 
+                                </span>
+                                <span v-else>
+                                    [[bucket]], 
+                                </span>
+                                
+                            </span>
+                        </div>
                         <div class="table table-striped table-responsive">
                             <table class="table table-striped align-middle" style="min-width: 100%;">
                                 <thead class="small">
@@ -196,18 +215,43 @@
 
                                                 </template>
                                             </td>
-                                            <td v-if="profession.Name != 'Unemployed'">
-                                                <tooltipwrapper :vm="this" :calcfrom="() => hireInfo(profession, populationMenu.amount)" :ishtml="true">
-                                                    <button class="btn btn-primary m-2 btn-sm" @click="tryHire(profession, populationMenu.amount)">
+                                            <td v-if="profession.Name != 'Unemployed' && profession.Name != 'Infant' && profession.Name != 'Child'">
+                                                <tooltipwrapper :vm="this" :calcfrom="() => hireInfo(profession, populationMenu.amount * getKeyboardModifiers())" :ishtml="true">
+                                                    <button class="btn btn-primary m-2 btn-sm" @click="tryHire(profession, populationMenu.amount * getKeyboardModifiers())">
                                                         Hire
                                                     </button>
                                                 </tooltipwrapper>
 
-                                                <tooltipwrapper :vm="this" :calcfrom="() => fireInfo(profession, populationMenu.amount)" :ishtml="true">
-                                                    <button class="btn btn-primary m-2 btn-sm" :style="canFire(profession) == false ? 'opacity:0.65' : ''" @click="tryFire(profession, populationMenu.amount)">
+                                                <tooltipwrapper :vm="this" :calcfrom="() => fireInfo(profession, populationMenu.amount * getKeyboardModifiers())" :ishtml="true">
+                                                    <button class="btn btn-primary m-2 btn-sm" :style="canFire(profession) == false ? 'opacity:0.65' : ''" @click="tryFire(profession, populationMenu.amount * getKeyboardModifiers())">
                                                         Fire
                                                     </button>
                                                 </tooltipwrapper>
+
+                                                <span v-if="!relocationInfo.IsRelocating">
+                                                    <tooltipwrapper :vm="this" :text="'Move existing workers from this task to another task without modifying the queue.'">
+                                                        <button class="btn btn-primary m-2 btn-sm" :style="canRelocate(profession) == false ? 'opacity:0.65' : ''" @click="setRelocationPrimary(profession, populationMenu.amount * getKeyboardModifiers())">
+                                                            Relocate
+                                                        </button>
+                                                    </tooltipwrapper>
+                                                </span>
+                                                <span v-else-if="relocationInfo?.Profession?.Name != profession.Name">
+                                                    <tooltipwrapper :vm="this" :calcfrom="() => relocateInfo(profession, populationMenu.amount * getKeyboardModifiers())" :ishtml="true">
+                                                        <button class="btn btn-primary m-2 btn-sm" :style="canRelocate(profession) == false ? 'opacity:0.65' : ''" @click="tryRelocate(profession, populationMenu.amount * getKeyboardModifiers())">
+                                                            Relocate [[populationMenu.amount * getKeyboardModifiers()]] [[relocationInfo.Profession.Name]]
+                                                        </button>
+                                                    </tooltipwrapper>
+                                                </span>
+                                                <span v-else>
+                                                    <tooltipwrapper :vm="this" :text="'Cancel moving workers.'">
+                                                        <button class="btn btn-primary m-2 btn-sm" @click="clearRelocation()">
+                                                            Cancel Relocation
+                                                        </button>
+                                                    </tooltipwrapper>
+                                                    
+                                                </span>
+
+                                                
                                             </td>
                                             <td v-else></td>
                                         </tr>
@@ -474,6 +518,7 @@
                         <h4 class="my-2">Population</h4>
                         <div>There are [[formatNumber(getPopulation(), true)]] people in your nation.</div>
                         <div>The average quality of life is [[formatNumber(QOL)]].</div>
+                        <div style="color:red;" v-for="issue in getNationGrowthIssues()">[[issue]]</div>
                         <div class="btn-group" role="group" aria-label="Amount selector">
 
                             <button v-for="n in [1, 5, 10]" :key="n" type="button" class="btn btn-outline-primary" :class="{ active: populationMenu.amount === n }" @click="populationMenu.amount = n">
@@ -484,6 +529,7 @@
                             </button>
                             <input v-if="populationMenu.customSelected" type="number" class="form-control" style="max-width: 6rem;" v-model.number="populationMenu.amount" @click.stop placeholder="Enter" min="1" />
                         </div>
+
                         <div class="table-responsive">
                             <table class="table table-striped align-middle" style="min-width: 100%;">
                                 <thead class="small">
@@ -570,14 +616,14 @@
                                                     </span>
                                                 </span>
                                             </td>
-                                            <td v-if="profession.Name != 'Unemployed'">
-                                                <tooltipwrapper :vm="this" :calcfrom="() => hireInfo(profession, populationMenu.amount)" :ishtml="true">
-                                                    <button class="btn btn-primary m-2" @click="tryHire(profession, populationMenu.amount)">Hire
+                                            <td v-if="profession.Name != 'Unemployed' && profession.Name != 'Infant' && profession.Name != 'Child'">
+                                                <tooltipwrapper :vm="this" :calcfrom="() => hireInfo(profession, populationMenu.amount * getKeyboardModifiers())" :ishtml="true">
+                                                    <button class="btn btn-primary m-2" @click="tryHire(profession, populationMenu.amount * getKeyboardModifiers())">Hire
                                                     </button>
                                                 </tooltipwrapper>
 
-                                                <tooltipwrapper :vm="this" :calcfrom="() => fireInfo(profession, populationMenu.amount)" :ishtml="true">
-                                                    <button class="btn btn-primary m-2" :style="canFire(profession) == false ? 'opacity:0.65' : ''" @click="tryFire(profession, populationMenu.amount)">Fire
+                                                <tooltipwrapper :vm="this" :calcfrom="() => fireInfo(profession, populationMenu.amount * getKeyboardModifiers())" :ishtml="true">
+                                                    <button class="btn btn-primary m-2" :style="canFire(profession) == false ? 'opacity:0.65' : ''" @click="tryFire(profession, populationMenu.amount * getKeyboardModifiers())">Fire
                                                     </button>
                                                 </tooltipwrapper>
                                             </td>

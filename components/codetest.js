@@ -97,7 +97,7 @@ print ninety nine thousand nine hundred ninety nine = 99999.
                         },
                         currencydata:{
                             Space:70,
-                            Wood:350
+                            Wood:1050
                         }
 
                     },
@@ -157,7 +157,7 @@ print ninety nine thousand nine hundred ninety nine = 99999.
                         },
                         currencydata:{
                             Space:70,
-                            Wood:350
+                            Wood:450
                         },
                     },
                     postState:{
@@ -510,6 +510,21 @@ print ninety nine thousand nine hundred ninety nine = 99999.
                     }
                 },
                 {
+                    mori:"Relocate two + four farmer to lumberjacks.",
+                    previousState:{
+                        professions:{
+                            Farmer:5,
+                            Lumberjack:1
+                        }
+                    },
+                    postState:{
+                        professions:{
+                            Farmer:0,
+                            Lumberjack:6
+                        },
+                    }
+                },
+                {
                     mori:"Hire two + four farmer.",
                     previousState:{
                         professions:{
@@ -554,6 +569,7 @@ print ninety nine thousand nine hundred ninety nine = 99999.
                 `Hire a farmer.`,
                 `Hire farmers until there are 10.`,
                 `Hire y farmers.`,
+                `Relocate y farmers to lumberjacks.`,
                 `Hire a farmer until food production is greater than food consumption.`,
                 `If food is greater than 10 and 5 is equal to 7 then print "ok" otherwise print "Nope".`,
                 `If food production is greater than or equal to food consumption, print 'we are okay'.`,
@@ -1035,7 +1051,7 @@ print ninety nine thousand nine hundred ninety nine = 99999.
             let ast = this.$parent.parse(tokens);
             asts.push(ast);
         }
-        //console.log(asts);
+        console.log(asts);
         //console.log(this.parsed);
         const transitions = {};
         const transitionExamples = {};
@@ -1055,7 +1071,7 @@ print ninety nine thousand nine hundred ninety nine = 99999.
         }
         // console.log(transitions);
         // console.log(transitionExamples);
-
+        this.$parent.unlockAllProfessions();
         this.runTestsWithOutputPairs();
 
         const textarea = document.querySelector('#code-text-area');
@@ -1149,6 +1165,7 @@ print ninety nine thousand nine hundred ninety nine = 99999.
                     if(this.$parent.buildingdata.find(x => x.Name == building).Count != count){
                         anyError = true;
                         console.error("Failed to reach expected building value for ", building, count, " actual: ", this.$parent.buildingdata.find(x => x.Name == building).Count);
+                        console.error(test);
                     }
                 }
                 for(let [currency, count] of Object.entries(test.postState.currencydata || [])){
