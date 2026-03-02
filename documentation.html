@@ -256,7 +256,7 @@ If lumberjacks > 0 print 'We have lumberjacks'.
                     <div class="my-3">
                        <h2>Actions</h2>
                        <div class="mx-2">
-                            As of the time of writing this, the only actions Mori can perform are to hire and fire workers, and to build buildings. I'd like to add more.
+                            As of the time of writing this, the only actions Mori can perform are to hire, relocate and fire workers, and to build buildings. I'd like to add more.
                         
                             <h3 class="mt-2">Hire</h3>
                             <div>
@@ -299,6 +299,23 @@ If lumberjacks > 0 print 'We have lumberjacks'.
                                 <div class="px-3 m-3">
                                     <pre class="documentation-code-block">Fire farmers until there are 10.</pre>
                                     <div>This will fire farmers every game tick until the condition after the <pre style="display:inline;">until</pre> keyword is false.</div>
+                                </div>
+                            </div>
+
+                            <h3 class="mt-2">Relocate</h3>
+                            <div>
+                                <div class="mx-2">You can relocate a profession using 
+                                    the <pre style="display:inline;">relocate</pre> keyword 
+                                    followed by <pre style="display:inline;">to</pre> and any other profession. 
+                                    Relocation is different from hire/fire in that it does not add to the hiring queue, it moves them directly.
+                                    This is nice when you have 300 farmers in the queue and don't want to not hire farmers, you just need more lumberjacks or something.
+                                    Here are some examples:</div>
+                                
+                                <hr>
+                                
+                                <div class="px-3 m-3">
+                                    <pre class="documentation-code-block">Relocate 3 farmers to lumberjacks.</pre>
+                                    <div>This will fire 3 farmers and hire 3 lumberjacks, avoiding the queue. If there are no farmers, nothing will happen.</div>
                                 </div>
                             </div>
 
