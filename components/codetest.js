@@ -1071,7 +1071,7 @@ print ninety nine thousand nine hundred ninety nine = 99999.
         }
         // console.log(transitions);
         // console.log(transitionExamples);
-        this.$parent.Mori.unlockAllProfessions();
+        this.$parent.unlockAllProfessions();
         this.runTestsWithOutputPairs();
 
         const textarea = document.querySelector('#code-text-area');
