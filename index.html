@@ -314,6 +314,11 @@
                     </div>
                     <div  :class="getCardClass()">
                         <div>Buildings</div>
+                        <div>There is enough housing for [[formatNumber(getTotalHousing())]] people.
+                            [[formatNumber(getAvailableHousing())]] room<span v-if="getAvailableHousing() != 1">s are</span>
+                            <span v-else> is</span>
+                            still open.
+                        </div>
                          <table class="table table-striped table-responsive">
                             <thead>
                                 <tr>

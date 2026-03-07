@@ -1046,9 +1046,9 @@ print ninety nine thousand nine hundred ninety nine = 99999.
         let asts = [];
         for(let v of this.validMori){
             
-            let tokens = this.$parent.tokenize(v);
+            let tokens = this.$parent.Mori.tokenize(v);
             this.parsed.push(tokens);
-            let ast = this.$parent.parse(tokens);
+            let ast = this.$parent.Mori.parse(tokens);
             asts.push(ast);
         }
         console.log(asts);
@@ -1071,7 +1071,7 @@ print ninety nine thousand nine hundred ninety nine = 99999.
         }
         // console.log(transitions);
         // console.log(transitionExamples);
-        this.$parent.unlockAllProfessions();
+        this.$parent.Mori.unlockAllProfessions();
         this.runTestsWithOutputPairs();
 
         const textarea = document.querySelector('#code-text-area');
@@ -1084,9 +1084,9 @@ print ninety nine thousand nine hundred ninety nine = 99999.
     methods: {
         
         inspect() {
-            this.tokens = this.$parent.tokenize(this.testCode);
-            this.ast = this.$parent.parse(this.tokens);
-            this.env = this.$parent.evaluate(this.ast, false);
+            this.tokens = this.$parent.Mori.tokenize(this.testCode);
+            this.ast = this.$parent.Mori.parse(this.tokens);
+            this.env = this.$parent.Mori.evaluate(this.ast, false);
             // console.log(this.env);
             // console.log(this.ast)
             this.isInspecting = true;

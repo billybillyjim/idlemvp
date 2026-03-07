@@ -16,7 +16,7 @@ export default [
                     Unlocked: true,
                     Visible: true,
                     Mortal:true,
-                    "BaseDemand": { 'Food': 1.5, 'Stone': 0.1 },
+                    "BaseDemand": { 'Food': 8, 'Stone': 0.1 },
                     "ModifiedDemand": {},
                 }
             )
