@@ -145,7 +145,7 @@
                         <button class="btn btn-primary m-2" @click="confirmCivName()">Confirm</button>
                     </div>
 
-                    <div :class="getCardClass()">
+                    <div class="col">
                         <div style="cursor:pointer;" @click="setMenu('Population')">Population Summary</div>
                         <div>There are [[formatNumber(getPopulation(), true)]] people in your nation.</div>
                         <div>
@@ -260,7 +260,7 @@
                             </table>
                         </div>
                     </div>
-                    <div :class="getCardClass()">
+                    <div  class="col">
                         <div>Stockpiles</div>
                         <table class="table table-striped table-responsive">
                             <thead>
@@ -312,12 +312,10 @@
                             </tbody>
                         </table>
                     </div>
-                    <div  :class="getCardClass()">
+                    <div class="col">
                         <div>Buildings</div>
                         <div>There is enough housing for [[formatNumber(getTotalHousing())]] people.
-                            [[formatNumber(getAvailableHousing())]] room<span v-if="getAvailableHousing() != 1">s are</span>
-                            <span v-else> is</span>
-                            still open.
+                            [[getAvailableHousingMessage()]]
                         </div>
                          <table class="table table-striped table-responsive">
                             <thead>
@@ -459,7 +457,7 @@
                             </tbody>
                         </table>
                     </div>
-                    <div :class="getCardClass()">
+                    <div  class="col">
                         <div>Technologies</div>
                         <div>Current Stockpiled Knowledge: [[formatNumber(currencydata['Knowledge'].Amount)]]</div>
                         <table class="table table-striped table-responsive">
@@ -505,7 +503,7 @@
                             </tbody>
                         </table>
                     </div>
-                    <div :class="getCardClass()" class="col-12">
+                    <div class="col-12">
                         <div>Log</div>
                         <table class="table table-striped table-responsive">
                             <tbody>
