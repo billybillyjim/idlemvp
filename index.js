@@ -50,7 +50,7 @@ const gamevm = Vue.createApp({
             },
             basePopulationGrowthChance: 0.005,
             civilizationName: "",
-            currentMenu: "Laws",
+            currentMenu: "Main",
             menus: ["Main", "Population", "Stockpiles", "Buildings", "Technology", "Government", "Laws", "Modifiers", "Log", "Charts", "Settings"],
             currentDate: new Date(2000, 0, 1),
             populationMenu: {
@@ -261,6 +261,7 @@ const gamevm = Vue.createApp({
             historicalValues: {},
             historicalValuesMinute: {},
             historicalValuesHour: {},
+            historicalLeaders:[],
             maxHistory: 1000,
             testMode: false,
             technologyEnhancedSurvivability: 30,
@@ -1088,8 +1089,12 @@ const gamevm = Vue.createApp({
                 }
                 for (let leader of this.government.currentLeaders) {
                     if (leader.isDead) {
-                        this.logit(leader.Name + " has died.");
-                        console.log(leader.Name + " has died at age " + leader.Age + ".");
+                        if(leader.Name){
+                            this.logit(leader.Name + " has died.");
+                            console.log(leader.Name + " has died at age " + leader.Age + ".");
+                            this.historicalLeaders.push(leader);
+                        }
+                        
                         this.getNewGovernmentLeader();
                     }
                 }
@@ -1098,8 +1103,11 @@ const gamevm = Vue.createApp({
             }
             else {
                 if (this.government.currentLeader.isDead) {
-                    this.logit(this.government.currentLeader.Name + " has died.");
-                    console.log(this.government.currentLeader.Name + " has died at age " + this.government.currentLeader.Age + ".");
+                    if(this.government.currentLeader.Name){
+                        this.logit(this.government.currentLeader.Name + " has died.");
+                        console.log(this.government.currentLeader.Name + " has died at age " + this.government.currentLeader.Age + ".");
+                    }
+
                     this.getNewGovernmentLeader();
                 }
                 else {
@@ -1598,8 +1606,7 @@ const gamevm = Vue.createApp({
                 let scaled = Math.round((prof.Count / totalMortals) * deaths);
                 let toDie = Math.min(scaled, prof.Count, remaining);
                 if (toDie > 0) {
-                    this.fire(prof, toDie);
-                    this.modifyUnemployed(-toDie);
+                    this.doDeathSteps(prof, toDie);
                     remaining -= toDie;
 
                     let keys = Object.keys(possibleCauses);
@@ -1614,8 +1621,7 @@ const gamevm = Vue.createApp({
                 let largest = mortals.filter(p => p.Count > 0).sort((a, b) => b.Count - a.Count)[0];
                 if (largest) {
                     let absorb = Math.min(remaining, largest.Count);
-                    this.fire(largest, absorb);
-                    this.modifyUnemployed(-absorb);
+                    this.doDeathSteps(largest, absorb);
                     let keys = Object.keys(possibleCauses);
                     let reason = keys[Math.floor(Math.random() * keys.length)];
                     if (this.getPopulation() < 1000) {
@@ -1628,6 +1634,14 @@ const gamevm = Vue.createApp({
                 console.log("Somebody shoulda got got but didnt get got.");
             }
         },
+        doDeathSteps(profession, amount){
+            this.fire(profession, amount);
+            this.modifyUnemployed(-amount);
+            if(!this.missingProfessionCounts[profession.Name]){
+                this.missingProfessionCounts[profession.Name] = 0;
+            }
+            this.missingProfessionCounts[profession.Name] += amount;
+        },  
         getHomelessnessRatio() {
             let population = this.getPopulation();
             if (population == 0) {
@@ -1751,7 +1765,10 @@ const gamevm = Vue.createApp({
                 for (let demandedGood of Object.keys(prof.ModifiedDemand)) {
                     this.modifyDemand(demandedGood, prof.ModifiedDemand[demandedGood] * prof.Count, prof.Name + ' Modified Demand');
                 }
-                totalPop += prof.Count;
+                if(prof.Mortal){
+                    totalPop += prof.Count;
+                }
+                
             }
 
             let baseHideDemand = 0.01;
@@ -2462,6 +2479,12 @@ const gamevm = Vue.createApp({
         deleteSave() {
             localStorage.clear();
             location.reload();
+        },
+        removeFromImportantStockpilesList(currencyName){
+            this.stockpileMenu.importantStockpiles = this.stockpileMenu.importantStockpiles.filter(x => x != currencyName);
+        },
+        addToImportantStockpilesList(currencyName){
+            this.stockpileMenu.importantStockpiles.push(currencyName);
         },
         hireByName(name) {
             let prof = this.professions.find(x => x.Name == name);

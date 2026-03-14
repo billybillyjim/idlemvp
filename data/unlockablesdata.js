@@ -2,7 +2,7 @@ export default [
     {
         "Name": "Lumberjack",
         "Type": "Profession",
-        "Cost": { "Food": 100 },
+        "Cost": { "Food": 0 },
         "Requirements": { "Technologies": ["Stone Tools"] },
         "BaseDemand": { 'Food': 1.5, 'Stone': 0.1 },
         "ModifiedDemand": {},
@@ -12,7 +12,7 @@ export default [
                     Name: 'Lumberjack',
                     Count: 0,
                     Cost: { 'Food': 1.3 },
-                    Produces: { 'Wood': 1.5 },
+                    Produces: { 'Wood': 2.5 },
                     Unlocked: true,
                     Visible: true,
                     Mortal:true,

@@ -72,6 +72,17 @@ export default [
         IsUnlocked:false,
     },
     {
+        Name:"Pottery",
+        Boosts:[
+            {Name:"Farmer", Currency:"Grain", ModifierType:"Multiplicative", Amount:1.05,},
+            {Name:"Farmer", Currency:"Food", ModifierType:"Multiplicative", Amount:1.05,},
+        ],
+        Requirements:{
+            Technologies:["Pottery"]
+        },
+        IsUnlocked:false,
+    },
+    {
         Name:"Pottery Wheel",
         Boosts:[
             {Name:"Potter", Currency:"Pottery", ModifierType:"Multiplicative", Amount:3,},

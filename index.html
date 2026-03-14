@@ -81,9 +81,6 @@
                         </tooltipwrapper>
                     </li>
                     <li class="nav-item my-2 col-2" style="color:white;text-align:center;">
-                        <div style="text-align:center;">
-                            Speed
-                        </div>
                         <div>
                             <button v-for="n in [1, 2, 5, 200, 300, 900, 2700, 9000]" :key="n" type="button" class="btn btn-outline-light" :class="{ active: tickspeed == 300 / n }" @click="setSpeed(300 / n, n / 300)">
                                 [[n]]
@@ -92,7 +89,7 @@
 
                     </li>
                     <li class="nav-item my-3 col-6" style="color:white">
-                        [[(goalLevelHints[currentGoalLevel])]]
+                        Task: [[(goalLevelHints[currentGoalLevel])]]
                     </li>
                     <li class="nav-item my-3 align-right col-3 hide-on-mobile" style="color:white;justify-content: right;">
                         <span v-if="settingsMenu.renderDate">[[formatDate(currentDate)]]</span> <span v-if="settingsMenu.renderWeather">[[getWeatherForDate(currentDate)]]</span>
@@ -147,7 +144,7 @@
 
                     <div class="col">
                         <div style="cursor:pointer;" @click="setMenu('Population')">Population Summary</div>
-                        <div>There are [[formatNumber(getPopulation(), true)]] people in your nation.</div>
+                        <div>There are [[formatNumber(getPopulation(), true)]] ([[formatNumber(getAdultPopulation(), true)]] adult) people in your nation.</div>
                         <div>
                             Monthly:
                             <span v-for="bucket in monthlyAgeBuckets">
@@ -187,8 +184,14 @@
                                             </td>
                                             <td style="width:255px;">
                                                 <template v-if="hasNumbers()">
-                                                    <tooltipwrapper :vm="this"
+                                                    <tooltipwrapper v-if="profession.Name != 'Child'" :vm="this"
                                                         :text="(missingProfessionCounts[profession.Name]) > 0 ? 'The number in parentheses is how many people used to be working this profession but died and have not been replaced yet.' : 'The current number of ' + pluralizer.plural(profession.Name)">
+                                                        [[formatNumber(profession.Count, true)]]
+                                                        <span v-if="missingProfessionCounts[profession.Name]">+
+                                                            ([[(missingProfessionCounts[profession.Name])]])</span>
+                                                    </tooltipwrapper>
+                                                    <tooltipwrapper v-else :vm="this"
+                                                        :text="'The current number of ' + pluralizer.plural(profession.Name) + '. ' + yearlyAgeBuckets[14] + ' will become adults next year.' ">
                                                         [[formatNumber(profession.Count, true)]]
                                                         <span v-if="missingProfessionCounts[profession.Name]">+
                                                             ([[(missingProfessionCounts[profession.Name])]])</span>
@@ -267,8 +270,16 @@
                                 <tr>
                                     <th style="width: 15%;">Stockpile</th>
                                     <th style="width: 35%;">Amount</th>
-                                    <th style="width: 25%;">Hourly Change</th>
-                                    <th style="width: 25%;">Demand</th>
+                                    <th style="width: 25%;">
+                                        <tooltipwrapper :vm="this" :text="'This is the amount the stockpile changes per game tick.'">
+                                            Change
+                                        </tooltipwrapper>
+                                    </th>
+                                    <th style="width: 25%;">
+                                        <tooltipwrapper :vm="this" :text="'This is how much your people want to consume per game tick.'">
+                                            Demand
+                                        </tooltipwrapper>
+                                    </th>
                                 </tr>
                             </thead>
                             <tbody>
@@ -646,8 +657,9 @@
                                 <tr>
                                     <th style="width: 15%;">Stockpile</th>
                                     <th style="width: 35%;">Amount</th>
-                                    <th style="width: 25%;">Hourly Change</th>
-                                    <th style="width: 25%;">Demand</th>
+                                    <th style="width: 15%;">Hourly Change</th>
+                                    <th style="width: 15%;">Demand</th>
+                                    <th style="width: 20%;">Actions</th>
                                 </tr>
                             </thead>
                             <tbody>
@@ -685,6 +697,10 @@
                                                 [[formatNumber(demand[currency.Name])]]
                                             </tooltipwrapper>
 
+                                        </td>
+                                        <td>
+                                            <button class="btn btn-primary" v-if="stockpileMenu.importantStockpiles.includes(currency.Name)" @click="removeFromImportantStockpilesList(currency.Name)">Hide</button>
+                                            <button class="btn btn-primary" v-else @click="addToImportantStockpilesList(currency.Name)">Show in Main Tab</button>
                                         </td>
                                     </tr>
                                 </template>
