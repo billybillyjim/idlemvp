@@ -640,6 +640,15 @@ const gamevm = Vue.createApp({
             )
         },
         shouldRunLawToday(law) {
+            if (law.lastRun) {
+                let lastRun = new Date(law.lastRun);
+                if (lastRun.getFullYear() == this.currentDate.getFullYear() &&
+                    lastRun.getMonth() == this.currentDate.getMonth() &&
+                    lastRun.getDate() == this.currentDate.getDate()) 
+                {
+                    return false;
+                }
+            }
             if (law.frequency == 'Daily') {
                 return true;
             }
@@ -650,7 +659,7 @@ const gamevm = Vue.createApp({
                 return currentDate.getDate() == 1;
             }
             if (law.frequency == 'Yearly') {
-                return ((Date.UTC(currentDate.getFullYear(), currentDate.getMonth(), currentDate.getDate()) - Date.UTC(currentDate.getFullYear(), 0, 0)) / 24 / 60 / 60 / 1000) == 1;
+                return ((Date.UTC(this.currentDate.getFullYear(), this.currentDate.getMonth(), this.currentDate.getDate()) - Date.UTC(this.currentDate.getFullYear(), 0, 0)) / 24 / 60 / 60 / 1000) == 1;
             }
         },
         generateReservedNames() {
@@ -798,11 +807,7 @@ const gamevm = Vue.createApp({
         collapseTribalGovernment() {
 
         },
-        wait(ms) {
-            new Promise(resolve => setTimeout(resolve, ms));
-        },
         getTechnologies(sort = false, includeResearched = false) {
-            //const allTechByName = Object.fromEntries(this.technologies.map(t => [t.Name, t]));
             let techs = [];
             for (let tech of this.technologies) {
                 if (!tech.Visible) {
@@ -851,7 +856,7 @@ const gamevm = Vue.createApp({
 
             return graph;
         },
-        saveState(state) {
+        saveState() {
             try {
                 let { Mori, ...data } = this.$data;
                 let snapshotData = JSON.parse(JSON.stringify(data));
@@ -872,7 +877,15 @@ const gamevm = Vue.createApp({
                 const compressed = localStorage.getItem('saveData');
                 if (!compressed) return null;
                 const json = LZString.decompressFromUTF16(compressed);
-                return JSON.parse(json);
+                let data = JSON.parse(json);
+                Object.assign(this.$data, data);
+                this.currentDate = new Date(this.currentDate);
+
+                this.reservedNames = new Set();
+                this.currencyReservedNames = new Set();
+                this.professionReservedNames = new Set();
+                this.buildingReservedNames = new Set();
+                this.generateReservedNames();
             } catch (err) {
                 console.error('loadState failed:', err);
                 return null;
@@ -884,12 +897,12 @@ const gamevm = Vue.createApp({
                 data.log = [];
                 const json = JSON.stringify(data);
                 const compressed = LZString.compressToUTF16(json);
-                const blob = new Blob([json], { type: 'text/plain;charset=UTF-16' });
+                const blob = new Blob([compressed], { type: 'text/plain;charset=UTF-16' });
                 const url = URL.createObjectURL(blob);
 
                 const a = Object.assign(document.createElement('a'), {
                     href: url,
-                    download: 'idlesave.txt',
+                    download: 'vanitasiasave.txt',
                 });
                 a.click();
                 URL.revokeObjectURL(url);
@@ -910,7 +923,7 @@ const gamevm = Vue.createApp({
                     const compressed = reader.result;
                     const json = LZString.decompressFromUTF16(compressed);
                     const loaded = JSON.parse(json);
-                    Object.assign(this.$data, loaded); // merge into reactive state
+                    Object.assign(this.$data, loaded);
                     this.uploadedSaveFile = null;
                 } catch (err) {
                     console.error('Failed to parse save file:', err);
@@ -1155,12 +1168,14 @@ const gamevm = Vue.createApp({
             }
         },
         getGovernmentEfficiency() {
-            if (!this.government || !this.government.baseEfficiency) {
+            let govType = this.governmentTypes[this.government.type];
+            if (!govType) {
                 return 0;
             }
-            let base = this.government.baseEfficiency;
+            let base = govType.baseEfficiency;
             let reduction = this.population * this.government.efficiencyPerCapita;
-            let boost = this.professions['Government Worker'].Amount * this.government.efficiencyPerEmployee;
+            let governmentWorker = this.professions.find(x => x.Name == 'Government Worker');
+            let boost = (governmentWorker?.Count ?? 0) * govType.efficiencyPerEmployee;
             let calculated = base - reduction + boost;
             return Math.max(calculated, 0);
         },
@@ -1466,7 +1481,7 @@ const gamevm = Vue.createApp({
                 }
 
             }
-            this.addCurrency("Space", spaceCost, "Demolishing " + actual + ' ' + this.toProperPluralize(houseType.Name, actual));
+            this.addCurrency("Space", spaceCost * actual, "Demolishing " + actual + ' ' + this.toProperPluralize(houseType.Name, actual));
             return actual;
         },
         canDemolish(houseType) {
@@ -1740,7 +1755,7 @@ const gamevm = Vue.createApp({
             else {
                 this.currencyDemandDescriptions[good] = [[good, this.formatNumber(amount), reason]];
             }
-            this.demand[good] += amount;
+            this.demand[good] = (this.demand[good] ?? 0) + amount;
         },
         processProfessionDemand() {
             let totalPop = 0;
@@ -2160,9 +2175,6 @@ const gamevm = Vue.createApp({
                         }
                     }
                 }
-                else {
-                    ////console.log("Could afford profession cost.", profession);
-                }
             }
             for (let [good, demand] of Object.entries(this.demand)) {
                 if (good == 'Space' || good == 'Knowledge' || good == 'Housing') {
@@ -2177,12 +2189,6 @@ const gamevm = Vue.createApp({
                 }
 
             }
-            // if (this.currencydata.Food.Amount <= 0) {
-            //     this.starvePeople();
-            // }
-            // if (this.currencydata.Water.Amount <= 0) {
-            //     this.dehydratePeople();
-            // }
         },
         processProfessions() {
             this.processUnemployed();
@@ -2287,8 +2293,14 @@ const gamevm = Vue.createApp({
             for (let [currency, amount] of Object.entries(cost)) {
                 let current = this.currencydata[currency];
 
+                if(!current){
+                    console.error("Invalid currency name for cost:", cost, currency);
+                }
                 if (current.Amount == 0) {
                     return 0;
+                }
+                if(amount == 0){
+                    return 1;
                 }
                 let ratio = current / amount;
                 if (ratio < actual) {
@@ -2416,7 +2428,7 @@ const gamevm = Vue.createApp({
             return output;
         },
         deleteSave() {
-            localStorage.clear();
+            localStorage.removeItem('saveData');
             location.reload();
         },
         removeFromImportantStockpilesList(currencyName){
@@ -2459,14 +2471,14 @@ const gamevm = Vue.createApp({
                     console.error("Invalid building name for required building for " + profession.Name);
                 }
                 else {
-                    let available = (profession.Count + amount) - building.Count;
-                    if (available < 0) {
-                        return;
+                    let available = building.Count - profession.Count;
+                    if (available <= 0) {
+                        return 0;
                     }
                     maxPossible = Math.min(maxPossible, available);
                 }
             }
-            //let actual = this.buy(profession.Cost, maxPossible, "Hiring " + profession.Name);
+
             profession.Count += maxPossible;
             this.modifyUnemployed(-maxPossible);
 
@@ -3000,8 +3012,7 @@ const gamevm = Vue.createApp({
             if (humid >= 90) description.push("humid");
             else if (humid < 25) description.push("dry");
 
-            this.previousWeather = weatherData;
-            this.previousWeather.temp = temp;
+            this.previousWeather = { ...weatherData, temp };
             return description.join(", ");
         },
         getRelativeNumber(n) {
@@ -3062,7 +3073,7 @@ const gamevm = Vue.createApp({
             env['current population'] = this.getPopulation();
             env['total population'] = this.getPopulation();
             env['unemployed people'] = this.getAvailableWorkers();
-            env['total housing'] = this.getAvailableHousing();
+            env['total housing'] = this.getTotalHousing();
             env['available housing'] = this.getAvailableHousing();
             return env;
         },
