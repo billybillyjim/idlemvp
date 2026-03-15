@@ -221,13 +221,13 @@
                                             <td v-if="profession.Name != 'Unemployed' && profession.Name != 'Infant' && profession.Name != 'Child'">
                                                 <tooltipwrapper :vm="this" :calcfrom="() => hireInfo(profession, populationMenu.amount * getKeyboardModifiers())" :ishtml="true">
                                                     <button class="btn btn-primary m-2 btn-sm" @click="tryHire(profession, populationMenu.amount * getKeyboardModifiers())">
-                                                        Hire
+                                                        Hire [[populationMenu.amount * getKeyboardModifiers()]]
                                                     </button>
                                                 </tooltipwrapper>
 
                                                 <tooltipwrapper :vm="this" :calcfrom="() => fireInfo(profession, populationMenu.amount * getKeyboardModifiers())" :ishtml="true">
                                                     <button class="btn btn-primary m-2 btn-sm" :style="canFire(profession) == false ? 'opacity:0.65' : ''" @click="tryFire(profession, populationMenu.amount * getKeyboardModifiers())">
-                                                        Fire
+                                                        Fire [[populationMenu.amount * getKeyboardModifiers()]]
                                                     </button>
                                                 </tooltipwrapper>
 
@@ -359,18 +359,18 @@
                                             </tooltipwrapper>
                                         </td>
                                         <td>
-                                            <tooltipwrapper :vm="this" :calcfrom="() => costToText(houseType.Cost)">
-                                                <div v-html="costToString(houseType.Cost)"></div>
+                                            <tooltipwrapper :vm="this" :calcfrom="() => costToText(houseType.Cost, buildingMenu.amount * getKeyboardModifiers())">
+                                                <div v-html="costToString(houseType.Cost, buildingMenu.amount * getKeyboardModifiers())"></div>
                                             </tooltipwrapper>
                                         </td>
                                         <td>
-                                            <button class="btn btn-primary btn-sm m-2" :style="(houseType.Unlocked == false || canAfford(houseType.Cost) == false) ? 'opacity:0.65' : ''" @click="buildBuilding(houseType)">
-                                                <tooltipwrapper :vm="this" :calcfrom="() => getBuildingCostTooltip(houseType)" :text="getBuildingCostTooltip(houseType)" :ishtml="true">
-                                                    Build
+                                            <button class="btn btn-primary btn-sm m-2" :style="(houseType.Unlocked == false || canAfford(houseType.Cost, buildingMenu.amount * getKeyboardModifiers()) == false) ? 'opacity:0.65' : ''" @click="buildBuilding(houseType, buildingMenu.amount * getKeyboardModifiers())">
+                                                <tooltipwrapper :vm="this" :calcfrom="() => getBuildingCostTooltip(houseType, buildingMenu.amount * getKeyboardModifiers())" :text="getBuildingCostTooltip(houseType, buildingMenu.amount * getKeyboardModifiers())" :ishtml="true">
+                                                    Build [[buildingMenu.amount * getKeyboardModifiers()]]
                                                 </tooltipwrapper>
                                             </button>
-                                            <button class="btn btn-primary btn-sm m-2" :style="!canDemolish(houseType) ? 'opacity:0.65' : ''" @click="demolishBuilding(houseType)">
-                                                <tooltipwrapper :vm="this" :calcfrom="() => getDemolishInfo(houseType)">Demolish
+                                            <button class="btn btn-primary btn-sm m-2" :style="!canDemolish(houseType) ? 'opacity:0.65' : ''" @click="demolishBuilding(houseType, buildingMenu.amount * getKeyboardModifiers())">
+                                                <tooltipwrapper :vm="this" :calcfrom="() => getDemolishInfo(houseType, buildingMenu.amount * getKeyboardModifiers())">Demolish [[buildingMenu.amount * getKeyboardModifiers()]]
                                                 </tooltipwrapper>
                                             </button>
                                         </td>
@@ -447,19 +447,19 @@
                                             </span>
                                         </td>
                                         <td>
-                                            <tooltipwrapper :vm="this" :calcfrom="() => costToText(houseType.Cost)" :text="costToText(houseType.Cost)">
-                                                <div v-html="costToString(houseType.Cost)"></div>
+                                            <tooltipwrapper :vm="this" :calcfrom="() => costToText(houseType.Cost, buildingMenu.amount * getKeyboardModifiers())" :text="costToText(houseType.Cost, buildingMenu.amount * getKeyboardModifiers())">
+                                                <div v-html="costToString(houseType.Cost, buildingMenu.amount * getKeyboardModifiers())"></div>
                                             </tooltipwrapper>
                                         </td>
                                         <td>
-                                            <button class="btn btn-primary btn-sm m-2" :style="(houseType.Unlocked == false || canAfford(houseType.Cost) == false) ? 'opacity:0.65' : ''" @click="buildBuilding(houseType)">
-                                                <tooltipwrapper :vm="this" :calcfrom="() => getBuildingCostTooltip(houseType)" :text="getBuildingCostTooltip(houseType)" :ishtml="true">
-                                                    Build
+                                            <button class="btn btn-primary btn-sm m-2" :style="(houseType.Unlocked == false || canAfford(houseType.Cost) == false) ? 'opacity:0.65' : ''" @click="buildBuilding(houseType, buildingMenu.amount * getKeyboardModifiers())">
+                                                <tooltipwrapper :vm="this" :calcfrom="() => getBuildingCostTooltip(houseType, buildingMenu.amount * getKeyboardModifiers())" :text="getBuildingCostTooltip(houseType, buildingMenu.amount * getKeyboardModifiers())" :ishtml="true">
+                                                    Build [[buildingMenu.amount * getKeyboardModifiers()]]
                                                 </tooltipwrapper>
                                             </button>
-                                            <button class="btn btn-primary btn-sm m-2" :style="!canDemolish(houseType) ? 'opacity:0.65' : ''" @click="demolishBuilding(houseType)">
-                                                <tooltipwrapper :vm="this" :calcfrom="() => getDemolishInfo(houseType)">
-                                                    Demolish
+                                            <button class="btn btn-primary btn-sm m-2" :style="!canDemolish(houseType, buildingMenu.amount * getKeyboardModifiers()) ? 'opacity:0.65' : ''" @click="demolishBuilding(houseType, buildingMenu.amount * getKeyboardModifiers())">
+                                                <tooltipwrapper :vm="this" :calcfrom="() => getDemolishInfo(houseType, buildingMenu.amount * getKeyboardModifiers())">
+                                                    Demolish [[buildingMenu.amount * getKeyboardModifiers()]]
                                                 </tooltipwrapper>
                                             </button>
                                         </td>
@@ -632,12 +632,12 @@
                                             </td>
                                             <td v-if="profession.Name != 'Unemployed' && profession.Name != 'Infant' && profession.Name != 'Child'">
                                                 <tooltipwrapper :vm="this" :calcfrom="() => hireInfo(profession, populationMenu.amount * getKeyboardModifiers())" :ishtml="true">
-                                                    <button class="btn btn-primary m-2" @click="tryHire(profession, populationMenu.amount * getKeyboardModifiers())">Hire
+                                                    <button class="btn btn-primary m-2" @click="tryHire(profession, populationMenu.amount * getKeyboardModifiers())">Hire  [[populationMenu.amount * getKeyboardModifiers()]]
                                                     </button>
                                                 </tooltipwrapper>
 
                                                 <tooltipwrapper :vm="this" :calcfrom="() => fireInfo(profession, populationMenu.amount * getKeyboardModifiers())" :ishtml="true">
-                                                    <button class="btn btn-primary m-2" :style="canFire(profession) == false ? 'opacity:0.65' : ''" @click="tryFire(profession, populationMenu.amount * getKeyboardModifiers())">Fire
+                                                    <button class="btn btn-primary m-2" :style="canFire(profession) == false ? 'opacity:0.65' : ''" @click="tryFire(profession, populationMenu.amount * getKeyboardModifiers())">Fire  [[populationMenu.amount * getKeyboardModifiers()]]
                                                     </button>
                                                 </tooltipwrapper>
                                             </td>
@@ -811,12 +811,12 @@
                                         <td>
                                             <button class="btn btn-primary btn-sm m-2" :style="(houseType.Unlocked == false || canAfford(houseType.Cost) == false) ? 'opacity:0.65' : ''" @click="buildBuilding(houseType)">
                                                 <tooltipwrapper :vm="this" :calcfrom="() => getBuildingCostTooltip(houseType)" :text="getBuildingCostTooltip(houseType)" :ishtml="true">
-                                                    Build
+                                                    Build [[buildingMenu.amount * getKeyboardModifiers()]]
                                                 </tooltipwrapper>
                                             </button>
                                             <button class="btn btn-primary btn-sm m-2" :style="!canDemolish(houseType) ? 'opacity:0.65' : ''" @click="demolishBuilding(houseType)">
                                                 <tooltipwrapper :vm="this" :calcfrom="() => getDemolishInfo(houseType)">
-                                                    Demolish
+                                                    Demolish [[buildingMenu.amount * getKeyboardModifiers()]]
                                                 </tooltipwrapper>
                                             </button>
                                         </td>
@@ -891,19 +891,19 @@
                                             </span>
                                         </td>
                                         <td>
-                                            <tooltipwrapper :vm="this" :calcfrom="() => costToText(houseType.Cost)" :text="costToText(houseType.Cost)">
-                                                <div v-html="costToString(houseType.Cost)"></div>
+                                            <tooltipwrapper :vm="this" :calcfrom="() => costToText(houseType.Cost, buildingMenu.amount * getKeyboardModifiers())" :text="costToText(houseType.Cost, buildingMenu.amount * getKeyboardModifiers())">
+                                                <div v-html="costToString(houseType.Cost, buildingMenu.amount * getKeyboardModifiers())"></div>
                                             </tooltipwrapper>
                                         </td>
                                         <td>
-                                            <button class="btn btn-primary btn-sm m-2" :style="(houseType.Unlocked == false || canAfford(houseType.Cost) == false) ? 'opacity:0.65' : ''" @click="buildBuilding(houseType)">
-                                                <tooltipwrapper :vm="this" :calcfrom="() => getBuildingCostTooltip(houseType)" :text="getBuildingCostTooltip(houseType)" :ishtml="true">
-                                                    Build
+                                            <button class="btn btn-primary btn-sm m-2" :style="(houseType.Unlocked == false || canAfford(houseType.Cost) == false) ? 'opacity:0.65' : ''" @click="buildBuilding(houseType, buildingMenu.amount * getKeyboardModifiers())">
+                                                <tooltipwrapper :vm="this" :calcfrom="() => getBuildingCostTooltip(houseType, buildingMenu.amount * getKeyboardModifiers())" :text="getBuildingCostTooltip(houseType, buildingMenu.amount * getKeyboardModifiers())" :ishtml="true">
+                                                    Build [[buildingMenu.amount * getKeyboardModifiers()]]
                                                 </tooltipwrapper>
                                             </button>
-                                            <button class="btn btn-primary btn-sm m-2" :style="!canDemolish(houseType) ? 'opacity:0.65' : ''" @click="demolishBuilding(houseType)">
-                                                <tooltipwrapper :vm="this" :calcfrom="() => getDemolishInfo(houseType)">
-                                                    Demolish
+                                            <button class="btn btn-primary btn-sm m-2" :style="!canDemolish(houseType) ? 'opacity:0.65' : ''" @click="demolishBuilding(houseType, buildingMenu.amount * getKeyboardModifiers())">
+                                                <tooltipwrapper :vm="this" :calcfrom="() => getDemolishInfo(houseType, buildingMenu.amount * getKeyboardModifiers())">
+                                                    Demolish [[buildingMenu.amount * getKeyboardModifiers()]]
                                                 </tooltipwrapper>
                                             </button>
                                         </td>

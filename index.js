@@ -23,7 +23,6 @@ import buildingdata from './data/buildingdata.js'
 
 
 const gamevm = Vue.createApp({
-    el: '#vm',
     components: {
         house,
         population,
@@ -48,7 +47,7 @@ const gamevm = Vue.createApp({
                 Shift: false,
                 Control: false,
             },
-            basePopulationGrowthChance: 0.005,
+            basePopulationGrowthChance: 0.0025,
             civilizationName: "",
             currentMenu: "Main",
             menus: ["Main", "Population", "Stockpiles", "Buildings", "Technology", "Government", "Laws", "Modifiers", "Log", "Charts", "Settings"],
@@ -62,6 +61,7 @@ const gamevm = Vue.createApp({
             },
             buildingMenu: {
                 hoverIndex: -1,
+                amount:1,
             },
             chartMenu: {
                 currentChart: '',
@@ -435,9 +435,6 @@ const gamevm = Vue.createApp({
                 tech.Unlock(this);
             }
         }
-        const input = `
-                if Wood >= 0 then hire Test until there are 10.
-                `;
         this.generateReservedNames();
     },
     mounted: async function () {
@@ -1206,38 +1203,24 @@ const gamevm = Vue.createApp({
                 }
             }
         },
-        processHistoricalValue(key, data) {
-            if (!this.historicalValues[key]) {
-                this.historicalValues[key] = [];
+        pushHistoricalValues(store, key, idx, data){
+            if (!store[key]) {
+                store[key] = [];
             }
-            let idx = this.currentTick;
             let jsonData = JSON.parse(JSON.stringify(data));
-            this.historicalValues[key].push({ [idx]: jsonData });
-            if (this.historicalValues[key].length >= this.maxHistory) {
-                this.historicalValues[key].shift();
+            store[key].push({ [idx]: jsonData });
+            if (store[key].length >= this.maxHistory) {
+                store[key].shift();
             }
+        },
+        processHistoricalValue(key, data) {
+            this.pushHistoricalValue(this.historicalValues, key, this.currentTick, data);
         },
         processHistoricalValueMinute(key, data) {
-            if (!this.historicalValuesMinute[key]) {
-                this.historicalValuesMinute[key] = [];
-            }
-            let idx = this.minuteTick;
-            let jsonData = JSON.parse(JSON.stringify(data));
-            this.historicalValuesMinute[key].push({ [idx]: jsonData });
-            if (this.historicalValuesMinute[key].length >= this.maxHistory) {
-                this.historicalValuesMinute[key].shift();
-            }
+            this.pushHistoricalValue(this.historicalValuesMinute, key, this.minuteTick, data);
         },
         processHistoricalValueHour(key, data) {
-            if (!this.historicalValuesHour[key]) {
-                this.historicalValuesHour[key] = [];
-            }
-            let idx = this.hourTick;
-            let jsonData = JSON.parse(JSON.stringify(data));
-            this.historicalValuesHour[key].push({ [idx]: jsonData });
-            if (this.historicalValuesHour[key].length >= this.maxHistory) {
-                this.historicalValuesHour[key].shift();
-            }
+            this.pushHistoricalValue(this.historicalValuesHour, key, this.hourTick, data);
         },
         generateAgeBracketChart() {
             const existingChart = Chart.getChart('agebrackets');
@@ -1640,7 +1623,10 @@ const gamevm = Vue.createApp({
             if(!this.missingProfessionCounts[profession.Name]){
                 this.missingProfessionCounts[profession.Name] = 0;
             }
-            this.missingProfessionCounts[profession.Name] += amount;
+            if(profession.Name != 'Unemployed'){
+                this.missingProfessionCounts[profession.Name] += amount;
+            }
+            
         },  
         getHomelessnessRatio() {
             let population = this.getPopulation();
@@ -1823,64 +1809,17 @@ const gamevm = Vue.createApp({
         },
         processUnmetDemand() {
             for (let currency of Object.values(this.currencydata)) {
-                //     if (currency.Name == 'Housing') {
-                //         if (this.getAvailableHousing() < 10) {
-                //             this.unmetdemand['Housing'] += 0.1;
-                //         }
-                //         if (this.getAvailableHousing() > 15) {
-                //             this.unmetdemand['Housing'] = 0;
-                //         }
-                //         continue;
-                //     }
-
-                //     let preCostAmount = this.preCostTickCurrencyValues[currency.Name]?.Amount;
                 let beginTickAmount = this.beginTickCurrencyValues[currency.Name]?.Amount;
                 let endAmount = this.endTickCurrencyValues[currency.Name]?.Amount;
-
-                //     let change = (preCostAmount - beginTickAmount);
                 let dailyChange = (endAmount - beginTickAmount);
                 this.currencyDailyChange[currency.Name] = dailyChange;
-                //     if (currency.Name == 'Space') {
-                //         continue;
-                //     }
-                //     if (change >= 0 && this.demand[currency.Name]) {
-                //         this.modifyDemand(currency.Name, -change, "Met by production ");
-
-                //         if (!this.unmetdemand[currency.Name]) {
-                //             this.unmetdemand[currency.Name] = -change;
-                //         }
-                //         else {
-                //             this.unmetdemand[currency.Name] -= change;
-                //         }
-                //         if (this.unmetdemand[currency.Name] < 0) {
-                //             this.unmetdemand[currency.Name] = 0;
-                //         }
-                //         if (this.demand[currency.Name] < 0) {
-
-                //             this.demand[currency.Name] = 0;
-                //         }
             }
-
-            //     if (endAmount < dailyChange) {
-            //         this.modifyDemand(currency.Name, Math.abs(-change - endAmount), "Lowering stockpiles");
-
-            //     }
-            // }
-
-            // for (let [k, v] of Object.entries(this.unmetdemand)) {
-            //     if (v > 0) {
-            //         this.modifyDemand(k, v, "Unmet demand");
-            //     }
-            // }
         },
         processDemand() {
             this.resetDemands();
             this.processProfessionDemand();
             this.processTechnologyDemand();
             this.processUnmetDemand();
-        },
-        getDailyProduction(currencyName) {
-            return (this.endTickCurrencyValues[currencyName]?.Amount - this.beginTickCurrencyValues[currencyName]?.Amount) * 24;
         },
         getDailyChange(currencyName) {
             return (this.endTickCurrencyValues[currencyName]?.Amount - this.beginTickCurrencyValues[currencyName]?.Amount) * 24;
@@ -2678,9 +2617,6 @@ const gamevm = Vue.createApp({
                 }
             }
             return true;
-            return Object.entries(cost).every(([k, v]) =>
-                this.currencydata[k]?.Amount >= v * amount
-            );
         },
         modifyUnemployed(amount) {
             this.professions.find(x => x.Name == 'Unemployed').Count += amount;
