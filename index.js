@@ -48,6 +48,7 @@ const gamevm = Vue.createApp({
                 Control: false,
             },
             basePopulationGrowthChance: 0.0025,
+            baseChildLaborProductionBoost:0.5,
             civilizationName: "",
             currentMenu: "Main",
             menus: ["Main", "Population", "Stockpiles", "Buildings", "Technology", "Government", "Laws", "Modifiers", "Log", "Charts", "Settings"],
@@ -166,28 +167,31 @@ const gamevm = Vue.createApp({
                     Unlocked: true,
                     Visible: true,
                     Mortal: true,
+                    Description:"Unemployed people gather most of their own food, but they are generally more productive if you assign them a job."
                 },
                 {
                     Name: 'Infant',
                     Count: 3,
                     Cost: {},
                     Produces: {},
-                    BaseDemand: { Food: 0.25 },
+                    BaseDemand: { Food: 0.15 },
                     ModifiedDemand: {},
                     Unlocked: true,
                     Visible: true,
                     Mortal: false,
+                    Description:"Infants require a small amount of food and produce no labor. They turn into children at the age of 1."
                 },
                 {
                     Name: 'Child',
                     Count: 14,
                     Cost: {},
                     Produces: {},
-                    BaseDemand: { Food: 1.25 },
+                    BaseDemand: { Food: 1.05 },
                     ModifiedDemand: {},
                     Unlocked: true,
                     Visible: true,
                     Mortal: false,
+                    Description:"Children provide a production boost to every adult profession. They turn into unemployed workers at the age of 15."
                 },
                 {
                     Name: 'Farmer',
@@ -201,6 +205,7 @@ const gamevm = Vue.createApp({
                     Unlocked: true,
                     Visible: true,
                     Mortal: true,
+                    Description:"Farmers are the lifeblood of the early civilization. They produce food and grain, which can be turned into food later."
                 },
                 // {Name:'Test', Count:0, Cost:{}, Produces:{}, Unlocked:true, Visible:true,},
 
@@ -1229,13 +1234,13 @@ const gamevm = Vue.createApp({
             }
         },
         processHistoricalValue(key, data) {
-            this.pushHistoricalValue(this.historicalValues, key, this.currentTick, data);
+            this.pushHistoricalValues(this.historicalValues, key, this.currentTick, data);
         },
         processHistoricalValueMinute(key, data) {
-            this.pushHistoricalValue(this.historicalValuesMinute, key, this.minuteTick, data);
+            this.pushHistoricalValues(this.historicalValuesMinute, key, this.minuteTick, data);
         },
         processHistoricalValueHour(key, data) {
-            this.pushHistoricalValue(this.historicalValuesHour, key, this.hourTick, data);
+            this.pushHistoricalValues(this.historicalValuesHour, key, this.hourTick, data);
         },
         generateAgeBracketChart() {
             const existingChart = Chart.getChart('agebrackets');
@@ -1577,7 +1582,8 @@ const gamevm = Vue.createApp({
                     continue;
                 }
                 let roll = Math.random();
-                let deaths = Math.round(roll * totalDeathOdds * this.yearlyAgeBuckets[i]);
+                let out = roll * totalDeathOdds * this.yearlyAgeBuckets[i];
+                let deaths = Math.round(out);
                 if (deaths <= 0) {
                     continue;
                 }
@@ -2338,6 +2344,10 @@ const gamevm = Vue.createApp({
                 count = customAmount;
             }
             const [additiveModifiers, multModifiers] = this.getProductionModifiers(producer.Name);
+            let childLaborProductionBoost = 0;
+            if(this.getPopulation() > 0){
+                childLaborProductionBoost = this.baseChildLaborProductionBoost * (this.getChildPopulation() / this.getPopulation());
+            }
             const allKeys = new Set([
                 ...Object.keys(producer.Produces),
                 ...Object.keys(additiveModifiers)
@@ -2349,7 +2359,7 @@ const gamevm = Vue.createApp({
                 let totalBase = baseProduction * count;
                 let withRatio = totalBase * this.getWorkRatio();
                 let withMult = withRatio * (multModifiers[currency] || 1);
-                let produced = withMult;
+                let produced = withMult * (1 + childLaborProductionBoost);
                 output.push([currency, produced]);
             }
 
@@ -2395,6 +2405,9 @@ const gamevm = Vue.createApp({
                 return {};
             }
             const [additiveModifiers, multModifiers] = this.getProductionModifiers(profession.Name);
+            if(this.getPopulation() > 0){
+                childLaborProductionBoost = this.baseChildLaborProductionBoost * (this.getChildPopulation() / this.getPopulation());
+            }
             const allKeys = new Set([
                 ...Object.keys(profession.Produces),
                 ...Object.keys(additiveModifiers)
@@ -2406,7 +2419,7 @@ const gamevm = Vue.createApp({
                 let baseProduction = producedAmount + additive;
                 let withRatio = baseProduction * this.getWorkRatio();
                 let withMult = withRatio * (multModifiers[currency] || 1);
-                let produced = withMult;
+                let produced = withMult * (1 + childLaborProductionBoost);
                 o.push([currency, this.formatNumber(produced)]);
             }
 
@@ -2436,6 +2449,11 @@ const gamevm = Vue.createApp({
         },
         addToImportantStockpilesList(currencyName){
             this.stockpileMenu.importantStockpiles.push(currencyName);
+        },
+        getTechnologyFocusDescription(technology) {
+            //Get production modifiers caused by the tech
+            let output = '';
+
         },
         hireByName(name) {
             let prof = this.professions.find(x => x.Name == name);
@@ -2638,6 +2656,58 @@ const gamevm = Vue.createApp({
         },
         getAdultPopulation() {
             return this.professions.filter(x => x.Name != 'Infant' && x.Name != 'Child').map(x => x.Count).reduce((a, b) => a + b);
+        },
+        getChildPopulation() {
+            return this.professions.find(x => x.Name == 'Child').Count;
+        },
+        getEffectivePopulation(){
+            let infant = this.professions.find(x => x.Name == 'Infant').Count * 0.1;
+            let child = this.professions.find(x => x.Name == 'Child').Count * 0.3;
+            let adult = this.getAdultPopulation();
+            return infant + child + adult;
+        },
+        test_ResetPopulation(){
+            for(let profession of this.professions){
+                profession.Count = 0;
+            }
+            for(let i = 0; i < this.yearlyAgeBuckets.length; i++){
+                this.yearlyAgeBuckets[i] = 0;
+            }
+            for(let i = 0; i < this.monthlyAgeBuckets.length; i++){
+                this.monthlyAgeBuckets[i] = 0;
+            }
+        },
+        test_SetPopulation(adults, children, infants){
+            for(let i = 0; i < adults; i++){
+                this.professions.find(x => x.Name == 'Unemployed').Count += 1;
+                let randomAge = Math.floor(Math.random() * (60 - 15 + 1)) + 15;
+                this.yearlyAgeBuckets[randomAge] += 1;
+            }
+            for(let i = 0; i < children; i++){
+                this.professions.find(x => x.Name == 'Child').Count += 1;
+                let randomAge = Math.floor(Math.random() * (14 - 2 + 1)) + 2;
+                this.yearlyAgeBuckets[randomAge] += 1;
+            }
+            for(let i = 0; i < infants; i++){
+                this.professions.find(x => x.Name == 'Infant').Count += 1;
+                let randomAge = Math.floor(Math.random() * 12);
+                this.monthlyAgeBuckets[randomAge] += 1;
+            }
+            let max = adults;
+            let farmers = this.professions.find(x => x.Name == 'Farmer');
+            this.processDemand();
+            let totalConsumption = this.demand['Food'] ?? 0;
+            while(max > 0){
+                let prod = this.getActualProduction(farmers);
+                let foodProd = prod.find(x => x[0] == 'Food')[1];
+                if(foodProd >= totalConsumption){
+                    break;
+                }
+                max -= 1;
+                this.hire(farmers, 1);
+                this.processDemand();
+            }
+            console.log(this.professions);
         },
         getAvailableWorkers() {
             return this.professions.find(x => x.Name == 'Unemployed').Count;
