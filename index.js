@@ -2357,14 +2357,15 @@ const gamevm = Vue.createApp({
                 ...Object.keys(producer.Produces),
                 ...Object.keys(additiveModifiers)
             ]);
+
             for (const currency of allKeys) {
                 const producedAmount = producer.Produces[currency] ?? 0;
                 const additive = additiveModifiers[currency] ?? 0;
-                let baseProduction = producedAmount + additive;
+                let baseMult = (multModifiers[currency] || 1) * (multModifiers['All'] || 1);
+                let baseProduction = (producedAmount + additive) * baseMult;
                 let totalBase = baseProduction * count;
                 let withRatio = totalBase * this.getWorkRatio();
-                let withMult = withRatio * (multModifiers[currency] || 1);
-                let produced = withMult * (1 + childLaborProductionBoost);
+                let produced = withRatio * (1 + childLaborProductionBoost);
                 output.push([currency, produced]);
             }
 
@@ -2394,7 +2395,7 @@ const gamevm = Vue.createApp({
                                     multModifiers[boost.Currency] = boost.Amount;
                                 }
                                 else {
-                                    multModifiers[boost.Currency] += boost.Amount;
+                                    multModifiers[boost.Currency] *= boost.Amount;
                                 }
                             }
                         }
@@ -2409,29 +2410,9 @@ const gamevm = Vue.createApp({
             if (!profession.Produces) {
                 return {};
             }
-            const [additiveModifiers, multModifiers] = this.getProductionModifiers(profession.Name);
-            let childLaborProductionBoost = 0;
-            if(this.getPopulation() > 0){
-                childLaborProductionBoost = this.baseChildLaborProductionBoost * (this.getChildPopulation() / this.getPopulation());
-            }
-            const allKeys = new Set([
-                ...Object.keys(profession.Produces),
-                ...Object.keys(additiveModifiers)
-            ]);
-            let o = [];
-            for (const currency of allKeys) {
-                const producedAmount = profession.Produces[currency] ?? 0;
-                const additive = additiveModifiers[currency] ?? 0;
-                let baseProduction = producedAmount + additive;
-                let withRatio = baseProduction * this.getWorkRatio();
-                let withMult = withRatio * (multModifiers[currency] || 1);
-                let produced = withMult * (1 + childLaborProductionBoost);
-                o.push([currency, this.formatNumber(produced)]);
-            }
-
             let output = {};
-            for (let [k, v] of o) {
-                output[k] = v;
+            for (let [currency, produced] of this.getActualProduction(profession, 1)) {
+                output[currency] = this.formatNumber(produced);
             }
             return output;
         },

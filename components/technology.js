@@ -19,7 +19,6 @@ export default {
     delimiters: ['[[', ']]'],
     template: /*html*/`
     <div class="grid-item">
-        <h1 class="display-6 mb-4">The Technology of [[$parent.civilizationName]]</h1>
         <div>Current Stockpiled Knowledge: [[$parent.formatNumber($parent.currencydata['Knowledge'].Amount)]]</div>
         <div><button class="btn btn-primary" @click="$parent.technologyMenu.showCompleted = !$parent.technologyMenu.showCompleted">Show
                 Completed</button></div>

@@ -313,6 +313,32 @@ export default [
         isLocked: true,
     },
     {
+        "Name": "Iron Metalworker",
+        "Type": "Profession",
+        "Cost": { "Food": 100 },
+        "Requirements": { "Technologies": ["Iron Tools"] },
+        "BaseDemand": { 'Food': 1.5, 'Iron': 1 },
+        "ModifiedDemand": {},
+        Unlock(vm) {
+            vm.professions.push(
+                {
+                    Name: 'Iron Metalworker',
+                    Count: 0,
+                    Cost: { 'Food': 2.4, 'Iron': 0.25, },
+                    Produces: { 'Iron Tools': 0.25 },
+                    Unlocked: true,
+                    Visible: true,
+                    Mortal:true,
+                    "BaseDemand": { 'Food': 1.5, 'Iron': 1 },
+                    "ModifiedDemand": {},
+                }
+            )
+            vm.logit("Heat the gray rocks, they melt.");
+            this.isLocked = false;
+        },
+        isLocked: true,
+    },
+    {
         "Name": "Surveyor",
         "Type": "Profession",
         "Cost": { "Food": 100, "Wood": 100 },

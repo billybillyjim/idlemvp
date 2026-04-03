@@ -1359,7 +1359,7 @@ export default [
         Name: "Irrigation Systems",
         Description: "We can get water closer to our other fields if we have a bunch of guys all dig together.",
         Cost: {},
-        Requirements: { Technologies: ["Corvée Labor", "Dirt Roads", "Plumb Line"] },
+        Requirements: { Technologies: ["Corvée Labor", "Dirt Roads", "Plumb Line", "Basic Irrigation"] },
         Progress: 0,
         Visible: false,
         Complexity: 25000,
