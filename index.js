@@ -9,6 +9,7 @@ import laws from './components/laws.js'
 import Tooltip from './components/tooltip.js'
 import tooltipwrapper from './components/tooltipwrapper.js'
 import codetester from './components/codetest.js'
+import stockpiles from './components/stockpiles.js'
 
 import pluralize from './lib/pluralize.js'
 import weather from './lib/weather.js'
@@ -33,7 +34,8 @@ const gamevm = Vue.createApp({
         laws,
         codetester,
         Tooltip,
-        tooltipwrapper
+        tooltipwrapper,
+        stockpiles
     },
     delimiters: ['[[', ']]'],
     data: function () {
@@ -2102,6 +2104,9 @@ const gamevm = Vue.createApp({
             }
         },
         nationCanGrow(includeReason = false) {
+            if(!this.previousTickUncappedProductionValues){
+                return false;
+            }
             let foodProd = this.previousTickUncappedProductionValues['Food'];
             let waterProd = this.previousTickUncappedProductionValues['Water'];
             let foodConsumpt = this.previousTickConsumptionValues['Food'];
@@ -2405,6 +2410,7 @@ const gamevm = Vue.createApp({
                 return {};
             }
             const [additiveModifiers, multModifiers] = this.getProductionModifiers(profession.Name);
+            let childLaborProductionBoost = 0;
             if(this.getPopulation() > 0){
                 childLaborProductionBoost = this.baseChildLaborProductionBoost * (this.getChildPopulation() / this.getPopulation());
             }
@@ -2453,7 +2459,21 @@ const gamevm = Vue.createApp({
         getTechnologyFocusDescription(technology) {
             //Get production modifiers caused by the tech
             let output = '';
-
+            for(let prodMod of this.productionModifiers){
+                if(prodMod.Requirements && prodMod.Requirements.Technologies){
+                    if(prodMod.Requirements.Technologies[0] == technology.Name){
+                        output += this.getProductionModifierDescription(prodMod);
+                    }
+                }
+            }
+            return output;
+        },
+        getProductionModifierDescription(prodMod){
+            let output = '';
+            for(let boost of prodMod.Boosts){
+                output += `${boost.ModifierType == 'Additive' ? `+ ${boost.Amount}` : (boost.Amount * 100) + '%'} ${boost.Currency} production boost for ${boost.Name}.\n`;
+            }
+            return output;
         },
         hireByName(name) {
             let prof = this.professions.find(x => x.Name == name);

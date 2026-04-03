@@ -1,6 +1,12 @@
+import tooltipwrapper from './tooltipwrapper.js'
+
 export default {
+        components: {
+            tooltipwrapper
+        },
     props: {
-      data: Object
+      data: Object,
+      fulldisplaymode:true,
     },    
     data: function(){
         return {
@@ -11,37 +17,58 @@ export default {
 
     },
     delimiters: ['[[', ']]'],
-    template: `
+    template: /*html*/`
     <div class="grid-item">
-        <h4>Technology</h4>
-        <div><button class="btn btn-primary" @click="showCompleted = !showCompleted">Show Completed</button></div>
+        <h1 class="display-6 mb-4">The Technology of [[$parent.civilizationName]]</h1>
+        <div>Current Stockpiled Knowledge: [[$parent.formatNumber($parent.currencydata['Knowledge'].Amount)]]</div>
+        <div><button class="btn btn-primary" @click="$parent.technologyMenu.showCompleted = !$parent.technologyMenu.showCompleted">Show
+                Completed</button></div>
         <div>
-            <table class="table table-striped">
+            <table class="table table-striped" style="table-layout: fixed; width: 100%;">
                 <thead>
                     <tr>
-                        <th>Technology</th>
-                        <th>Progress</th>
-                        <th>Focus</th>
+                        <th style="width: 33%;">Technology</th>
+                        <th style="width: 34%;">Progress</th>
+                        <th style="width: 33%;">Focus</th>
                     </tr>
                 </thead>
                 <tbody>
-                    <template v-for="technology in this.$parent.getTechnologies()">
-                        <tr v-if="technology.isLocked || showCompleted">
+                    <template v-for="technology in $parent.getTechnologies(true, true)">
+                        <tr v-if="technology.isLocked || $parent.technologyMenu.showCompleted">
                             <td>
-                                [[technology.Name]]
+                                <tooltipwrapper :vm="$parent" :text="technology.Description">
+                                    [[technology.Name]]
+                                </tooltipwrapper>
                             </td>
                             <td>
-                                [[$parent.formatNumber(technology.Progress)]] / [[ $parent.formatNumber(technology.Complexity) ]]   
+                                <tooltipwrapper :vm="$parent" :calcfrom="() => $parent.getTechnologyProgressDescription(technology)">
+                                    [[$parent.formatNumber(technology.Progress)]] / [[
+                                    $parent.formatNumber(technology.Complexity) ]]
+                                </tooltipwrapper>
+
+                                <div class="progress" style="height: 24px;">
+                                    <div class="progress-bar" role="progressbar" :style="{ width: (technology.Progress / technology.Complexity * 100) + '%' }" :aria-valuenow="technology.Progress"
+                                        :aria-valuemin="0" :aria-valuemax="technology.Complexity">
+                                    </div>
+                                </div>
                             </td>
                             <td>
-                                <button v-if="technology.isLocked" class="btn btn-primary m-2" :disabled="this.$parent.focusedTechnology == technology" @click="$parent.focusTechnology(technology)">[[this.$parent.focusedTechnology == technology ? 'Focused' : 'Focus']]</button>      
+                                <button v-if="technology.isLocked" class="btn btn-primary m-2 btn-sm" :style="$parent.focusedTechnology == technology ? 'opacity:0.65' : ''" @click="$parent.focusTechnology(technology)">
+                                    <tooltipwrapper :vm="$parent" 
+                                    :calcfrom="() => $parent.getTechnologyFocusDescription(technology)"
+                                    >
+                                        [[$parent.focusedTechnology == technology ? 'Focused' : 'Focus']]
+                                    </tooltipwrapper>
+                                </button>
                             </td>
                         </tr>
                     </template>
+                    <tr v-if="$parent.getTechnologies().length == 0">
+                        <td colspan="1000">No one has any ideas for any technologies right now.</td>
+                    </tr>
                 </tbody>
             </table>
         </div>
     </div>
-    
     `
   }

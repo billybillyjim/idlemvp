@@ -147,3 +147,12 @@ Bureaucracy:
 
 Meritocracy:
 
+
+What is left to make this an actual game/MVP:
+1. failure must push the player forward somehow. If you wake up to a dead civ, get some kind of boost.
+2. add a way to make sure the tech graph flows nicely in the test tool
+3. make sure the techs work
+4. add buildings to make more stuff interesting 
+5. give up on govt and ideas for now.
+6. more useful info on the buttons so players can make informed decisions.
+7. tutorial leads to numbers. tehy can even be nonsensically easy to unlock
