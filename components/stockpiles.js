@@ -31,6 +31,8 @@ export default {
     delimiters: ['[[', ']]'],
     template: /*html*/`
     <div class="grid-item">
+
+        <h4 class="my-2" v-if="!fulldisplaymode">Stockpiles</h4>
         <div>
             <table class="table table-striped" style="table-layout: fixed; width: 100%;">
                 <thead>
@@ -79,8 +81,11 @@ export default {
 
                             </td>
                             <td v-if="fulldisplaymode">
-                                <button class="btn btn-primary" v-if="$parent.stockpileMenu.importantStockpiles.includes(currency.Name)" @click="$parent.removeFromImportantStockpilesList(currency.Name)">Hide</button>
-                                <button class="btn btn-primary" v-else @click="$parent.addToImportantStockpilesList(currency.Name)">Show in Main Tab</button>
+                                <tooltipwrapper :vm="$parent" :ishtml="true" :calcfrom="() => $parent.getCurrencyStorageUpgradeCostDescription(currency.Name)">
+                                    <button class="btn btn-primary btn-sm m-2" :disabled="!$parent.canAffordCurrencyStorageUpgrade(currency.Name)" @click="$parent.upgradeCurrencyStorage(currency.Name, 1)">Upgrade Storage</button>
+                                </tooltipwrapper>
+                                <button class="btn btn-primary btn-sm m-2" v-if="$parent.stockpileMenu.importantStockpiles.includes(currency.Name)" @click="$parent.removeFromImportantStockpilesList(currency.Name)">Hide</button>
+                                <button class="btn btn-primary btn-sm m-2" v-else @click="$parent.addToImportantStockpilesList(currency.Name)">Show in Main Tab</button>
                             </td>
                         </tr>
                     </template>

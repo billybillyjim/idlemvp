@@ -21,11 +21,11 @@ export default {
 		},
 	},
 	template: `
-   <span 
+   <span "
         @pointermove="setTooltipData(text, ishtml, $event, calcfrom)"
         @pointerenter="setTooltipData(text, ishtml, $event, calcfrom)"
         @pointerleave="clearTooltipData()">
-      <slot></slot>
+      <slot :style="text ? '' : 'display:none'"></slot>
     </span>
   `
 };

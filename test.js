@@ -44,7 +44,7 @@ const testvm = Vue.createApp({
             if(!this.gameApp) return 0;
             let farmer = this.gameApp.professions.find(x => x.Name == 'Farmer');
             let prod = this.gameApp.getActualProduction(farmer);
-            console.log(prod, farmer.Count);
+            //console.log(prod, farmer.Count);
             let foodProd = prod.find(x => x[0] == 'Food')[1];
             return foodProd
         },
@@ -113,6 +113,44 @@ const testvm = Vue.createApp({
             farmerProf.Count = 0;
             unemployedProf.Count = maxFarmers - infants - children - lo;
             return [lo, unemployedProf.Count ];
+        },
+        testTechTimes(){
+            if (!this.gameApp) return;
+            let maxTicks = 4000;
+            this.gameApp.isPaused = false;
+            this.gameApp.settingsMenu.autoSaveEnabled = false;
+            this.gameApp.settingsMenu.enableCharts = false;
+            for(let i = 0; i < maxTicks; i++){
+                this.gameApp.gameTick();
+                this.testTechTimes_FocusTech();
+                let foodProd = this.getGameAppFoodProduction();
+                let foodDemand = this.gameApp.demand['Food'] ?? 0;
+                if(foodProd < foodDemand){
+                    let farmer = this.gameApp.professions.find(x => x.Name == 'Farmer');
+                    this.gameApp.hire(farmer, 1);
+                    console.log("Hired a farmer");
+                }
+                if(i % 1000 == 0){
+                    console.log(`Tick ${i+1}: Food Production = ${foodProd}, Food Demand = ${foodDemand}`);
+                }
+
+            }
+            this.gameApp.isPaused = true;
+        },
+        testTechTimes_FocusTech(){
+            if(this.gameApp.focusedTechnology){
+            }
+            else{
+                for(let t of this.gameApp.getTechnologies(true, true)){
+                    if(t.isLocked){
+                        this.gameApp.focusTechnology(t);
+                        break;
+                    }
+                }
+            }
+            if(!this.gameApp.focusedTechnology){
+                console.log("No available tech to focus on.");
+            }
         },
         findOptimalRatios(){
             if (!this.gameApp) return;

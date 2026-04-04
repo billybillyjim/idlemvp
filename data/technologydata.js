@@ -224,6 +224,25 @@ export default [
         },
     },
     {
+        Name: "Iron Tools",
+        Description: "What if we used the iron we make for farming tools?",
+        Cost: { "Iron": 1000 },
+        Requirements: { Technologies: ["Iron Metal", "Metal Casting"] },
+        Progress: 0,
+        Visible: false,
+        Complexity: 5000,
+        isLocked: true,
+        demandModifiers: {
+            Global: {},
+            PerCapita: { 'Iron': 0.001 },
+            Farmer: { 'Iron Tools': 0.01 }
+        },
+        Unlock(vm) {
+            vm.logit("Our farmers can harvest more easily with iron sickles. Our people are beginning to want iron for all sorts of things now.");
+            this.isLocked = false;
+        },
+    },
+    {
         Name: "Crop Rotations",
         Description: "Maybe we should grow our crops in different spots every year.",
         Cost: { "Food": 5000 },
@@ -353,7 +372,7 @@ export default [
     {
         Name: "Loom",
         Description: "Maybe we can combine strands of fiber into a sheet.",
-        Cost: { "Fibers": 700 },
+        Cost: { },
         Requirements: { Technologies: ["Spinning Wheel"] },
         Progress: 0,
         Visible: false,
@@ -407,7 +426,7 @@ export default [
     {
         Name: "Saddle Quern",
         Description: "Grind grain into a tasty dust.",
-        Cost: { "Stone": 1000, "Food": 1000 },
+        Cost: { "Stone": 1000 },
         Requirements: { Technologies: ["Stone Tools"] },
         Progress: 0,
         Visible: false,
@@ -443,8 +462,8 @@ export default [
     {
         Name: "Taxation",
         Description: "It's not like we can keep doing all this for free.",
-        Requirements: { Technologies: ["Solar Calendar", "Numbers", "Basic Societal Structure", "Basic Laws"] },
-        Cost: { "Food": 10000 },
+        Requirements: { Technologies: ["Lunar Calendar", "Numbers", "Basic Societal Structure", "Basic Laws"] },
+        Cost: { },
         Progress: 0,
         Visible: false,
         Complexity: 1500,
@@ -461,7 +480,7 @@ export default [
     {
         Name: "Corvée Labor",
         Description: "We could enable greater public work projects if we can find a way to get people to work for free.",
-        Cost: { "Food": 50000 },
+        Cost: { },
         Requirements: { Technologies: ["Taxation"] },
         Progress: 0,
         Visible: false,
@@ -480,7 +499,7 @@ export default [
         Name: "The Wheel",
         Description: "Spin the wheeeeel.",
         Requirements: { Technologies: ["Measuring Sticks"] },
-        Cost: { "Wood": 2000, "Food": 1000 },
+        Cost: { },
         Progress: 0,
         Visible: false,
         Complexity: 314,
@@ -497,7 +516,7 @@ export default [
     {
         Name: "Lunar Calendar",
         Description: "Have you ever noticed the moon? There's some kind of pattern going on there.",
-        Cost: { "Wood": 5000 },
+        Cost: { },
         Requirements: { Technologies: ["Numbers"] },
         Progress: 0,
         Visible: false,
@@ -515,7 +534,7 @@ export default [
     {
         Name: "Solar Calendar",
         Description: "The moon is great, but it seems that over time our seasons drift apart from our calendar. Maybe we can use the sun and stars for something more accurate.",
-        Cost: { "Food": 10000, "Wood": 10000 },
+        Cost: { },
         Requirements: { Technologies: ["Lunar Calendar", "Star Chart", "Intercalary Months"] },
         Progress: 0,
         Visible: false,
@@ -551,7 +570,7 @@ export default [
     {
         Name: "Dirt Roads",
         Description: "It's much easier to get around without all that stuff in the way.",
-        Cost: { "Food": 1000, "Wood": 1000, "Ore": 1000 },
+        Cost: { },
         Requirements: { Technologies: ["Measuring Sticks", "Rope", "Stone Tools", "Corvée Labor"] },
         Progress: 0,
         Visible: false,
@@ -569,7 +588,7 @@ export default [
     {
         Name: "Palisades",
         Description: "Spooky, scary, pointy sticks.",
-        Cost: { "Wood": 3000 },
+        Cost: { },
         Requirements: { Technologies: ["Rope"] },
         Progress: 0,
         Visible: false,
@@ -605,7 +624,7 @@ export default [
     {
         Name: "Writing",
         Description: "So that's what all those squiggles mean!",
-        Cost: { "Food": 5000 },
+        Cost: { },
         Requirements: { Technologies: ["Measuring Sticks", "Clay Bullae"] },
         Progress: 0,
         Visible: false,
@@ -623,7 +642,7 @@ export default [
     {
         Name: "Animal Domestication",
         Description: "Watch this cow do cool tricks.",
-        Cost: { "Food": 1500 },
+        Cost: {  },
         Requirements: { Technologies: [] },
         Progress: 0,
         Visible: false,
@@ -641,7 +660,7 @@ export default [
     {
         Name: "Selective Breeding",
         Description: "Better cows might make better cows.",
-        Cost: { "Food": 1600 },
+        Cost: { },
         Requirements: { Technologies: ["Animal Domestication"] },
         Progress: 0,
         Visible: false,
@@ -659,12 +678,12 @@ export default [
     {
         Name: "Numbers",
         Description: "There is a theory that we could write down a symbol for the amount of bullae we would use, instead of using them. We will have to research further.",
-        Cost: { "Food": 3000, "Wood": 2000 },
+        Cost: {},
         Requirements: { Technologies: ["Measuring Sticks", "Writing"] },
         Progress: 0,
         Visible: false,
         Complexity: 1234,
-        isLocked: false,
+        isLocked: true,
         demandModifiers: {
             Global: {},
             PerCapita: {},
@@ -677,7 +696,7 @@ export default [
     {
         Name: "Cheese",
         Description: "Okay, hear me out. We take the cow's milk, and put it back in their stomach, and then we eat it.",
-        Cost: { "Food": 15000 },
+        Cost: { },
         Requirements: { Technologies: ["Animal Domestication", "Fermentation"] },
         Progress: 0,
         Visible: false,

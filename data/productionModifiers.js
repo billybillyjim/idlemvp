@@ -229,8 +229,8 @@ export default [
     {
         Name:"Bee Keeping",
         Boosts:[
-            {Name:"Unemployed", Currency:"Wax", ModifierType:"Additive", Amount:0.15},
-            {Name:"Farmer", Currency:"Wax", ModifierType:"Additive", Amount:0.1},
+            {Name:"Unemployed", Currency:"Food", ModifierType:"Additive", Amount:0.15},
+            {Name:"Farmer", Currency:"Food", ModifierType:"Additive", Amount:0.1},
         ],
         Requirements:{
             Technologies:["Wax"]

@@ -1,5 +1,5 @@
 
-import house from './components/house.js'
+import buildings from './components/buildings.js'
 import population from './components/population.js'
 import timeinfo from './components/timeinfo.js'
 import currencies from './components/currencies.js'
@@ -25,7 +25,7 @@ import buildingdata from './data/buildingdata.js'
 
 const gamevm = Vue.createApp({
     components: {
-        house,
+        buildings,
         population,
         currencies,
         timeinfo,
@@ -78,6 +78,7 @@ const gamevm = Vue.createApp({
                 logsDisabled: false,
                 renderDate: true,
                 renderWeather: true,
+                autoSaveEnabled: true,
             },
             government: {
                 currentLeader: {
@@ -439,7 +440,7 @@ const gamevm = Vue.createApp({
         for (let tech of this.technologies) {
             this.techDict[tech.Name] = tech;
             if ((location.hostname === "localhost" || location.hostname === "127.0.0.1") && this.testMode) {
-                tech.Unlock(this);
+                // tech.Unlock(this);
             }
         }
         this.generateReservedNames();
@@ -588,7 +589,7 @@ const gamevm = Vue.createApp({
             if (this.testMode) {
                 return this.menus;
             }
-            let alwaysAvailable = ["Main", "Population", "Stockpiles", "Technology", "Government", "Charts"];
+            let alwaysAvailable = ["Main", "Population", "Buildings", "Stockpiles", "Technology", "Government", "Charts"];
             if (this.hasTechnology('Firemaking')) {
                 alwaysAvailable.push("Buildings");
             }
@@ -1085,7 +1086,7 @@ const gamevm = Vue.createApp({
             this.processDeaths();
         },
         handlePeriodicTasks() {
-            if (this.currentTick % 100 == 0) {
+            if (this.currentTick % 100 == 0 && this.settingsMenu.autoSaveEnabled) {
                 this.saveState(this.$data);
             }
             if (this.checkHistoricalValues && this.settingsMenu.enableCharts) {
@@ -1505,17 +1506,35 @@ const gamevm = Vue.createApp({
             if (currency.Type == 'Nonphysical Good') {
                 return -1;
             }
-            let base = 1000;
-            for (let building of this.buildingdata) {
-                if (building.Stores) {
-
-                    let storage = building.Stores[currencyName] * building.Count;
-                    if (storage) {
-                        base += storage;
-                    }
-                }
+            return currency.MaxStock;
+        },
+        getCurrencyStorageUpgradeCostDescription(currencyName) {
+            let currency = this.currencydata[currencyName];
+            if (currency.Type == 'Nonphysical Good') {
+                return 'This currency has no physical storage, so you can\'t upgrade it even if you want to. You might wonder why this button even exists, then. What is the purpose of a button that you can\'t ever click? Is it just a waste of space? I mean, yeah, kinda.';
             }
-            return base;
+            let cost = currency.MaxStock / 2;
+            return `Upgrade ${currencyName} storage by 2x for the cost of ${this.formatNumber(cost)} <img class="image-icon" src="${currency.Icon}" />.`;
+        },
+        canAffordCurrencyStorageUpgrade(currencyName) {
+            let currency = this.currencydata[currencyName];
+            if (currency.Type == 'Nonphysical Good') {
+                return false;
+            }
+            let cost = currency.MaxStock / 2;
+            return this.canAfford({ [currencyName]: cost });
+        },
+        upgradeCurrencyStorage(currencyName, amount) {
+            let currency = this.currencydata[currencyName];
+            if (currency.Type == 'Nonphysical Good') {
+                return false;
+            }
+            let cost = currency.MaxStock / 2;
+            if(this.buy({ [currencyName]: cost }, 1, `Upgrading ${currencyName} Storage`)){
+                currency.MaxStock *= 2;
+                return true;
+            }
+            return false;
         },
         getCurrencyByName(currencyName) {
             return this.currencydata[currencyName];
@@ -1895,6 +1914,7 @@ const gamevm = Vue.createApp({
                 else if (this.currentGoalLevel == 6) {
                     this.incrementGoalLevel(7);
                 }
+                console.log("Finished technology:", this.focusedTechnology.Name, this.currentTick * this.tickspeed / 1000, "seconds");
                 this.focusedTechnology = null;
 
             }
@@ -2439,7 +2459,7 @@ const gamevm = Vue.createApp({
         },
         getTechnologyFocusDescription(technology) {
             //Get production modifiers caused by the tech
-            let output = '';
+            let output = technology.Description + '\n';
             for(let prodMod of this.productionModifiers){
                 if(prodMod.Requirements && prodMod.Requirements.Technologies){
                     if(prodMod.Requirements.Technologies[0] == technology.Name){
@@ -2447,12 +2467,48 @@ const gamevm = Vue.createApp({
                     }
                 }
             }
+            //Get unlocked buildings from tech
+            //Is this evil? I mean, kinda yeah but it's JS so might as well take advantage
+            let src = technology?.Unlock?.toString?.() ?? "";
+            const getCalls = (fnName) =>
+                [...src.matchAll(new RegExp(`\\b${fnName}\\s*\\(\\s*['"\`]([^'"\`]+)['"\`]\\s*\\)`, "g"))]
+                .map(m => m[1]);
+
+            let buildings = getCalls("unlockBuilding");
+            if(buildings.length > 0){
+                output += `Unlocks the following buildings: ${buildings.join(', ')}.\n`;
+            }
+            let currencies = getCalls("unlockCurrency");
+            if(currencies.length > 0){
+                output += `Unlocks the following currencies:\n`;
+                for(let c of currencies){
+                    let currency = this.currencydata[c];
+                    if(currency){
+                        output += `- <img class="image-icon" src="${currency.Icon}" /> ${currency.Name}\n`;
+                    }
+                    else{
+                        console.error("Invalid currency unlocked by tech:", c, "in tech", technology.Name);
+                    }
+                }
+            }
+                
             return output;
         },
         getProductionModifierDescription(prodMod){
             let output = '';
             for(let boost of prodMod.Boosts){
-                output += `${boost.ModifierType == 'Additive' ? `+ ${boost.Amount}` : (boost.Amount * 100) + '%'} ${boost.Currency} production boost for ${boost.Name}.\n`;
+                if(boost.Currency == 'All'){
+                    output += `${boost.ModifierType == 'Additive' ? `+ ${this.formatNumber(boost.Amount)}` : '+' + this.formatNumber((boost.Amount - 1) * 100) + '%'} <img class="image-icon" src="/icons/world.svg" /> for all production.\n`;
+
+                }
+                else{
+                    let c = this.currencydata[boost.Currency];
+                    if(!c){
+                        console.error("Invalid currency for production modifier boost:", boost.Currency, prodMod);
+                    }
+                    output += `${boost.ModifierType == 'Additive' ? `+ ${this.formatNumber(boost.Amount)}` : '+' + this.formatNumber((boost.Amount - 1) * 100) + '%'} <img class="image-icon" src="${c.Icon}" /> for ${this.toProperPluralize(boost.Name, 2)}.\n`;
+
+                }
             }
             return output;
         },
@@ -3087,7 +3143,10 @@ const gamevm = Vue.createApp({
             return description.join(", ");
         },
         getRelativeNumber(n) {
-            if (n <= 0) {
+            if(n < 0){
+                return "Going Down";
+            }
+            if (n == 0) {
                 return "None";
             }
             if (n < 1) {

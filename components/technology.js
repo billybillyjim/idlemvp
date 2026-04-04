@@ -18,10 +18,12 @@ export default {
     },
     delimiters: ['[[', ']]'],
     template: /*html*/`
-    <div class="grid-item">
+    <div class="grid-item col">
+        <h4 class="my-2" v-if="!fulldisplaymode">Technology</h4>
         <div>Current Stockpiled Knowledge: [[$parent.formatNumber($parent.currencydata['Knowledge'].Amount)]]</div>
-        <div><button class="btn btn-primary" @click="$parent.technologyMenu.showCompleted = !$parent.technologyMenu.showCompleted">Show
-                Completed</button></div>
+        <div v-if="fulldisplaymode">
+            <button class="btn btn-primary" @click="$parent.technologyMenu.showCompleted = !$parent.technologyMenu.showCompleted">Show Completed</button>
+        </div>
         <div>
             <table class="table table-striped" style="table-layout: fixed; width: 100%;">
                 <thead>
@@ -53,9 +55,7 @@ export default {
                             </td>
                             <td>
                                 <button v-if="technology.isLocked" class="btn btn-primary m-2 btn-sm" :style="$parent.focusedTechnology == technology ? 'opacity:0.65' : ''" @click="$parent.focusTechnology(technology)">
-                                    <tooltipwrapper :vm="$parent" 
-                                    :calcfrom="() => $parent.getTechnologyFocusDescription(technology)"
-                                    >
+                                    <tooltipwrapper :vm="$parent" :ishtml="true" :calcfrom="() => $parent.getTechnologyFocusDescription(technology)">
                                         [[$parent.focusedTechnology == technology ? 'Focused' : 'Focus']]
                                     </tooltipwrapper>
                                 </button>
