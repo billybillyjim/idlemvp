@@ -165,7 +165,7 @@ const gamevm = Vue.createApp({
                     Count: 5,
                     Cost: {},
                     Produces: { 'Food': 0.8 },
-                    BaseDemand: { Food: 4 },
+                    BaseDemand: { Food: 4, Water:2 },
                     ModifiedDemand: {},
                     Unlocked: true,
                     Visible: true,
@@ -177,7 +177,7 @@ const gamevm = Vue.createApp({
                     Count: 3,
                     Cost: {},
                     Produces: {},
-                    BaseDemand: { Food: 0.15 },
+                    BaseDemand: { Food: 0.15, Water:0.1 },
                     ModifiedDemand: {},
                     Unlocked: true,
                     Visible: true,
@@ -189,7 +189,7 @@ const gamevm = Vue.createApp({
                     Count: 14,
                     Cost: {},
                     Produces: {},
-                    BaseDemand: { Food: 1.05 },
+                    BaseDemand: { Food: 1.05, Water:0.2 },
                     ModifiedDemand: {},
                     Unlocked: true,
                     Visible: true,
@@ -202,7 +202,8 @@ const gamevm = Vue.createApp({
                     Cost: {},
                     Produces: { 'Food': 10.0, 'Grain': 5, },
                     BaseDemand: {
-                        Food: 4
+                        Food: 4,
+                        Water:4,
                     },
                     ModifiedDemand: {},
                     Unlocked: true,
@@ -415,6 +416,7 @@ const gamevm = Vue.createApp({
                 0.957970,
                 1.000000
             ],
+            starvationDeathOdds:0.15,
             charts: [{ Name: 'UnmetDemands' }, { Name: 'Currencies' }, { Name: 'Population' }, { Name: 'Real Production' }, { Name: 'Uncapped Production' }, { Name: 'agebrackets' }],
             keyColors: {
                 'Space': 'rgba(224, 224, 224, 1)',
@@ -1080,7 +1082,6 @@ const gamevm = Vue.createApp({
             this.preCostTickCurrencyValues = JSON.parse(JSON.stringify(this.currencydata));
             this.processCosts();
             this.endTickCurrencyValues = JSON.parse(JSON.stringify(this.currencydata));
-            this.processHousingDemand();
             this.processDemand();
             this.processLaws();
             this.processDeaths();
@@ -1451,10 +1452,6 @@ const gamevm = Vue.createApp({
                 }
             }
         },
-        processHousingDemand() {
-            this.currencydata.Housing.Amount = this.getTotalHousing();
-            this.modifyDemand('Housing', (this.getPopulation() / ((this.getAvailableHousing() - this.getPopulation()) + 1)) * 5, "Base Population Housing Desire");
-        },
         buildBuilding(houseType, amount = 1) {
             let target = this.buildingdata.find(x => x.Name.toLowerCase() == houseType.Name.toLowerCase());
             let actual = 0;
@@ -1572,18 +1569,25 @@ const gamevm = Vue.createApp({
                 "Natural Causes": "has died of natural causes.",
             };
 
+            if(this.currencydata.Food.Amount == 0){
+                deathOdds += this.starvationDeathOdds;
+                possibleCauses["Starvation"] = "has died of starvation.";
+            }
+
             if (homelessRate > 0) {
                 deathOdds += homelessRate / 10;
                 possibleCauses["Homelessness"] = "has died homeless.";
             }
+
             if (this.gravity == 0) {
                 deathOdds = 1;
                 possibleCauses["No Gravity"] = "has floated off into space.";
             }
-            if (this.gravity > 25) {
+            else if (this.gravity > 25) {
                 deathOdds = 0.03 * this.gravity;
                 possibleCauses["High Gravity"] = "has been crushed by extreme gravity.";
             }
+
             if (this.previousWeather?.temp < -40) {
                 deathOdds += (Math.abs(this.previousWeather?.temp) - 40) / 100;
                 possibleCauses["Low Sun"] = "has frozen in the low sunlight.";
@@ -1604,7 +1608,7 @@ const gamevm = Vue.createApp({
                 }
                 let roll = Math.random();
                 let out = roll * totalDeathOdds * this.yearlyAgeBuckets[i];
-                let deaths = Math.round(out);
+                let deaths = Math.round(out) + (Math.random() < (out % 1) ? 1 : 0);
                 if (deaths <= 0) {
                     continue;
                 }
@@ -1637,7 +1641,7 @@ const gamevm = Vue.createApp({
                     let keys = Object.keys(possibleCauses);
                     let reason = keys[Math.floor(Math.random() * keys.length)];
                     if (this.getPopulation() < 1000) {
-                        this.logit(this.getNameOrProfession(prof, toDie) + ` ${possibleCauses[reason]}.`);
+                        this.logit(this.getNameOrProfession(prof, toDie) + ` ${possibleCauses[reason]}`);
                     }
 
                 }
@@ -1650,7 +1654,7 @@ const gamevm = Vue.createApp({
                     let keys = Object.keys(possibleCauses);
                     let reason = keys[Math.floor(Math.random() * keys.length)];
                     if (this.getPopulation() < 1000) {
-                        this.logit(this.getNameOrProfession(largest, remaining) + ` ${possibleCauses[reason]}.`);
+                        this.logit(this.getNameOrProfession(largest, remaining) + ` ${possibleCauses[reason]}`);
                     }
                 }
             }
@@ -1798,36 +1802,9 @@ const gamevm = Vue.createApp({
                 }
                 
             }
-
-            let baseHideDemand = 0.01;
-            let baseClayDemand = 0.01;
-            let baseWoodDemand = 0.015;
-            let baseOreDemand = 0.002;
-            let baseSpaceDemand = 0.015;
-            let baseHousingDemand = 0.01;
-            let baseFurnitureDemand = 0.001;
-            let baseWaterDemand = 1;
-            let unmetSpaceDemand = 0.001;
-            this.modifyDemand('Hides', baseHideDemand * totalPop, 'Global Demand');
-            this.modifyDemand('Clay', baseClayDemand * totalPop, 'Global Demand');
-            this.modifyDemand('Wood', baseWoodDemand * totalPop, 'Global Demand');
-            this.modifyDemand('Ore', baseOreDemand * totalPop, 'Global Demand');
-            this.modifyDemand('Water', baseWaterDemand * totalPop, 'Global Demand');
-            this.modifyDemand('Space', baseSpaceDemand * totalPop, 'Global Demand');
-            if (this.currencydata.Space.Amount == 0) {
-                this.ticksOfUnmetSpaceDemand += 1;
-                this.modifyDemand('Space', unmetSpaceDemand * totalPop * this.ticksOfUnmetSpaceDemand, 'Unmet Demand');
-            }
-            else {
-                this.ticksOfUnmetSpaceDemand = 0;
-            }
-
-
-            this.modifyDemand('Housing', baseHousingDemand * totalPop, 'Global Demand');
-            this.modifyDemand('Furniture', baseFurnitureDemand * totalPop, 'Global Demand');
         },
         processTechnologyDemand() {
-            let population = this.getPopulation();
+            let population = this.getEffectivePopulation();
             for (let tech of this.technologies) {
                 if (tech.isLocked == false) {
                     for (let [good, mod] of Object.entries(tech.demandModifiers.Global)) {
@@ -2032,11 +2009,12 @@ const gamevm = Vue.createApp({
         addCurrency(currencyName, amount, reason) {
             let storage = this.getCurrencyStorage(currencyName);
             this.currencyPotentialChange[currencyName] = (this.currencyPotentialChange[currencyName] ?? 0) + amount;
-
+            let c = this.currencydata[currencyName];
             this.uncappedTickProductionValues[currencyName] += amount;
-            if (this.currencydata[currencyName].Amount + amount > storage && storage != -1) {
-                amount = this.getCurrencyStorage(currencyName) - this.currencydata[currencyName].Amount;
+            if (c.Amount + amount > storage && storage != -1) {
+                amount = this.getCurrencyStorage(currencyName) - c.Amount;
                 reason += " (Capped by Storage)";
+                c.IsCapped = true;
             }
 
             if (this.currencyProductionDescriptions[currencyName]) {
@@ -2050,7 +2028,7 @@ const gamevm = Vue.createApp({
                 return false;
             }
             this.tickProductionValues[currencyName] += amount;
-            this.currencydata[currencyName].Amount += amount;
+            c.Amount += amount;
         },
         payCurrency(currencyName, amount, reason, payEvenIfYouCantAfford = false) {
             if (isNaN(amount)) {
@@ -2059,24 +2037,26 @@ const gamevm = Vue.createApp({
             }
             this.currencyPotentialChange[currencyName] = (this.currencyPotentialChange[currencyName] ?? 0) - amount;
             this.uncappedTickConsumptionValues[currencyName] -= amount;
-            if (!this.currencydata[currencyName]) {
+            let c = this.currencydata[currencyName];
+            if (!c) {
                 console.error(currencyName, 'is not in the currency data.');
+                return 0;
             }
-
+            c.IsCapped = false;
             if (this.currencyConsumptionDescriptions[currencyName]) {
                 this.currencyConsumptionDescriptions[currencyName].push([currencyName, this.formatNumber(amount), reason]);
             }
             else {
                 this.currencyConsumptionDescriptions[currencyName] = [[currencyName, this.formatNumber(amount), reason]];
             }
-            if (this.currencydata[currencyName].Amount < amount && !payEvenIfYouCantAfford) {
+            if (c.Amount < amount && !payEvenIfYouCantAfford) {
                 return 0;
             }
-            if (payEvenIfYouCantAfford && amount > this.currencydata[currencyName].Amount) {
-                amount = this.currencydata[currencyName].Amount
+            if (payEvenIfYouCantAfford && amount > c.Amount) {
+                amount = c.Amount
             }
 
-            this.currencydata[currencyName].Amount -= amount;
+            c.Amount -= amount;
 
             return amount;
         },
@@ -2149,6 +2129,17 @@ const gamevm = Vue.createApp({
                 }
                 if (waterTotal <= 0) {
                     reasons.push('Our people are out of water.');
+                }
+                let parents = 0;
+                for (let i = 15; i < 40; i++) {
+                    parents += this.yearlyAgeBuckets[i];
+                }
+                if(parents == 0){
+                    reasons.push('We have no parents to have children.');
+                }
+                let piRatio = this.getInfantToParentRatio();
+                if(piRatio == 0){
+                    reasons.push('All possible parents already have as many children as they can.');
                 }
                 return [hasFood && hasWater, reasons];
             }
