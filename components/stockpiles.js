@@ -26,6 +26,34 @@ export default {
                 }
             }
             return c;
+        },
+        currencyIsCapped(currencyName){
+            return (this.$parent.preCostTickCurrencyValues[currencyName]?.Amount ?? 0) >= this.$parent.getCurrencyStorage(currencyName);
+        },
+        getCurrencyBarColor(currency){
+            let base = '';
+            if(currency.Type == 'Nonphysical Good'){
+                base = 'bg-info';
+            }
+            else if(this.currencyIsCapped(currency.Name)){
+                base = 'bg-primary';
+            }
+            else if (this.$parent.currencyDailyChange[currency.Name] < 0){
+                base = 'bg-danger';
+            }
+            else{
+                base = 'bg-success';
+            }
+            return base;
+        },
+        getBarWidth(currency){
+            if(currency.Type == 'Nonphysical Good'){
+                return 100;
+            }
+            if(this.currencyIsCapped(currency.Name)){
+                return 100;
+            }
+            return (currency.Amount / this.$parent.getCurrencyStorage(currency.Name) * 100);
         }
     },
     delimiters: ['[[', ']]'],
@@ -63,8 +91,8 @@ export default {
                                 </template>
                                 <div>
                                     <div class="progress" style="height: 24px;">
-                                        <div class="progress-bar" :class="$parent.currencyDailyChange[currency.Name] < 0 ? 'bg-danger' : 'bg-success'" role="progressbar"
-                                            :style="{ width: (currency.Amount / $parent.getCurrencyStorage(currency.Name) * 100) + '%' }">
+                                        <div class="progress-bar" :class="getCurrencyBarColor(currency)" role="progressbar"
+                                            :style="{ width: getBarWidth(currency) + '%' }">
                                         </div>
                                     </div>
                                 </div>
