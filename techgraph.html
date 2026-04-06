@@ -77,6 +77,67 @@
 			font-weight: 700;
 			margin-left: 8px;
 		}
+
+		.search-wrap {
+			margin-top: 8px;
+			max-width: 360px;
+		}
+
+		.search-wrap label {
+			display: block;
+			margin-bottom: 4px;
+		}
+
+		#techSearchInput {
+			width: 100%;
+			box-sizing: border-box;
+			padding: 6px 8px;
+			border: 1px solid #666;
+			border-radius: 4px;
+			background: #111;
+			color: #fff;
+		}
+
+		#techSearchResults {
+			margin-top: 6px;
+			max-height: 180px;
+			overflow-y: auto;
+			background: #111;
+			border: 1px solid #444;
+			border-radius: 6px;
+			display: none;
+		}
+
+		#techSearchResults.has-items {
+			display: block;
+		}
+
+		.search-result {
+			display: block;
+			width: 100%;
+			padding: 6px 8px;
+			text-align: left;
+			background: transparent;
+			color: #eee;
+			border: 0;
+			border-bottom: 1px solid #333;
+			cursor: pointer;
+		}
+
+		.search-result:last-child {
+			border-bottom: 0;
+		}
+
+		.search-result:hover,
+		.search-result:focus {
+			background: #2a2a2a;
+			outline: none;
+		}
+
+		.search-result.empty {
+			cursor: default;
+			opacity: 0.8;
+		}
 	</style>
 </head>
 
@@ -97,6 +158,14 @@
 				<label for="linkSlider">Link distance</label>
 				<input id="linkSlider" type="range" min="40" max="200" step="5" value="100">
 				<span id="linkVal">100</span>
+			</div>
+			<div style="margin-top:6px;">
+				<button id="clearHighlightBtn" style="display:none; color:white; background:#333; border:1px solid #666; border-radius:4px; padding:3px 8px; cursor:pointer;">✕ Clear Highlight</button>
+			</div>
+			<div class="search-wrap">
+				<label for="techSearchInput">Search Technologies</label>
+				<input id="techSearchInput" type="text" placeholder="Type to search...">
+				<div id="techSearchResults" aria-live="polite"></div>
 			</div>
 		</div>
 	</div>
@@ -150,6 +219,7 @@
 		}
 
 		const { nodes, links } = buildDependencyGraph();
+		const nodeById = new Map(nodes.map(n => [n.id, n]));
 
 		let width = window.innerWidth;
 		let height = window.innerHeight;
@@ -176,8 +246,9 @@
 
 		// Attach zoom to the SVG
 		svg.call(zoom);
-		// Define arrowhead marker
-		zoomTarget.append("defs").append("marker")
+		// Define arrowhead marker + glow filter
+		const defs = zoomTarget.append("defs");
+		defs.append("marker")
 			.attr("id", "arrow")
 			.attr("viewBox", "0 -5 10 10")
 			.attr("refX", 10)
@@ -188,6 +259,19 @@
 			.append("path")
 			.attr("d", "M0,-5L10,0L0,5")
 			.attr("fill", "#999");
+
+		const glowFilter = defs.append("filter")
+			.attr("id", "link-glow")
+			.attr("x", "-50%").attr("y", "-50%")
+			.attr("width", "200%").attr("height", "200%");
+		glowFilter.append("feGaussianBlur")
+			.attr("in", "SourceGraphic")
+			.attr("stdDeviation", "3")
+			.attr("result", "blur");
+		const feMerge = glowFilter.append("feMerge");
+		feMerge.append("feMergeNode").attr("in", "blur");
+		feMerge.append("feMergeNode").attr("in", "blur");
+		feMerge.append("feMergeNode").attr("in", "SourceGraphic");
 
 		const sizeScale = d3.scaleSqrt()
 			.domain([50, 5000000])
@@ -348,6 +432,7 @@
 				<div class="row"><span class="k">Requirements:</span> ${safeList(reqs)}</div>
 				<div class="row"><span class="k">Required By:</span> ${safeList(rby)}</div>
 				<div class="row"><span class="k">Cost:</span> ${fmtCost(t.Cost)}</div>
+				<div class="row" style="margin-top:8px;"><button class="hl-deps-btn" style="cursor:pointer;background:#2a4a2a;color:#f0c040;border:1px solid #f0c040;border-radius:4px;padding:3px 8px;">Highlight Dependencies</button></div>
 			`;
 
 			tooltipEl.html(content).classed('hidden', false);
@@ -359,16 +444,178 @@
 
 			// close button
 			tooltipEl.select('.close').on('click', () => tooltipEl.classed('hidden', true));
+			// highlight dependencies button
+			tooltipEl.select('.hl-deps-btn').on('click', () => applyHighlight(getAncestors(d.id)));
 		}
 
 		function hideTooltip() {
 			tooltipEl.classed('hidden', true);
 		}
 
+		// ── Dependency highlight ──────────────────────────────────────────────────
+		let highlightedSet = null;
+		let clearBtn = null;
+
+		function getNodeFill(d) {
+			if (d.hasMutual) return "purple";
+			const hasAttached = d.requiredBy && d.requiredBy.length > 0;
+			const hasDeps = d.dependsOn && d.dependsOn.length > 0;
+			if (!hasAttached) return "red";
+			if (!hasDeps) return "orange";
+			return "#69b3a2";
+		}
+
+		function getAncestors(startId) {
+			const visited = new Set();
+			const queue = [startId];
+			visited.add(startId);
+			while (queue.length > 0) {
+				const current = queue.shift();
+				const n = nodeById.get(current);
+				if (!n) continue;
+				for (const dep of n.dependsOn) {
+					if (!visited.has(dep)) {
+						visited.add(dep);
+						queue.push(dep);
+					}
+				}
+			}
+			return visited;
+		}
+
+		function applyHighlight(ancestorSet) {
+			highlightedSet = ancestorSet;
+			node.select("circle")
+				.attr("fill", d => ancestorSet.has(d.id) ? "#f0c040" : getNodeFill(d))
+				.attr("opacity", d => ancestorSet.has(d.id) ? 1 : 0.15);
+			node.select("text")
+				.attr("opacity", d => ancestorSet.has(d.id) ? 1 : 0.15);
+			link
+				.style("stroke", d => {
+					const s = typeof d.source === 'object' ? d.source.id : d.source;
+					const t = typeof d.target === 'object' ? d.target.id : d.target;
+					return (ancestorSet.has(s) && ancestorSet.has(t)) ? "#f0c040" : "#999";
+				})
+				.style("stroke-opacity", d => {
+					const s = typeof d.source === 'object' ? d.source.id : d.source;
+					const t = typeof d.target === 'object' ? d.target.id : d.target;
+					return (ancestorSet.has(s) && ancestorSet.has(t)) ? 1 : 0.15;
+				})
+				.style("stroke-width", d => {
+					const s = typeof d.source === 'object' ? d.source.id : d.source;
+					const t = typeof d.target === 'object' ? d.target.id : d.target;
+					return (ancestorSet.has(s) && ancestorSet.has(t)) ? "2.5px" : "1.5px";
+				})
+				.attr("filter", d => {
+					const s = typeof d.source === 'object' ? d.source.id : d.source;
+					const t = typeof d.target === 'object' ? d.target.id : d.target;
+					return (ancestorSet.has(s) && ancestorSet.has(t)) ? "url(#link-glow)" : null;
+				});
+			if (clearBtn) clearBtn.style.display = "inline-block";
+		}
+
+		function clearHighlight() {
+			highlightedSet = null;
+			node.select("circle")
+				.attr("fill", d => getNodeFill(d))
+				.attr("opacity", 1);
+			node.select("text")
+				.attr("opacity", 1);
+			link
+				.style("stroke", null)
+				.style("stroke-opacity", null)
+				.style("stroke-width", null)
+				.attr("filter", null);
+			if (clearBtn) clearBtn.style.display = "none";
+		}
+
 		const chargeSlider = document.getElementById('chargeSlider');
 		const linkSlider = document.getElementById('linkSlider');
 		const chargeVal = document.getElementById('chargeVal');
 		const linkVal = document.getElementById('linkVal');
+		const techSearchInput = document.getElementById('techSearchInput');
+		const techSearchResults = document.getElementById('techSearchResults');
+
+		function getNodeLabel(n) {
+			return n.tech?.Name || n.id;
+		}
+
+		const searchableNodes = nodes
+			.map(n => ({
+				id: n.id,
+				label: getNodeLabel(n),
+				searchText: getNodeLabel(n).toLowerCase()
+			}))
+			.sort((a, b) => a.label.localeCompare(b.label));
+
+		function clearSearchResults() {
+			techSearchResults.innerHTML = '';
+			techSearchResults.classList.remove('has-items');
+		}
+
+		function clearSearchInputAndResults() {
+			techSearchInput.value = '';
+			clearSearchResults();
+		}
+
+		function renderSearchResults(matches, hasQuery) {
+			clearSearchResults();
+			if (!hasQuery) return;
+
+			if (!matches.length) {
+				const empty = document.createElement('div');
+				empty.className = 'search-result empty';
+				empty.textContent = 'No matches';
+				techSearchResults.appendChild(empty);
+				techSearchResults.classList.add('has-items');
+				return;
+			}
+
+			for (const item of matches) {
+				const btn = document.createElement('button');
+				btn.type = 'button';
+				btn.className = 'search-result';
+				btn.textContent = item.label;
+				btn.addEventListener('click', (event) => {
+					event.stopPropagation();
+					clearSearchInputAndResults();
+					tooltipEl.classed('hidden', true);
+					applyHighlight(getAncestors(item.id));
+				});
+				techSearchResults.appendChild(btn);
+			}
+
+			techSearchResults.classList.add('has-items');
+		}
+
+		techSearchInput.addEventListener('input', (event) => {
+			const query = event.target.value.trim().toLowerCase();
+			if (!query) {
+				clearSearchResults();
+				return;
+			}
+
+			const matches = searchableNodes
+				.filter(item => item.searchText.includes(query))
+				.slice(0, 100);
+
+			renderSearchResults(matches, true);
+		});
+
+		techSearchInput.addEventListener('keydown', (event) => {
+			if (event.key === 'Enter') {
+				const firstResultBtn = techSearchResults.querySelector('button.search-result');
+				if (firstResultBtn) {
+					event.preventDefault();
+					firstResultBtn.click();
+				}
+				return;
+			}
+
+			if (event.key === 'Escape') {
+				clearSearchInputAndResults();
+			}
+		});
 
 		function applyCharge(valAbs) {
 			simulation.force('charge').strength(-Number(valAbs));
@@ -409,6 +656,15 @@
 			if (resizeRaf) cancelAnimationFrame(resizeRaf);
 			resizeRaf = requestAnimationFrame(handleResize);
 		});
+
+		// Background click: clear highlight and hide tooltip
+		svg.on("click", () => {
+			clearHighlight();
+			tooltipEl.classed('hidden', true);
+		});
+
+		clearBtn = document.getElementById('clearHighlightBtn');
+		clearBtn.addEventListener('click', () => clearHighlight());
 	</script>
 </body>
 
