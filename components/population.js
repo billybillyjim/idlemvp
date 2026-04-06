@@ -55,6 +55,9 @@ export default {
 
             </span>
         </div>
+        <div>
+            [[$parent.getNationGrowthIssues()?.join(' ')]]
+        </div>
         <div class="table-responsive">
             <table class="table table-striped align-middle" style="min-width: 100%;">
                 <thead class="small">
