@@ -36,27 +36,37 @@ export default {
             </button>
             <input v-if="$parent.populationMenu.customSelected" type="number" class="form-control" style="max-width: 6rem;" v-model.number="$parent.populationMenu.amount" @click.stop placeholder="Enter" min="1" />
         </div>
-        <div>
-            Monthly:
-            <span v-for="bucket in $parent.monthlyAgeBuckets">
-                [[bucket]],
-            </span>
-        </div>
-        <div>
-            Yearly:
-            <br />
-            <span v-for="bucket, index in $parent.yearlyAgeBuckets.slice(0, 28)">
-                <span v-if="index == 15" style="color:red">
+        <div v-if="$parent.testMode">
+            <div>
+                Monthly:
+                <span v-for="bucket in $parent.monthlyAgeBuckets">
                     [[bucket]],
                 </span>
-                <span v-else>
-                    [[bucket]],
-                </span>
+            </div>
+            <div>
+                Yearly:
+                <br />
+                <span v-for="bucket, index in $parent.yearlyAgeBuckets.slice(0, 28)">
+                    <span v-if="index == 15" style="color:red">
+                        [[bucket]],
+                    </span>
+                    <span v-else>
+                        [[bucket]],
+                    </span>
 
-            </span>
+                </span>
+            </div>
+            
         </div>
-        <div>
-            [[$parent.getNationGrowthIssues()?.join(' ')]]
+        <div class="m-2">
+            <div v-if="$parent.getNationGrowthIssues()?.length > 0" style="color:red; font-weight:bold;">
+                <tooltipwrapper :vm="$parent" :text="$parent.getNationGrowthIssues().join(' ')">
+                    Our people are stagnating.
+                </tooltipwrapper>
+            </div>
+            <div v-else>
+                Our people can grow.
+            </div>
         </div>
         <div class="table-responsive">
             <table class="table table-striped align-middle" style="min-width: 100%;">

@@ -10,6 +10,16 @@ export default [
         IsUnlocked:false,
     },
     {   
+        Name:"Better Stone Tools", 
+        Boosts:[
+            {Name:"Global", Currency:"All", ModifierType:"Multiplicative", Amount:1.025},
+        ],
+        Requirements:{
+            Technologies:["Flint Knapping"]
+        },
+        IsUnlocked:false,
+    },
+    {   
         Name:"Animal Domestication", 
         Boosts:[
             {Name:"Farmer", Currency:"Food", ModifierType:"Additive", Amount:0.25,},

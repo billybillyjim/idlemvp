@@ -74,6 +74,80 @@ export default [
         },
     },
     {
+        Name: "Pottery",
+        Description: "This smooth dirt all around us could have some kind of use.",
+        Cost: { "Food": 300 },
+        Requirements: { Technologies: ["Firemaking"] },
+        Progress: 0,
+        Visible: false,
+        Complexity: 7,
+        isLocked: true,
+        demandModifiers: {
+            Global: {},
+            PerCapita: {"Clay":0.025},
+        },
+        Unlock(vm) {
+            vm.logit("The stuff in the ground was clay. Now we know how to make pots like we've seen others make!");
+            vm.unlockCurrency('Clay');
+            vm.unlockCurrency('Pottery');
+            this.isLocked = false;
+        },
+    },
+    {
+        Name: "Clay Bullae",
+        Description: "A token to represent a thing or things.",
+        Cost: { "Clay": 200 },
+        Requirements: { Technologies:["Pottery"]},
+        Progress: 0,
+        Visible: false,
+        Complexity: 60,
+        isLocked: true,
+        demandModifiers: {
+            Global: {},
+            PerCapita: { Clay: 0.01 },
+        },
+        Unlock(vm) {
+            vm.logit("We have developed a new method of record keeping with little balls of clay.");
+            this.isLocked = false;
+        },
+    },
+    {
+        Name: "Measuring Sticks",
+        Description: "We can figure out how long something is by using a stick.",
+        Cost: { "Food": 300, "Wood": 1 },
+        Requirements: { Technologies: ["Stone Tools", "Rope"] },
+        Progress: 0,
+        Visible: false,
+        Complexity: 90,
+        isLocked: true,
+        demandModifiers: {
+            Global: {},
+            PerCapita: {},
+        },
+        Unlock(vm) {
+            vm.logit("We have figured out a way to know how long things are with sticks!");
+            this.isLocked = false;
+        },
+    },
+    {
+        Name: "Numbers",
+        Description: "There is a theory that we could write down a symbol for the amount of bullae we would use, instead of using them. We will have to research further.",
+        Cost: {},
+        Requirements: { Technologies: ["Measuring Sticks", "Writing"] },
+        Progress: 0,
+        Visible: false,
+        Complexity: 123,
+        isLocked: true,
+        demandModifiers: {
+            Global: {},
+            PerCapita: {},
+        },
+        Unlock(vm) {
+            vm.logit("Yeah it turns out that numbers are actually really common in other countries too, but we can use them now as well.");
+            this.isLocked = false;
+        },
+    },
+    {
         Name: "Hide Tanning",
         Description: "There's gotta be something we can do with all these animal skins.",
         Cost: { "Food": 200 },
@@ -124,27 +198,6 @@ export default [
         },
         Unlock(vm) {
             vm.logit("We have uncovered the secrets of mudbricks. Now we can make things out of mudbricks!");
-            vm.unlockBuilding('Granary');
-            this.isLocked = false;
-        },
-    },
-    {
-        Name: "Pottery",
-        Description: "This smooth dirt all around us could have some kind of use.",
-        Cost: { "Food": 300 },
-        Requirements: { Technologies: ["Firemaking"] },
-        Progress: 0,
-        Visible: false,
-        Complexity: 7,
-        isLocked: true,
-        demandModifiers: {
-            Global: {},
-            PerCapita: {"Clay":0.025},
-        },
-        Unlock(vm) {
-            vm.logit("The stuff in the ground was clay. Now we know how to make pots like we've seen others make!");
-            vm.unlockCurrency('Clay');
-            vm.unlockCurrency('Pottery');
             this.isLocked = false;
         },
     },
@@ -406,24 +459,6 @@ export default [
         },
     },
     {
-        Name: "Measuring Sticks",
-        Description: "We can figure out how long something is by using a stick.",
-        Cost: { "Food": 300, "Wood": 1 },
-        Requirements: { Technologies: ["Stone Tools", "Rope"] },
-        Progress: 0,
-        Visible: false,
-        Complexity: 200,
-        isLocked: true,
-        demandModifiers: {
-            Global: {},
-            PerCapita: {},
-        },
-        Unlock(vm) {
-            vm.logit("We have figured out a way to know how long things are with sticks!");
-            this.isLocked = false;
-        },
-    },
-    {
         Name: "Saddle Quern",
         Description: "Grind grain into a tasty dust.",
         Cost: { "Stone": 1000 },
@@ -604,24 +639,6 @@ export default [
         },
     },
     {
-        Name: "Clay Bullae",
-        Description: "A token to represent a thing or things.",
-        Cost: { "Clay": 200 },
-        Requirements: { Technologies:["Pottery"]},
-        Progress: 0,
-        Visible: false,
-        Complexity: 100,
-        isLocked: true,
-        demandModifiers: {
-            Global: {},
-            PerCapita: { Clay: 0.01 },
-        },
-        Unlock(vm) {
-            vm.logit("We have developed a new method of record keeping with little balls of clay.");
-            this.isLocked = false;
-        },
-    },
-    {
         Name: "Writing",
         Description: "So that's what all those squiggles mean!",
         Cost: { },
@@ -672,24 +689,6 @@ export default [
         },
         Unlock(vm) {
             vm.logit("It turns out better cows beget better cows. See where this is going?");
-            this.isLocked = false;
-        },
-    },
-    {
-        Name: "Numbers",
-        Description: "There is a theory that we could write down a symbol for the amount of bullae we would use, instead of using them. We will have to research further.",
-        Cost: {},
-        Requirements: { Technologies: ["Measuring Sticks", "Writing"] },
-        Progress: 0,
-        Visible: false,
-        Complexity: 1234,
-        isLocked: true,
-        demandModifiers: {
-            Global: {},
-            PerCapita: {},
-        },
-        Unlock(vm) {
-            vm.logit("Yeah it turns out that numbers are actually really common in other countries too, but we can use them now as well.");
             this.isLocked = false;
         },
     },

@@ -111,10 +111,8 @@ const gamevm = Vue.createApp({
             consoleOutputs: [],
             uploadedSaveFile: null,
             activeTooltipData: null,
-            population: 1,
             growthThreshold: 2,
             QOLDecay: 0.95,
-            ticksOfUnmetSpaceDemand: 0,
             tickspeed: 300,
             currentTick: 0,
             minuteTick: 0,
@@ -1182,7 +1180,7 @@ const gamevm = Vue.createApp({
                 return 0;
             }
             let base = govType.baseEfficiency;
-            let reduction = this.population * this.government.efficiencyPerCapita;
+            let reduction = this.getPopulation() * this.government.efficiencyPerCapita;
             let governmentWorker = this.professions.find(x => x.Name == 'Government Worker');
             let boost = (governmentWorker?.Count ?? 0) * govType.efficiencyPerEmployee;
             let calculated = base - reduction + boost;
@@ -2118,11 +2116,11 @@ const gamevm = Vue.createApp({
             let hasWater = waterProd + waterConsumpt >= growthThreshold && waterTotal > 0;
             if (includeReason && (!hasFood || !hasWater)) {
                 let reasons = ['Our nation cannot grow right now:'];
-                if (foodProd + foodConsumpt >= growthThreshold == false) {
+                if (foodProd + foodConsumpt > growthThreshold == false) {
                     reasons.push('Our people are consuming almost all our food production.');
                 }
-                if (waterProd + waterConsumpt >= growthThreshold == false) {
-                    reasons.push('Our people are consuming almost all our water production.');
+                if (waterProd + waterConsumpt > growthThreshold == false) {
+                    reasons.push('Our people are consuming almost all our water.');
                 }
                 if (foodTotal <= 0) {
                     reasons.push('Our people are out of food');

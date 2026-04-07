@@ -99,12 +99,12 @@ export default {
                             </td>
                             <td>
                                 <tooltipwrapper :vm="$parent" :calcfrom="() => $parent.getDailyChangeDescription(currency)">
-                                    [[$parent.formatNumber($parent.currencyDailyChange[currency.Name])]]
+                                    [[$parent.formatNumber($parent.currencyDailyChange[currency.Name] ?? 0)]]
                                 </tooltipwrapper>
                             </td>
                             <td>
                                 <tooltipwrapper :vm="$parent" :calcfrom="() => $parent.getDailyDemandDescription(currency)">
-                                    [[$parent.formatNumber($parent.demand[currency.Name])]]
+                                    [[$parent.formatNumber($parent.demand[currency.Name] ?? 0)]]
                                 </tooltipwrapper>
 
                             </td>

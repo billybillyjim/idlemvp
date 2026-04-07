@@ -167,16 +167,31 @@
                     </div>
                 </template>
                 <template v-else-if="currentMenu == 'Population'">
-                    <population :fulldisplaymode="true"></population>
+                    <div class="col">
+                        <h4>The People of [[civilizationName]]</h4>
+                        <population :fulldisplaymode="true"></population>
+                    </div>
+                    
                 </template>
                 <template v-else-if="currentMenu == 'Stockpiles'">
-                    <stockpiles :fulldisplaymode="true"></stockpiles>
+                    <div class="col">
+                        <h4>The Stockpiles of [[civilizationName]]</h4>
+                        <stockpiles :fulldisplaymode="true"></stockpiles>
+
+                    </div>
                 </template>
                 <template v-else-if="currentMenu == 'Technology'">
-                    <technology :fulldisplaymode="true"></technology>
+                    <div class="col">
+                        <h4>The Technologies of [[civilizationName]]</h4>
+                        <technology :fulldisplaymode="true"></technology>
+                    </div>
+                    
                 </template>
                 <template v-else-if="currentMenu == 'Buildings'">
-                    <buildings :fulldisplaymode="true"></buildings>
+                    <div class="col">
+                        <h4>The Buildings of [[civilizationName]]</h4>
+                        <buildings :fulldisplaymode="true"></buildings>
+                    </div>
                 </template>
                 <template v-else-if="currentMenu == 'Laws'">
                     <h1 class="display-6 mb-4">The Laws of [[civilizationName]]</h1>
