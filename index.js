@@ -3254,5 +3254,10 @@ const gamevm = Vue.createApp({
     }
 });
 
+try{
 window.VM = gamevm.mount('#vm');
+}
+catch{
+    alert("Sorry, it seems that your browser doesn't support some of the features needed to run this game. Please try updating your browser or using a different one.");
+}
 //console.log(window.VM);
