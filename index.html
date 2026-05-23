@@ -108,7 +108,7 @@
                     <ul class="nav nav-pills flex-column mb-auto">
                         <li class="nav-item" v-for="menu in getAvailableMenus()">
                             <button @click="setMenu(menu)" :class="currentMenu == menu ? 'active' : ''" class="btn-link nav-link ps-2 w-100" style="text-align: left;" data-bs-dismiss="offcanvas"
-                                aria-current="page">[[menu]]</a>
+                                aria-current="page">[[menu]]</button>
                                 <span v-if="menu == 'Technology' && getTechnologies(true).length > 0" class="badge bg-danger rounded-pill">
                                     <span v-if="hasTechnology('Numbers')">
                                         [[formatNumber(getTechnologies(false, false).length, true)]]
