@@ -21,7 +21,7 @@ export default {
 		},
 	},
 	template: `
-   <span "
+   <span 
         @pointermove="setTooltipData(text, ishtml, $event, calcfrom)"
         @pointerenter="setTooltipData(text, ishtml, $event, calcfrom)"
         @pointerleave="clearTooltipData()">
