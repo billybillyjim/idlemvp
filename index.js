@@ -2188,11 +2188,7 @@ const gamevm = Vue.createApp({
             for (let profession of this.professions) {
                 if (profession.Count > 0 && !this.canAfford(profession.Cost, profession.Count, "Cost of " + profession.Name)) {
                     for (const key in profession.Cost) {
-                        if (Object.hasOwn(this.unmetdemand, key)) {
-                            this.unmetdemand[key] += profession.Cost[key];
-                        } else {
-                            this.unmetdemand[key] = profession.Cost[key];
-                        }
+                        this.unmetdemand[key] = (this.unmetdemand[key] ?? 0) + profession.Cost[key];
                     }
                 }
             }
