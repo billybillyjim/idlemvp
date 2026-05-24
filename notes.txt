@@ -156,3 +156,9 @@ What is left to make this an actual game/MVP:
 5. give up on govt and ideas for now.
 6. more useful info on the buttons so players can make informed decisions.
 7. tutorial leads to numbers. tehy can even be nonsensically easy to unlock
+    a. Tutorial stages
+        - Clearer messaging
+        - Defined goals
+        - Unlock content 1x1x1
+        - Name civ -> hire farmer -> focus tech -> build hut
+            maybe start with enough wood to build a hut

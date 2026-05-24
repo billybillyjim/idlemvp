@@ -63,7 +63,7 @@ export default
         Food:{
             Name:'Food',
             Value:1,
-            Amount:100,
+            Amount:1000,
             MaxStock:2000,
             Type:'Essential',
             Description:"Food is the most delicious of all resources. And if there isn't enough, people will starve.",

@@ -15,6 +15,7 @@ export default [
         Unlock(vm) {
             vm.logit("We have uncovered the secrets of stone tools. Turns out, it wasn't really that complicated. Who could have known?");
             this.isLocked = false;
+            vm.updateTutorialStage(2);
         },
     },
     {
@@ -126,6 +127,24 @@ export default [
         },
         Unlock(vm) {
             vm.logit("We have figured out a way to know how long things are with sticks!");
+            this.isLocked = false;
+        },
+    },
+        {
+        Name: "Weather",
+        Description: "We can look at the sky and tell if it is raining on us or not.",
+        Cost: { "Food": 300, "Wood": 1 },
+        Requirements: { Technologies: ["Stone Tools", "Rope"] },
+        Progress: 0,
+        Visible: false,
+        Complexity: 70,
+        isLocked: true,
+        demandModifiers: {
+            Global: {},
+            PerCapita: {},
+        },
+        Unlock(vm) {
+            vm.logit("We have figured out a way to tell what the weather is!");
             this.isLocked = false;
         },
     },
@@ -820,7 +839,7 @@ export default [
     },
     {
         Name: "Wax",
-        Description: "Get the wax from bees, probably.",
+        Description: "Get the wax from... bees? Probably?",
         Cost: { "Food": 800 },
         Requirements: {},
         Progress: 0,

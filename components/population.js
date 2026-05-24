@@ -25,16 +25,38 @@ export default {
         <h4 class="my-2" v-if="!fulldisplaymode">Population</h4>
         <div>There are [[$parent.formatNumber($parent.getPopulation(), true)]] people in your nation.</div>
         <div>The average quality of life is [[$parent.formatNumber($parent.QOL)]].</div>
+        <div v-if="$parent.tutorialStage < 1" style="color:orange; font-weight:bold;" @click="$parent.incrementTutorialSkip()">
+            <tooltipwrapper :vm="$parent" :text="'This is friendly information from one of your old coworkers. If you think this is unnecessary, click this text 5 times he will go away and stop bothering you.'">
+                This is a list of all the people in our new nation. Children can't work yet, but they can help out the adults.
+                The Unemployed can basically feed themselves, but don't produce much for others. Right now you are in charge of it all, you decide what jobs people will do.
+                Everyone would appreciate if you would hire another farmer before our people all starve.
+            </tooltipwrapper>
+        </div>
+        <div v-else-if="$parent.tutorialStage == 2" style="color:orange; font-weight:bold;" @click="$parent.incrementTutorialSkip()">
+            <tooltipwrapper :vm="$parent" :text="'This is friendly information from one of your old coworkers. If you think this is unnecessary, click this text 5 times he will go away and stop bothering you.'">
+                Stone tools let us gather wood a lot more effectively. Someone could probably do it as a full-time job. But be careful, lumberjacking takes a lot of energy, so it uses more food.
+            </tooltipwrapper>
+        </div>
         <div style="color:red;" v-for="issue in $parent.getNationGrowthIssues()">[[$parent.issue]]</div>
         <div class="btn-group" role="group" aria-label="Amount selector">
-
-            <button v-for="n in [1, 5, 10]" :key="n" type="button" class="btn btn-outline-primary" :class="{ active: $parent.populationMenu.amount === n }" @click="$parent.populationMenu.amount = n">
-                [[$parent.formatNumber(n, true)]]
-            </button>
-            <button type="button" class="btn btn-outline-primary" v-if="$parent.hasNumbers()" :class="{ active: $parent.populationMenu.customSelected }" @click="$parent.populationMenu.customSelected = true">
-                X
-            </button>
-            <input v-if="$parent.populationMenu.customSelected" type="number" class="form-control" style="max-width: 6rem;" v-model.number="$parent.populationMenu.amount" @click.stop placeholder="Enter" min="1" />
+            <template v-if="$parent.tutorialStage < 1">
+                <div>
+                    <tooltipwrapper :vm="$parent" :text="$parent.getPopulationTooltipForTutorial()">   
+                        <button v-for="n in [1, 5, 10]" :key="n" type="button" class="btn btn-outline-primary" :class="{ active: $parent.populationMenu.amount === n }" @click="$parent.populationMenu.amount = n">
+                            [[$parent.formatNumber(n, true)]]
+                        </button>
+                    </tooltipwrapper>
+                </div>
+            </template>
+            <template v-else>
+                <button v-for="n in [1, 5, 10]" :key="n" type="button" class="btn btn-outline-primary" :class="{ active: $parent.populationMenu.amount === n }" @click="$parent.populationMenu.amount = n">
+                    [[$parent.formatNumber(n, true)]]
+                </button>
+                <button type="button" class="btn btn-outline-primary" v-if="$parent.hasNumbers()" :class="{ active: $parent.populationMenu.customSelected }" @click="$parent.populationMenu.customSelected = true">
+                    X
+                </button>
+                <input v-if="$parent.populationMenu.customSelected" type="number" class="form-control" style="max-width: 6rem;" v-model.number="$parent.populationMenu.amount" @click.stop placeholder="Enter" min="1" />
+            </template>
         </div>
         <div v-if="$parent.testMode">
             <div>
@@ -157,27 +179,28 @@ export default {
                                             Fire [[ $parent.formatNumber($parent.populationMenu.amount * $parent.getKeyboardModifiers()) ]]
                                         </tooltipwrapper>
                                     </button>
-                                    <button v-if="!$parent.relocationInfo.IsRelocating" class="btn btn-primary btn-sm" :style="$parent.canRelocate(profession) == false ? 'opacity:0.65' : ''"
-                                        @click="$parent.setRelocationPrimary(profession, $parent.populationMenu.amount * $parent.getKeyboardModifiers())">
+                                    <template v-if="$parent.hasTechnology('Stone Tools')">
+                                        <button v-if="!$parent.relocationInfo.IsRelocating" class="btn btn-primary btn-sm" :style="$parent.canRelocate(profession) == false ? 'opacity:0.65' : ''"
+                                            @click="$parent.setRelocationPrimary(profession, $parent.populationMenu.amount * $parent.getKeyboardModifiers())">
 
-                                        <tooltipwrapper :vm="$parent" :text="'Move existing workers from this task to another task without modifying the queue.'">
-                                            Relocate
-                                        </tooltipwrapper>
-                                    </button>
-                                    <button v-else-if="$parent.relocationInfo?.Profession?.Name != profession.Name" class="btn btn-primary btn-sm" :style="$parent.canRelocate(profession) == false ? 'opacity:0.65' : ''"
-                                        @click="$parent.tryRelocate(profession, $parent.populationMenu.amount * $parent.getKeyboardModifiers())">
+                                            <tooltipwrapper :vm="$parent" :text="'Move existing workers from this task to another task without modifying the queue.'">
+                                                Relocate
+                                            </tooltipwrapper>
+                                        </button>
+                                        <button v-else-if="$parent.relocationInfo?.Profession?.Name != profession.Name" class="btn btn-primary btn-sm" :style="$parent.canRelocate(profession) == false ? 'opacity:0.65' : ''"
+                                            @click="$parent.tryRelocate(profession, $parent.populationMenu.amount * $parent.getKeyboardModifiers())">
 
-                                        <tooltipwrapper :vm="$parent" :calcfrom="() => $parent.relocateInfo(profession, $parent.populationMenu.amount * $parent.getKeyboardModifiers())" :ishtml="true">
-                                            Relocate [[ $parent.formatNumber($parent.populationMenu.amount * $parent.getKeyboardModifiers()) ]] [[ $parent.relocationInfo.Profession.Name ]]
-                                        </tooltipwrapper>
-                                    </button>
-                                    <button v-else class="btn btn-primary btn-sm" @click="$parent.clearRelocation()">
+                                            <tooltipwrapper :vm="$parent" :calcfrom="() => $parent.relocateInfo(profession, $parent.populationMenu.amount * $parent.getKeyboardModifiers())" :ishtml="true">
+                                                Relocate [[ $parent.formatNumber($parent.populationMenu.amount * $parent.getKeyboardModifiers()) ]] [[ $parent.relocationInfo.Profession.Name ]]
+                                            </tooltipwrapper>
+                                        </button>
+                                        <button v-else class="btn btn-primary btn-sm" @click="$parent.clearRelocation()">
 
-                                        <tooltipwrapper :vm="$parent" :text="'Cancel moving workers.'">
-                                            Cancel Relocation
-                                        </tooltipwrapper>
-                                    </button>
-
+                                            <tooltipwrapper :vm="$parent" :text="'Cancel moving workers.'">
+                                                Cancel Relocation
+                                            </tooltipwrapper>
+                                        </button>
+                                    </template>
                                 </div>
                             </td>
                             <td v-else></td>

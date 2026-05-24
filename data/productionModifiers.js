@@ -10,12 +10,23 @@ export default [
         IsUnlocked:false,
     },
     {   
-        Name:"Better Stone Tools", 
+        Name:"Flint Knapped Stone Tools", 
         Boosts:[
             {Name:"Global", Currency:"All", ModifierType:"Multiplicative", Amount:1.025},
         ],
         Requirements:{
             Technologies:["Flint Knapping"]
+        },
+        IsUnlocked:false,
+    },
+    {   
+        Name:"Firemaking", 
+        Boosts:[
+            {Name:"Farmer", Currency:"Food", ModifierType:"Additive", Amount:0.15,},
+            {Name:"Unemployed", Currency:"Food", ModifierType:"Additive", Amount:0.05,},
+        ],
+        Requirements:{
+            Technologies:["Firemaking"]
         },
         IsUnlocked:false,
     },

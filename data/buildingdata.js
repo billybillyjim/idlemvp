@@ -1,7 +1,7 @@
 export default[
     { 
         Name: 'Hut', 
-        Description:"A poorly assembled hut. It should safely house about 3 people.", 
+        Description:"A poorly assembled hut. It should safely house a few people.", 
         Type: "Housing", 
         Count: 2, 
         Cost: 
@@ -31,7 +31,21 @@ export default[
     },
     { 
         Name: 'Large Hut', 
-        Description:"A larger hut. It should safely house about 12 people.", 
+        Description:"A larger hut. It should safely house many people.", 
+        Type: "Housing", 
+        Count: 2, 
+        Cost: 
+        { 
+            Wood: 1500, 
+            Space: 35 
+        }, 
+        Houses: 12, 
+        Unlocked: true, 
+        Visible: true, 
+    },
+    { 
+        Name: 'Communal Lodge', 
+        Description:"A gathering place for our people. ", 
         Type: "Housing", 
         Count: 2, 
         Cost: 
@@ -72,7 +86,7 @@ export default[
         Consumes:{
             Grain:50,
         },
-        
+
         Unlocked: false, 
         Visible: false, 
     },

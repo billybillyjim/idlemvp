@@ -67,10 +67,10 @@
                 </button>
 
                 <a class="navbar-brand" href="">Vanitasia</a>
-                <a href="/techgraph.html">Tech</a>
+                <a href="/techgraph.html" v-if="currentMenu == 'Settings'">Tech</a>
 
                 <ul class="navbar-nav w-100 row">
-                    <li class="nav-item my-3 col-1" style="color:white">
+                    <li class="nav-item my-3 col-1" style="color:white" v-if="hasTechnology('Stone Tools')">
                         <div style="text-align:center;">
                             Population
                         </div>
@@ -80,7 +80,7 @@
                             </div>
                         </tooltipwrapper>
                     </li>
-                    <li class="nav-item my-2 col-2" style="color:white;text-align:center;">
+                    <li class="nav-item my-2 col-2" style="color:white;text-align:center;" v-if="testMode">
                         <div>
                             <button v-for="n in [1, 2, 5, 200, 300, 900, 2700, 9000]" :key="n" type="button" class="btn btn-outline-light" :class="{ active: tickspeed == 300 / n }" @click="setSpeed(300 / n, n / 300)">
                                 [[n]]
@@ -88,10 +88,10 @@
                         </div>
 
                     </li>
-                    <li class="nav-item my-3 col-6" style="color:white">
+                    <li class="nav-item my-3 col-6" style="color:white" v-if="civNameConfirmed">
                         Task: [[(goalLevelHints[currentGoalLevel])]]
                     </li>
-                    <li class="nav-item my-3 align-right col-3 hide-on-mobile" style="color:white;justify-content: right;">
+                    <li class="nav-item my-3 align-right col-3 hide-on-mobile" style="color:white;justify-content: right;" v-if="hasTechnology('Weather')">
                         <span v-if="settingsMenu.renderDate">[[formatDate(currentDate)]]</span> <span v-if="settingsMenu.renderWeather">[[getWeatherForDate(currentDate)]]</span>
                     </li>
                 </ul>
@@ -108,7 +108,7 @@
                     <ul class="nav nav-pills flex-column mb-auto">
                         <li class="nav-item" v-for="menu in getAvailableMenus()">
                             <button @click="setMenu(menu)" :class="currentMenu == menu ? 'active' : ''" class="btn-link nav-link ps-2 w-100" style="text-align: left;" data-bs-dismiss="offcanvas"
-                                aria-current="page">[[menu]]</button>
+                                aria-current="page">[[menu]]
                                 <span v-if="menu == 'Technology' && getTechnologies(true).length > 0" class="badge bg-danger rounded-pill">
                                     <span v-if="hasTechnology('Numbers')">
                                         [[formatNumber(getTechnologies(false, false).length, true)]]
@@ -125,6 +125,8 @@
                                         !
                                     </span>
                                 </span>
+                            </button>
+                                
                         </li>
                     </ul>
                     <hr />
@@ -137,34 +139,50 @@
                 <template v-if="currentMenu == 'Main'">
                     <h1 class="display-6 mb-4">[[civilizationName]]</h1>
                     <div v-if="civNameConfirmed == false">
+                        <div>
+                            You finally had enough. You quit your office job and moved into the woods to start anew.
+                            <br/>
+                            In all, you number 15 adults, 7 children, and 3 infants.
+                            <br/>
+                            Unfortunately, neither you nor anyone you brought along knows how anything works, so it seems as though you're going to have to start from scratch.
+                            <br/>
+                            That all sounds rather hard, so you all agree you need to name your new civilization first.
+                        </div>
                         <label>Name your Civilization</label>
                         <input class="form-control" v-model="civilizationName" />
                         <button class="btn btn-primary m-2" @click="confirmCivName()">Confirm</button>
+                        <button class="btn btn-primary m-2" @click="generateRandomCivName()">See a Random Name</button>
                     </div>
-
-                    <div class="col">
-                        <population :fulldisplaymode="false"></population>
-                    </div>
-                    <div  class="col">
-                        <stockpiles :fulldisplaymode="false"></stockpiles>
-                    </div>
-                    <div class="col">
-                        <buildings :fulldisplaymode="false"></buildings>
-                    </div>
-                    <div class="col">
-                        <technology :fulldisplaymode="false"></technology>
-                    </div>
-                    <div class="col-12">
-                        <div>Log</div>
-                        <table class="table table-striped table-responsive">
-                            <tbody>
-                                <tr v-for="log in log">
-                                    <td>[[log.Time]]</td>
-                                    <td>[[log.message]]</td>
-                                </tr>
-                            </tbody>
-                        </table>
-                    </div>
+                    <template v-if="civNameConfirmed">
+                        <div class="col">
+                            <population :fulldisplaymode="false"></population>
+                        </div>
+                        <div  class="col">
+                            <stockpiles :fulldisplaymode="false"></stockpiles>
+                        </div>
+                        <template v-if="hasTechnology('Firemaking')">
+                            <div class="col">
+                                <buildings :fulldisplaymode="false"></buildings>
+                            </div>
+                        </template>
+                        <template v-if="tutorialStage > 0">
+                            <div class="col">
+                                <technology :fulldisplaymode="false"></technology>
+                            </div>
+                        </template>
+                        
+                        <div class="col-12">
+                            <div>Log</div>
+                            <table class="table table-striped table-responsive">
+                                <tbody>
+                                    <tr v-for="log in log">
+                                        <td>[[log.Time]]</td>
+                                        <td>[[log.message]]</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </template>
                 </template>
                 <template v-else-if="currentMenu == 'Population'">
                     <div class="col">
@@ -392,5 +410,6 @@
 <script src="https://cdn.jsdelivr.net/npm/lz-string@1.4.4/libs/lz-string.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 <script src="./index.js" type="module"></script>
+<script src="./letterPairTool.js" type="module"></script>
 
 </html>

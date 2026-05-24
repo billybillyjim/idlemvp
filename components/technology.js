@@ -21,6 +21,16 @@ export default {
     <div class="grid-item col">
         <h4 class="my-2" v-if="!fulldisplaymode">Technology</h4>
         <div>Current Stockpiled Knowledge: [[$parent.formatNumber($parent.currencydata['Knowledge'].Amount)]]</div>
+        <div v-if="$parent.tutorialStage < 2" style="color:orange; font-weight:bold;">
+            <tooltipwrapper :vm="$parent" :text="''">
+                As we have spent some time growing, we realize we don't really know how anything works at all.
+                We can start building a combined knowledge of the world, but you need to tell the people
+                where to put that focus. When there is no focus, their knowledge will still accumulate, and apply
+                more quickly to whatever you select.
+
+                Try focusing on Stone Tools or Firemaking. Please. It's cold out here and we are farming with sticks.
+            </tooltipwrapper>
+        </div>
         <div v-if="fulldisplaymode">
             <button class="btn btn-primary" @click="$parent.technologyMenu.showCompleted = !$parent.technologyMenu.showCompleted">Show Completed</button>
         </div>

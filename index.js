@@ -44,7 +44,7 @@ const gamevm = Vue.createApp({
             Verbose: true,
             gravity: 9.81,
             sunlight: 1,
-            isPaused: false,
+            isPaused: true,
             keyboardModifiers: {
                 Shift: false,
                 Control: false,
@@ -131,6 +131,7 @@ const gamevm = Vue.createApp({
             focusedTechnology: null,
             currencyDailyChange: {},
             tutorialStage: 0,
+            tutorialSkipCount:0,
             currentGoalLevel: 0,
             goalLevelHints: [
                 "Your people are cold at night. There must be something we can do.",
@@ -271,7 +272,7 @@ const gamevm = Vue.createApp({
             historicalLeaders:[],
             maxHistory: 1000,
             testMode: false,
-            technologyEnhancedSurvivability: 30,
+            technologyEnhancedSurvivability: 1,
             monthlyAgeBuckets: [
                 0, 0, 0,
                 0, 0, 1,
@@ -309,39 +310,39 @@ const gamevm = Vue.createApp({
                 0,
                 0,
                 0,
-                0.000622,
-                0.000826,
-                0.001026,
-                0.001182,
-                0.001301,
-                0.001404,
-                0.001498,
-                0.001586,
-                0.001679,
-                0.001776,
-                0.001881,
-                0.001985,
-                0.002095,
-                0.002219,
-                0.002332,
-                0.002445,
-                0.002562,
-                0.002653,
-                0.002716,
-                0.002791,
-                0.002894,
-                0.002994,
-                0.003091,
-                0.003217,
-                0.003353,
-                0.003499,
-                0.003642,
-                0.003811,
-                0.003996,
-                0.004175,
-                0.004388,
-                0.004666,
-                0.004973,
+                0.000322,
+                0.000426,
+                0.000526,
+                0.000582,
+                0.000601,
+                0.000704,
+                0.000798,
+                0.000886,
+                0.000879,
+                0.000876,
+                0.000981,
+                0.001085,
+                0.001095,
+                0.001219,
+                0.001332,
+                0.001445,
+                0.001562,
+                0.001653,
+                0.001716,
+                0.001791,
+                0.001894,
+                0.001994,
+                0.002091,
+                0.002217,
+                0.002353,
+                0.002499,
+                0.002642,
+                0.002811,
+                0.002996,
+                0.003175,
+                0.003388,
+                0.003666,
+                0.003973,
                 0.005305,
                 0.005666,
                 0.006069,
@@ -478,7 +479,7 @@ const gamevm = Vue.createApp({
             }
         },
         tickMonth() {
-            if (this.testMode || true) {
+            if (this.testMode) {
                 this.doSanityChecks('Before');
             }
             this.professions.find(x => x.Name == 'Infant').Count -= this.monthlyAgeBuckets[11];
@@ -493,7 +494,7 @@ const gamevm = Vue.createApp({
             }
             this.monthlyAgeBuckets[0] = 0;
             this.yearlyAgeBuckets[0] = sum;
-            if (this.testMode || true) {
+            if (this.testMode) {
                 this.doSanityChecks('After');
             }
         },
@@ -514,8 +515,19 @@ const gamevm = Vue.createApp({
                     }
                 }
             }
-            if (this.testMode || true) {
+            if (this.testMode) {
                 this.doSanityChecks();
+            }
+        },
+        updateTutorialStage(newStage){
+            this.tutorialStage = Math.max(this.tutorialStage, newStage);
+        },
+        incrementTutorialSkip(){
+            this.tutorialSkipCount++;
+            console.log("Tutorial skip count:", this.tutorialSkipCount);
+            if(this.tutorialSkipCount > 5){
+                this.updateTutorialStage(100);
+                this.clearTooltipData();
             }
         },
         doSanityChecks(when) {
@@ -589,15 +601,25 @@ const gamevm = Vue.createApp({
             if (this.testMode) {
                 return this.menus;
             }
-            let alwaysAvailable = ["Main", "Population", "Buildings", "Stockpiles", "Technology", "Government", "Charts"];
+            if (!this.civNameConfirmed) {
+                return ["Main"];
+            }
+            let alwaysAvailable = ["Main", "Population"];
+            if(this.tutorialStage > 0){
+                alwaysAvailable.push("Technology");
+            }
             if (this.hasTechnology('Firemaking')) {
                 alwaysAvailable.push("Buildings");
             }
+
+            alwaysAvailable.push("Stockpiles");
+            
             if (this.hasTechnology('Basic Societal Structure')) {
                 alwaysAvailable.push('Laws');
             }
             if (this.hasTechnology('Numbers')) {
                 alwaysAvailable.push('Modifiers');
+                alwaysAvailable.push('Charts');
             }
             alwaysAvailable.push("Log");
             alwaysAvailable.push("Settings");
@@ -605,6 +627,10 @@ const gamevm = Vue.createApp({
         },
         confirmCivName() {
             this.civNameConfirmed = true;
+            this.isPaused = false;
+        },
+        getPopulationTooltipForTutorial(){
+            return 'What are One, a Hand, or Both Hands? Well,  we don\'t have a great way to describe how many things there are. We haven\'t figured that out yet. Surely this all will become a lot clearer once we do.';
         },
         setMenu(menu) {
             this.currentMenu = menu;
@@ -742,6 +768,133 @@ const gamevm = Vue.createApp({
             this.currentVillagerNameIndex++;
 
             return name;
+        },
+        generateLikelyNameSounds(){
+            let allowed = {
+                "t": ["i", "e", "a", "r", "o"],
+                "h": ["e", "a", "o", "i", "t"],
+                "o": ["n", "r", "l", "u", "m"],
+                "a": ["t", "n", "r", "l", "c"],
+                "n": ["g", "t", "s", "e", "d"],
+                "i": ["n", "o", "c", "t", "s"],
+                "f": ["i", "o", "e", "a", "f"],
+                "b": ["e", "a", "l", "o", "i"],
+                "w": ["a", "i", "e", "o", "h"],
+                "y": ["s", "e", "i", "m", "o"],
+                "r": ["e", "a", "i", "o", "s"],
+                "u": ["r", "n", "s", "t", "l"],
+                "l": ["e", "i", "a", "l", "o"],
+                "v": ["e", "i", "a", "o", "y"],
+                "e": ["r", "s", "n", "d", "a"],
+                "m": ["e", "a", "i", "o", "p"],
+                "c": ["o", "e", "a", "h", "t"],
+                "p": ["e", "r", "a", "o", "l"],
+                "g": ["e", "r", "a", "h", "i"],
+                "s": ["t", "e", "i", "s", "u"],
+                "d": ["e", "i", "a", "s", "o"],
+                "k": ["e", "i", "s", "a", "n"],
+                "j": ["o", "e", "u", "a", "i"],
+                "x": ["p", "t", "i", "c", "e"],
+                "z": ["e", "a", "i", "o", "z"],
+                "q": ["u", "l", "t", "s", "i"]
+            };
+                let length = Math.floor(Math.random() * 5) + 5;
+                let name = '';
+                
+                for(let i = 0; i < length; i++){
+                    if(i == 0){
+                        name += Object.keys(allowed)[Math.floor(Math.random() * Object.keys(allowed).length)].toUpperCase();
+                    }
+
+                    else{
+                        let lastChar = name.charAt(name.length - 1).toLowerCase(); 
+                        if(allowed[lastChar]){
+                            let nextChar = allowed[lastChar][Math.floor(Math.random() * allowed[lastChar].length)];
+                            name += nextChar;
+                        }
+                    }
+                }
+                return name;
+        },
+        generateRandomNameSounds(){
+            let length = Math.floor(Math.random() * 5) + 5;
+            let name = '';
+            let chars = 'abcdfghjklmnpqrstvwxyz';
+            let vowels = 'aeiou';
+            let validVowelPairs = ["ae", "ai", "au",
+                                    "ea", "ee", "ei", "eu",
+                                    "ia", "ie", "io",
+                                    "oa", "oi", "ou",
+                                    "ua", "ui"];
+            let lastWasVowel = true;
+            for(let i = 0; i < length; i++){
+                if(lastWasVowel == false){
+                    if(Math.random() < 0.3){
+                        let pair = validVowelPairs[Math.floor(Math.random() * validVowelPairs.length)];
+                        name += pair;
+                    }
+                    else{
+                        let pickedVowel = vowels[Math.floor(Math.random() * vowels.length)];
+                        name += pickedVowel;
+                    }
+                    lastWasVowel = true;
+                }
+                else{
+                    name += chars[Math.floor(Math.random() * chars.length)];
+                    lastWasVowel = false;
+                }
+            }
+            name = name.charAt(0).toUpperCase() + name.slice(1);
+            return name;
+        },
+        generateRandomCivName(){
+            let possibleTypesOfNames = ['From Villagers', 'Adjective Noun', 'The Adjective Noun of Name', 'Weird'];
+            let type = possibleTypesOfNames[Math.floor(Math.random() * possibleTypesOfNames.length)];
+
+            let adjectives = ['Great', 'Mighty', 'Ancient', 'Noble', 'Glorious'];
+            let nouns = ['Nation', 'State', 'Empire', 'Kingdom', 'Republic', 'Duchy', 'Sultanate', 'Principality', 
+                    'Realm', 'Domain', 'Land', 'Homeland', 'Motherland', 'Fatherland', 'Colony', 'Province', 'Territory',
+                'Commonwealth', 'Sovereignty', 'Monarchy', 'Dictatorship', 'Dominion', 'Settlement', 'Duchy', 'Mandate',
+                'Ministate', 'City-State', 'Sultanate', 'Microstate', 'Emirate', 'World Power', 'Superpower', 'Trust Territory',
+                'Oligarchy', 'Theocracy', 'Seigniory', 'Welfare State', 'Condominium', 'Client State', 'Monocracy'];
+            let n1 = this.getVillagerName();
+            let n2 = this.getVillagerName();
+            let n3 = this.generateRandomNameSounds();
+            let n4 = this.generateLikelyNameSounds();
+            let name = n1;
+            let adjective = adjectives[Math.floor(Math.random() * adjectives.length)];
+            let roll = Math.random();
+            if(roll < 0.2){
+                name = n1.substring(0, Math.floor(n1.length/2)) + n2.substring(Math.floor(n2.length/2));
+            }
+            else if(roll < 0.4){
+                name = nouns[Math.floor(Math.random() * nouns.length)];
+            }
+            else if(roll < 0.6){
+                name = n1.substring(0, Math.floor(n1.length/2)) + n2.substring(Math.floor(n2.length/2));
+            }
+            else if(roll < 0.9){
+                n3 = n4;
+            }
+            else{
+                n3 = n3;
+            }
+            if(type == 'From Villagers'){
+                this.civilizationName = name;
+            }
+            else if(type == 'Adjective Noun'){
+                this.civilizationName = adjective + ' ' + name;
+            }
+            else if(type == 'The Adjective Noun of Name'){
+                this.civilizationName = 'The ' + adjective + ' ' +  nouns[Math.floor(Math.random() * nouns.length)] + ' of ' + n3;
+            }
+            else if(type == 'Weird'){
+                this.civilizationName = n3;
+            }
+            else{
+                 this.civilizationName = 'Nope';
+            }
+            
         },
         getNameOrProfession(profession, count) {
             if (count == 1) {
@@ -1069,7 +1222,9 @@ const gamevm = Vue.createApp({
             this.currencyConsumptionDescriptions = {};
         },
         runAllProcesses() {
-            this.processBaseGrowth();
+            if(this.tutorialStage > 0){
+                this.processBaseGrowth();
+            }
             this.processProductionModifiers();
             this.processGovernment();
             this.processProfessions();
@@ -1082,7 +1237,10 @@ const gamevm = Vue.createApp({
             this.endTickCurrencyValues = JSON.parse(JSON.stringify(this.currencydata));
             this.processDemand();
             this.processLaws();
-            this.processDeaths();
+            if(this.tutorialStage > 0){
+                this.processDeaths();
+            }
+            
         },
         handlePeriodicTasks() {
             if (this.currentTick % 100 == 0 && this.settingsMenu.autoSaveEnabled) {
@@ -1598,21 +1756,29 @@ const gamevm = Vue.createApp({
         },
         applyDeathsToAgeBuckets(deathOdds, possibleCauses) {
             for (let i = 119; i > 15; i--) {
-                let totalDeathOdds = deathOdds + this.ageDeathProbabilityTable[i];
+                let yearlyDeathChance = this.ageDeathProbabilityTable[i] * this.technologyEnhancedSurvivability;
+                let ticklyDeathChance = 1;
+                if(yearlyDeathChance < 1){
+                    ticklyDeathChance = 1 - Math.pow(1 - yearlyDeathChance, 1 / 8760);
+                }
+                let totalDeathOdds = deathOdds + ticklyDeathChance;
                 let bucketSize = this.yearlyAgeBuckets[i];
 
                 if (bucketSize == 0) {
                     continue;
                 }
-                let roll = Math.random();
-                let out = roll * totalDeathOdds * this.yearlyAgeBuckets[i];
-                let deaths = Math.round(out) + (Math.random() < (out % 1) ? 1 : 0);
+
+                let expectedDeaths = totalDeathOdds * bucketSize;
+                let deaths = Math.floor(expectedDeaths);
+                let remainderOdds = Math.random() * 8760;
+                if (remainderOdds < (expectedDeaths % 1)) {
+                    deaths += 1;
+                }
                 if (deaths <= 0) {
                     continue;
                 }
 
                 deaths = Math.min(deaths, bucketSize);
-                console.log("Processing deaths for age", i, "deaths: ", deaths);
                 this.yearlyAgeBuckets[i] -= deaths;
                 this.distributeDeathsToProfessions(deaths, possibleCauses);
             }
@@ -1842,6 +2008,7 @@ const gamevm = Vue.createApp({
             return (this.endTickCurrencyValues[currencyName]?.Amount - this.beginTickCurrencyValues[currencyName]?.Amount) * 24;
         },
         processQOL() {
+            //TODO: Gotta make happiness a number that makes sense and is desirable
             let hides = Math.min(this.getPopulation(), this.currencydata.Hides.Amount);
             let hideConsumptionRate = 0.1;
             let hideQOLBoost = hides * hideConsumptionRate;
@@ -2540,6 +2707,11 @@ const gamevm = Vue.createApp({
             }
 
             profession.Count += maxPossible;
+
+            this.updateTutorialStage(1);
+            if(profession.Name == "Lumberjack"){
+                this.updateTutorialStage(3);
+            }
             this.modifyUnemployed(-maxPossible);
 
             return maxPossible;
@@ -3255,7 +3427,7 @@ const gamevm = Vue.createApp({
 });
 
 try{
-window.VM = gamevm.mount('#vm');
+    window.VM = gamevm.mount('#vm');
 }
 catch(e){
     alert(e);
