@@ -195,6 +195,29 @@ print ninety nine thousand nine hundred ninety nine = 99999.
                     }
                 },
                 {
+                    mori:'Assign 7 Farmers.',
+                    previousState:{
+                        professions:{
+                            Farmer:5,
+                            Unemployed:0,
+                        },
+                        childHelpers:{
+                            Farmer:0,
+                        },
+                        childCount:10,
+                    },
+                    postState:{
+                        professions:{
+                            Farmer:5,
+                            Unemployed:0
+                        },
+                        childHelpers:{
+                            Farmer:7,
+                        },
+                        unassignedChildCount:3,
+                    }
+                },
+                {
                     mori:'Hire 7 Farmers.',
                     previousState:{
                         professions:{
@@ -1159,6 +1182,12 @@ print ninety nine thousand nine hundred ninety nine = 99999.
                 for(let [prof, count] of Object.entries(test.previousState.professions || [])){
                     this.$parent.professions.find(x => x.Name == prof).Count = count;
                 }
+                for(let [prof, count] of Object.entries(test.previousState.childHelpers || [])){
+                    this.$parent.professions.find(x => x.Name == prof).ChildHelperCount = count;
+                }
+                this.$parent.professions.find(x => x.Name == 'Child').Count = test.previousState.childCount || 0;
+                this.$parent.professions.find(x => x.Name == 'Child').Assigned = 0;
+
                 this.$parent.runCode(test.mori);
                 let anyError = false;
                 for(let [building, count] of Object.entries(test.postState.buildingdata || [])){
@@ -1178,6 +1207,19 @@ print ninety nine thousand nine hundred ninety nine = 99999.
                     if(this.$parent.professions.find(x => x.Name == prof).Count != count){
                         anyError = true;
                         console.error("Failed to reach expected profession value for ", prof, count, " actual: ", this.$parent.professions.find(x => x.Name == prof).Count);
+                    }
+                }
+                for(let [prof, count] of Object.entries(test.postState.childHelpers || [])){
+                    if(this.$parent.professions.find(x => x.Name == prof).ChildHelperCount != count){
+                        anyError = true;
+                        console.error("Failed to reach expected child helper profession value for ", prof, count, " actual: ", this.$parent.professions.find(x => x.Name == prof).ChildHelperCount);
+                    }
+                }
+
+                if(test.postState.unassignedChildCount){
+                    if(test.postState.unassignedChildCount != this.$parent.professions.find(x => x.Name == 'Child').Count - this.$parent.professions.find(x => x.Name == 'Child').Assigned){
+                        anyError = true;
+                        console.error("Failed to reach expected unassigned child count for ", test.postState.unassignedChildCount, " actual: ", this.$parent.professions.find(x => x.Name == 'Child').Count - this.$parent.professions.find(x => x.Name == 'Child').Assigned);
                     }
                 }
                 for(let output of (test.postState.printOutputs || [])){

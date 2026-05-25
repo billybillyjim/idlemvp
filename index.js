@@ -52,7 +52,7 @@ const gamevm = Vue.createApp({
             basePopulationGrowthChance: 0.0025,
             baseChildLaborProductionBoost:0.15,
             civilizationName: "",
-            currentMenu: "Main",
+            currentMenu: "Laws",
             menus: ["Main", "Population", "Stockpiles", "Buildings", "Technology", "Government", "Laws", "Modifiers", "Log", "Charts", "Settings"],
             currentDate: new Date(2000, 0, 1),
             populationMenu: {
@@ -276,7 +276,7 @@ const gamevm = Vue.createApp({
             historicalValuesHour: {},
             historicalLeaders:[],
             maxHistory: 1000,
-            testMode: false,
+            testMode: true,
             technologyEnhancedSurvivability: 1,
             monthlyAgeBuckets: [
                 0, 0, 0,
@@ -754,16 +754,16 @@ const gamevm = Vue.createApp({
             if (this.reservedNames.size == 0) {
                 this.generateReservedNames();
             }
-            const tokens = this.tokenize(code);
+            const tokens = this.Mori.tokenize(code);
             if (outputTokens) {
                 console.log(tokens);
             }
-            this.parser.tokens = tokens;
-            const ast = this.parse(tokens);
+            this.Mori.parser.tokens = tokens;
+            const ast = this.Mori.parse(tokens);
             if (outputAST) {
                 console.log(ast);
             }
-            let output = this.evaluate(ast, tokens);
+            let output = this.Mori.evaluate(ast, tokens);
             if (outputOutput) {
                 console.log(output);
             }
@@ -2543,7 +2543,7 @@ const gamevm = Vue.createApp({
             const [additiveModifiers, multModifiers] = this.getProductionModifiers(producer.Name);
             let childLaborProductionBoost = 0;
             if(this.getPopulation() > 0){
-                childLaborProductionBoost = this.baseChildLaborProductionBoost * producer.ChildHelperCount;
+                childLaborProductionBoost = this.baseChildLaborProductionBoost * (producer.ChildHelperCount ?? 0);
             }
             const allKeys = new Set([
                 ...Object.keys(producer.Produces),
@@ -2692,7 +2692,6 @@ const gamevm = Vue.createApp({
                 return false;
             }
             let maxPossible = Math.min(amount, this.getAvailableChildren());
-            console.log("Trying to assign", amount, "children to", prof.Name, "Max possible:", maxPossible);
             if (maxPossible > 0) {
                 return this.assignChildren(prof, maxPossible);
             }
@@ -2702,7 +2701,6 @@ const gamevm = Vue.createApp({
             if (isNaN(amount)) {
                 return false;
             }
-            console.log("Trying to assign", amount, "children to", prof.Name);
             let maxPossible = Math.min(amount, this.getAvailableChildren());
 
             prof.ChildHelperCount += maxPossible;
@@ -3021,7 +3019,6 @@ const gamevm = Vue.createApp({
         },
         getAvailableChildren() {
             let children = this.professions.find(x => x.Name == 'Child');
-
             return children.Count - (children.Assigned ?? 0);
         },
         /**
