@@ -16,7 +16,12 @@ export default {
         }
     },
     methods: {
+        isAssignedChild(index, profession) {
+            let childCount = profession.Count;
+            let assignedCount = Math.min(profession.Assigned, childCount);
 
+            return index >= childCount - assignedCount;
+        }
     },
     delimiters: ['[[', ']]'],
     template: /*html*/`
@@ -115,21 +120,45 @@ export default {
                             </td>
                             <td>
                                 <template v-if="$parent.hasNumbers()">
-                                    <tooltipwrapper :vm="$parent"
-                                        :text="($parent.missingProfessionCounts[profession.Name]) > 0 ? 'The number in parentheses is how many people used to be working this profession but died and have not been replaced yet.' : 'The current number of ' + $parent.pluralizer.plural(profession.Name)">
+                                   
                                         [[$parent.formatNumber(profession.Count, true)]]
+                                         <tooltipwrapper :vm="$parent"
+                                        :text="'How many jobs are available and unfilled for this profession. This can happen either by hiring more people than you have unemployed or by people dying and not being replaced yet.'">
                                         <span v-if="$parent.missingProfessionCounts[profession.Name]">+
-                                            ([[ ($parent.missingProfessionCounts[profession.Name]) ]])</span>
+                                            ([[ ($parent.formatNumber($parent.missingProfessionCounts[profession.Name], true)) ]])</span>
+                                        </tooltipwrapper>
+                                         <tooltipwrapper :vm="$parent"
+                                        :text="'The total number of child labor helpers assigned for this profession. Each child helper gives a ' + $parent.getChildLaborProductionBoost() + 'x boost to production, giving a total of ' + ($parent.getChildLaborProductionBoost() * profession.ChildHelperCount) + 'x boost for this profession.'">
+                                        <span v-if="profession.ChildHelperCount > 0" class="ms-2">+
+                                            ([[ ($parent.formatNumber(profession.ChildHelperCount, true)) ]])</span>
                                     </tooltipwrapper>
                                 </template>
                                 <template v-else>
-                                    <tooltipwrapper :vm="$parent" :calcfrom="() => $parent.formatNumber(profession.Count)">
+                                    
                                         <div>
-                                            <div style="position:relative; white-space: nowrap;top:-20px;">
-                                                <div v-for="n, index in profession.Count" style="position:absolute;" :style="'left:' + (((index + 1) * (100 / (profession.Count + 1))) - 16) + 'px'">
-                                                    <img src="icons/guy.png" width="32" height="32">
+                                            <template v-if="profession.Name == 'Child'">
+                                                <div style="position:relative; white-space: nowrap;top:-20px;">
+                                                    <div v-for="n, index in profession.Count" style="position:absolute;" :style="'left:' + (((index + 1) * (100 / (profession.Count + 1))) - 16) + 'px'">
+                                                        <img src="icons/littleguy.png" width="32" height="32" :style="{ opacity: isAssignedChild(index, profession) ? 0.5 : 1 }">
+                                                    </div>
                                                 </div>
-                                            </div>
+                                            </template>
+                                            <template v-else-if="profession.Name == 'Infant'">
+                                                <div style="position:relative; white-space: nowrap;top:-20px;">
+                                                    <div v-for="n, index in profession.Count" style="position:absolute;" :style="'left:' + (((index + 1) * (100 / (profession.Count + 1))) - 16) + 'px'">
+                                                        <img src="icons/littlestguy.png" width="32" height="32">
+                                                    </div>
+                                                </div>
+                                            </template>
+                                            <template v-else>
+                                                <tooltipwrapper :vm="$parent" :calcfrom="() => $parent.formatNumber(profession.Count, true)">
+                                                <div style="position:relative; white-space: nowrap;top:-20px;">
+                                                    <div v-for="n, index in profession.Count" style="position:absolute;" :style="'left:' + (((index + 1) * (100 / (profession.Count + 1))) - 16) + 'px'">
+                                                        <img src="icons/guy.png" width="32" height="32">
+                                                    </div>
+                                                </div>
+                                                </tooltipwrapper>
+                                            </template>
                                             <div style="position:relative; white-space: nowrap;top:15px;left:-10px;" v-if="$parent.missingProfessionCounts[profession.Name]">
                                                 +
                                                 <div v-for="n, index in $parent.missingProfessionCounts[profession.Name]" style="position:absolute;top:-8px;opacity:0.5;"
@@ -141,11 +170,11 @@ export default {
                                                 +
                                                 <div v-for="n, index in profession.ChildHelperCount" style="position:absolute;top:-8px;"
                                                     :style="'left:' + (((index + 1) * (100 / (1 + profession.ChildHelperCount))) - 6) + 'px'">
-                                                    <img src="icons/guy.png" width="32" height="32">
+                                                    <img src="icons/littleguy.png" width="32" height="32">
                                                 </div>
                                             </div>
                                         </div>
-                                    </tooltipwrapper>
+                                    
 
                                 </template>
                             </td>
@@ -180,26 +209,26 @@ export default {
                                 <div class="btn-group" role="group" aria-label="Actions">
                                     <button class="btn btn-primary btn-sm" @click="$parent.tryHire(profession, $parent.populationMenu.amount * $parent.getKeyboardModifiers())">
                                         <tooltipwrapper :vm="$parent" :calcfrom="() => $parent.hireInfo(profession, $parent.populationMenu.amount * $parent.getKeyboardModifiers())" :ishtml="true">
-                                            Hire [[ $parent.formatNumber($parent.populationMenu.amount * $parent.getKeyboardModifiers()) ]]
+                                            Hire [[ $parent.formatNumber($parent.populationMenu.amount * $parent.getKeyboardModifiers(), true) ]]
                                         </tooltipwrapper>
                                     </button>
                                     <button class="btn btn-primary btn-sm" :style="$parent.canFire(profession) == false ? 'opacity:0.65' : ''"
                                         @click="$parent.tryFire(profession, $parent.populationMenu.amount * $parent.getKeyboardModifiers())">
                                         <tooltipwrapper :vm="$parent" :calcfrom="() => $parent.fireInfo(profession, $parent.populationMenu.amount * $parent.getKeyboardModifiers())" :ishtml="true">
-                                            Fire [[ $parent.formatNumber($parent.populationMenu.amount * $parent.getKeyboardModifiers()) ]]
+                                            Fire [[ $parent.formatNumber($parent.populationMenu.amount * $parent.getKeyboardModifiers(), true) ]]
                                         </tooltipwrapper>
                                     </button>
                                     <template v-if="$parent.hasTechnology('Child Labor')">
                                         <button class="btn btn-primary btn-sm" :style="$parent.canAssign(profession) == false ? 'opacity:0.65' : ''"
                                             @click="$parent.tryAssign(profession, $parent.populationMenu.amount * $parent.getKeyboardModifiers())">
                                             <tooltipwrapper :vm="$parent" :calcfrom="() => $parent.assignInfo(profession, $parent.populationMenu.amount * $parent.getKeyboardModifiers())" :ishtml="true">
-                                                Assign [[ $parent.formatNumber($parent.populationMenu.amount * $parent.getKeyboardModifiers()) ]] [[$parent.toProperPluralize('Child', $parent.populationMenu.amount * $parent.getKeyboardModifiers())]]
+                                                Assign [[ $parent.formatNumber($parent.populationMenu.amount * $parent.getKeyboardModifiers(), true) ]] [[$parent.toProperPluralize('Child', $parent.populationMenu.amount * $parent.getKeyboardModifiers())]]
                                             </tooltipwrapper>
                                         </button>
                                         <button class="btn btn-primary btn-sm" :style="$parent.canUnassign(profession) == false ? 'opacity:0.65' : ''"
                                             @click="$parent.tryUnassign(profession, $parent.populationMenu.amount * $parent.getKeyboardModifiers())">
                                             <tooltipwrapper :vm="$parent" :calcfrom="() => $parent.unassignInfo(profession, $parent.populationMenu.amount * $parent.getKeyboardModifiers())" :ishtml="true">
-                                                Unassign [[ $parent.formatNumber($parent.populationMenu.amount * $parent.getKeyboardModifiers()) ]] [[$parent.toProperPluralize('Child', $parent.populationMenu.amount * $parent.getKeyboardModifiers())]]
+                                                Unassign [[ $parent.formatNumber($parent.populationMenu.amount * $parent.getKeyboardModifiers(), true) ]] [[$parent.toProperPluralize('Child', $parent.populationMenu.amount * $parent.getKeyboardModifiers())]]
                                             </tooltipwrapper>
                                         </button>
                                     </template>
@@ -215,7 +244,7 @@ export default {
                                             @click="$parent.tryRelocate(profession, $parent.populationMenu.amount * $parent.getKeyboardModifiers())">
 
                                             <tooltipwrapper :vm="$parent" :calcfrom="() => $parent.relocateInfo(profession, $parent.populationMenu.amount * $parent.getKeyboardModifiers())" :ishtml="true">
-                                                Relocate [[ $parent.formatNumber($parent.populationMenu.amount * $parent.getKeyboardModifiers()) ]] [[ $parent.relocationInfo.Profession.Name ]]
+                                                Relocate [[ $parent.formatNumber($parent.populationMenu.amount * $parent.getKeyboardModifiers(), true) ]] [[ $parent.relocationInfo.Profession.Name ]]
                                             </tooltipwrapper>
                                         </button>
                                         <button v-else class="btn btn-primary btn-sm" @click="$parent.clearRelocation()">

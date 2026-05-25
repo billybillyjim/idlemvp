@@ -50,7 +50,7 @@ const gamevm = Vue.createApp({
                 Control: false,
             },
             basePopulationGrowthChance: 0.0025,
-            baseChildLaborProductionBoost:0.5,
+            baseChildLaborProductionBoost:0.15,
             civilizationName: "",
             currentMenu: "Main",
             menus: ["Main", "Population", "Stockpiles", "Buildings", "Technology", "Government", "Laws", "Modifiers", "Log", "Charts", "Settings"],
@@ -443,10 +443,14 @@ const gamevm = Vue.createApp({
         this.Mori.initialize(this);
         this.endTickCurrencyValues = JSON.parse(JSON.stringify(this.currencydata));
         this.beginTickCurrencyValues = JSON.parse(JSON.stringify(this.currencydata));
+
         for (let tech of this.technologies) {
             this.techDict[tech.Name] = tech;
             if ((location.hostname === "localhost" || location.hostname === "127.0.0.1") && this.testMode) {
                 // tech.Unlock(this);
+            }
+            if(tech.Name == 'Numbers'){
+                tech.Unlock(this);
             }
         }
         this.generateReservedNames();
@@ -2539,7 +2543,7 @@ const gamevm = Vue.createApp({
             const [additiveModifiers, multModifiers] = this.getProductionModifiers(producer.Name);
             let childLaborProductionBoost = 0;
             if(this.getPopulation() > 0){
-                childLaborProductionBoost = this.baseChildLaborProductionBoost * (this.getChildPopulation() / this.getPopulation());
+                childLaborProductionBoost = this.baseChildLaborProductionBoost * producer.ChildHelperCount;
             }
             const allKeys = new Set([
                 ...Object.keys(producer.Produces),
@@ -2680,6 +2684,9 @@ const gamevm = Vue.createApp({
             }
             return output;
         },
+        getChildLaborProductionBoost(){
+            return this.baseChildLaborProductionBoost;
+        },
         tryAssign(prof, amount = 1) {
             if (isNaN(amount)) {
                 return false;
@@ -2709,6 +2716,10 @@ const gamevm = Vue.createApp({
             if (isNaN(amount)) {
                 return '';
             }
+            if(!this.hasNumbers()){
+                return `You can assign children to help with this profession. It's not totally clear how much that helps, but at least they aren't useless.`;
+            }
+            return '';
         },
         tryUnassign(prof, amount = 1) {
             if (isNaN(amount)) {
@@ -2735,6 +2746,10 @@ const gamevm = Vue.createApp({
             if (isNaN(amount)) {
                 return '';
             }
+            if(!this.hasNumbers()){
+                return `You can unassign children to free them up to help elsewhere.`;
+            }
+            return '';
         },
         canAssign(prof){
             return this.getAvailableChildren() > 0;
