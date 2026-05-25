@@ -18,6 +18,24 @@ export default [
             vm.updateTutorialStage(2);
         },
     },
+        {
+        Name: "Child Labor",
+        Description: "Little Joey can't just sit around all day. What can we do to make him useful?",
+        Cost: { "Food": 0 },
+        Requirements: {Technologies: ["Stone Tools"] },
+        Progress: 0,
+        Visible: false,
+        Complexity: 1,
+        isLocked: true,
+        demandModifiers: {
+            Global: {},
+            PerCapita: {}
+        },
+        Unlock(vm) {
+            vm.logit("In the before times, children went to school. But until our society can manage itself, we should probably get all the help we can.");
+            this.isLocked = false;
+        },
+    },
     {
         Name: "Spears",
         Description: "Now that we have sharp stone tools, we should develop something to hurt others with it.",

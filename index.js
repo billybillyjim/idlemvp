@@ -169,6 +169,7 @@ const gamevm = Vue.createApp({
                     Unlocked: true,
                     Visible: true,
                     Mortal: true,
+                    ChildHelperCount:0,
                     Description:"Unemployed people gather most of their own food, but they are generally more productive if you assign them a job."
                 },
                 {
@@ -176,11 +177,12 @@ const gamevm = Vue.createApp({
                     Count: 3,
                     Cost: {},
                     Produces: {},
-                    BaseDemand: { Food: 0.15, Water:0.1 },
+                    BaseDemand: { Food: 0.1, Water:0.1 },
                     ModifiedDemand: {},
                     Unlocked: true,
                     Visible: true,
                     Mortal: false,
+                    ChildHelperCount:0,
                     Description:"Infants require a small amount of food and produce no labor. They turn into children at the age of 1."
                 },
                 {
@@ -188,11 +190,13 @@ const gamevm = Vue.createApp({
                     Count: 14,
                     Cost: {},
                     Produces: {},
-                    BaseDemand: { Food: 1.05, Water:0.2 },
+                    BaseDemand: { Food: 0.75, Water:0.2 },
                     ModifiedDemand: {},
                     Unlocked: true,
                     Visible: true,
                     Mortal: false,
+                    Assigned:0,
+                    ChildHelperCount:0,
                     Description:"Children provide a production boost to every adult profession. They turn into unemployed workers at the age of 15."
                 },
                 {
@@ -208,6 +212,7 @@ const gamevm = Vue.createApp({
                     Unlocked: true,
                     Visible: true,
                     Mortal: true,
+                    ChildHelperCount:0,
                     Description:"Farmers are the lifeblood of the early civilization. They produce food and grain, which can be turned into food later."
                 },
                 // {Name:'Test', Count:0, Cost:{}, Produces:{}, Unlocked:true, Visible:true,},
@@ -1971,12 +1976,23 @@ const gamevm = Vue.createApp({
             let population = this.getEffectivePopulation();
             for (let tech of this.technologies) {
                 if (tech.isLocked == false) {
-                    for (let [good, mod] of Object.entries(tech.demandModifiers.Global)) {
-                        this.modifyDemand(good, mod, "From " + tech.Name);
+                    try{
+                        for (let [good, mod] of Object.entries(tech.demandModifiers.Global)) {
+                            this.modifyDemand(good, mod, "From " + tech.Name);
+                        }
                     }
-                    for (let [good, mod] of Object.entries(tech.demandModifiers.PerCapita)) {
-                        this.modifyDemand(good, mod * population, "Per Capita from " + tech.Name);
+                    catch(e){
+                        console.error("Error processing global demand modifier for technology " + tech.Name, e);
                     }
+                    try{
+                        for (let [good, mod] of Object.entries(tech.demandModifiers.PerCapita)) {
+                            this.modifyDemand(good, mod * population, "Per Capita from " + tech.Name);
+                        }
+                    }
+                    catch(e){
+                        console.error("Error processing per capita demand modifier for technology " + tech.Name, e);
+                    }
+
                     for (let [profName, goods] of Object.entries(tech.demandModifiers)) {
                         if (profName == 'Global' || profName == 'PerCapita') {
                             continue;
@@ -2664,6 +2680,68 @@ const gamevm = Vue.createApp({
             }
             return output;
         },
+        tryAssign(prof, amount = 1) {
+            if (isNaN(amount)) {
+                return false;
+            }
+            let maxPossible = Math.min(amount, this.getAvailableChildren());
+            console.log("Trying to assign", amount, "children to", prof.Name, "Max possible:", maxPossible);
+            if (maxPossible > 0) {
+                return this.assignChildren(prof, maxPossible);
+            }
+            return 0;
+        },
+        assignChildren(prof, amount = 1) {
+            if (isNaN(amount)) {
+                return false;
+            }
+            console.log("Trying to assign", amount, "children to", prof.Name);
+            let maxPossible = Math.min(amount, this.getAvailableChildren());
+
+            prof.ChildHelperCount += maxPossible;
+            let children = this.professions.find(x => x.Name == 'Child');
+
+            children.Assigned += maxPossible;
+            return maxPossible;
+
+        },
+        assignInfo(prof, amount = 1) {
+            if (isNaN(amount)) {
+                return '';
+            }
+        },
+        tryUnassign(prof, amount = 1) {
+            if (isNaN(amount)) {
+                return false;
+            }
+            let maxPossible = Math.min(amount, prof.ChildHelperCount);
+            if (maxPossible > 0) {
+                return this.unassignChildren(prof, maxPossible);
+            }
+            return 0;
+        },
+        unassignChildren(prof, amount = 1) {
+            if (isNaN(amount)) {
+                return false;
+            }
+            let maxPossible = Math.min(amount, prof.ChildHelperCount);
+            prof.ChildHelperCount -= maxPossible;
+            let children = this.professions.find(x => x.Name == 'Child');
+            children.Assigned -= maxPossible;
+            return maxPossible;
+
+        },
+        unassignInfo(prof, amount = 1) {
+            if (isNaN(amount)) {
+                return '';
+            }
+        },
+        canAssign(prof){
+            return this.getAvailableChildren() > 0;
+        },
+        canUnassign(prof) {
+            return prof.ChildHelperCount > 0;
+        },
         hireByName(name) {
             let prof = this.professions.find(x => x.Name == name);
             if (prof) {
@@ -2925,6 +3003,11 @@ const gamevm = Vue.createApp({
         },
         getAvailableWorkers() {
             return this.professions.find(x => x.Name == 'Unemployed').Count;
+        },
+        getAvailableChildren() {
+            let children = this.professions.find(x => x.Name == 'Child');
+
+            return children.Count - (children.Assigned ?? 0);
         },
         /**
          * Pay but only if you can afford it. If you can't afford it, the function returns 0.

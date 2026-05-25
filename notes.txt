@@ -162,3 +162,12 @@ What is left to make this an actual game/MVP:
         - Unlock content 1x1x1
         - Name civ -> hire farmer -> focus tech -> build hut
             maybe start with enough wood to build a hut
+
+
+Notes may 2026:
+1. With the added tutorial things are starting to look better, but the real issue now is that kids take 15 years to grow, so you have a huge gap between growth and actual people.
+    possible fixes:
+    - Reduce adulthood even further. This kinda works but even 12 years is a long time or even 8 years, and any shorter defeats the point of the realism
+    - Some kind of kid management mechanic. This is promising but also adds just another thing to build and balance.
+    - Remove infant/child entirely, track in the background as a production malus or something, idk. This probably is the easiest solution but less interesting to me.
+    

@@ -89,6 +89,9 @@ export default {
             <div v-else>
                 Our people can grow.
             </div>
+            <div>
+                [[$parent.professions.find(x => x.Name == 'Child').Assigned]].
+            </div>
         </div>
         <div class="table-responsive">
             <table class="table table-striped align-middle" style="min-width: 100%;">
@@ -105,7 +108,7 @@ export default {
                 <tbody>
                     <template v-for="profession in $parent.getVisibleProfessions()">
                         <tr :style="profession == 'Unlocked' ? '' : 'locked-item'">
-                            <td>
+                            <td style="height: 96px;">
                                 <tooltipwrapper :vm="$parent" :text="profession.Description">
                                     [[profession.Name]]
                                 </tooltipwrapper>
@@ -121,16 +124,23 @@ export default {
                                 </template>
                                 <template v-else>
                                     <tooltipwrapper :vm="$parent" :calcfrom="() => $parent.formatNumber(profession.Count)">
-                                        <div style="display:flex;">
-                                            <div style="position:relative; white-space: nowrap;">
-                                                <div v-for="n, index in profession.Count" style="position:absolute;top:-16px;" :style="'left:' + (((index + 1) * (100 / (profession.Count + 1))) - 16) + 'px'">
+                                        <div>
+                                            <div style="position:relative; white-space: nowrap;top:-20px;">
+                                                <div v-for="n, index in profession.Count" style="position:absolute;" :style="'left:' + (((index + 1) * (100 / (profession.Count + 1))) - 16) + 'px'">
                                                     <img src="icons/guy.png" width="32" height="32">
                                                 </div>
                                             </div>
-                                            <div style="position:relative; white-space: nowrap;top:18px;left:-10px;" v-if="$parent.missingProfessionCounts[profession.Name]">
+                                            <div style="position:relative; white-space: nowrap;top:15px;left:-10px;" v-if="$parent.missingProfessionCounts[profession.Name]">
                                                 +
                                                 <div v-for="n, index in $parent.missingProfessionCounts[profession.Name]" style="position:absolute;top:-8px;opacity:0.5;"
                                                     :style="'left:' + (((index + 1) * (100 / (1 + $parent.missingProfessionCounts[profession.Name]))) - 6) + 'px'">
+                                                    <img src="icons/guy.png" width="32" height="32">
+                                                </div>
+                                            </div>
+                                            <div style="position:relative; white-space: nowrap;top:20px;left:-10px;" v-if="profession.ChildHelperCount > 0">
+                                                +
+                                                <div v-for="n, index in profession.ChildHelperCount" style="position:absolute;top:-8px;"
+                                                    :style="'left:' + (((index + 1) * (100 / (1 + profession.ChildHelperCount))) - 6) + 'px'">
                                                     <img src="icons/guy.png" width="32" height="32">
                                                 </div>
                                             </div>
@@ -179,6 +189,20 @@ export default {
                                             Fire [[ $parent.formatNumber($parent.populationMenu.amount * $parent.getKeyboardModifiers()) ]]
                                         </tooltipwrapper>
                                     </button>
+                                    <template v-if="$parent.hasTechnology('Child Labor')">
+                                        <button class="btn btn-primary btn-sm" :style="$parent.canAssign(profession) == false ? 'opacity:0.65' : ''"
+                                            @click="$parent.tryAssign(profession, $parent.populationMenu.amount * $parent.getKeyboardModifiers())">
+                                            <tooltipwrapper :vm="$parent" :calcfrom="() => $parent.assignInfo(profession, $parent.populationMenu.amount * $parent.getKeyboardModifiers())" :ishtml="true">
+                                                Assign [[ $parent.formatNumber($parent.populationMenu.amount * $parent.getKeyboardModifiers()) ]] [[$parent.toProperPluralize('Child', $parent.populationMenu.amount * $parent.getKeyboardModifiers())]]
+                                            </tooltipwrapper>
+                                        </button>
+                                        <button class="btn btn-primary btn-sm" :style="$parent.canUnassign(profession) == false ? 'opacity:0.65' : ''"
+                                            @click="$parent.tryUnassign(profession, $parent.populationMenu.amount * $parent.getKeyboardModifiers())">
+                                            <tooltipwrapper :vm="$parent" :calcfrom="() => $parent.unassignInfo(profession, $parent.populationMenu.amount * $parent.getKeyboardModifiers())" :ishtml="true">
+                                                Unassign [[ $parent.formatNumber($parent.populationMenu.amount * $parent.getKeyboardModifiers()) ]] [[$parent.toProperPluralize('Child', $parent.populationMenu.amount * $parent.getKeyboardModifiers())]]
+                                            </tooltipwrapper>
+                                        </button>
+                                    </template>
                                     <template v-if="$parent.hasTechnology('Stone Tools')">
                                         <button v-if="!$parent.relocationInfo.IsRelocating" class="btn btn-primary btn-sm" :style="$parent.canRelocate(profession) == false ? 'opacity:0.65' : ''"
                                             @click="$parent.setRelocationPrimary(profession, $parent.populationMenu.amount * $parent.getKeyboardModifiers())">
