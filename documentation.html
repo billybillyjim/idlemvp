@@ -46,7 +46,7 @@ if food production is less than food consumption and there are more than 5 unemp
                     <div class="mx-3">It's just a simple parser I wrote in Javascript. The main goal is to be as forgiving and accepting as possible. As much as possible syntax errors should be clear as to what word caused the error and what kinds of words the parser was expecting.</div>
 
                     <div class="my-3">
-                        <h3>Basic Syntax</h3>
+                        <h3 id="basic-syntax">Basic Syntax <img src="./icons/copy.png" alt="Copy Link" style="cursor: pointer; height: 24px; width: 24px;" @click="copyHeaderLink('basic-syntax')"></h3>
                         <div class="mx-2">
                             Every Mori command consists of some kind of identification or some kind of action, followed by a period.
                             The goal is to closely mimic actual human speech so that it is easy to figure out and easy to use.
@@ -54,15 +54,15 @@ if food production is less than food consumption and there are more than 5 unemp
                         </div>
                     </div>
                     <div class="my-3">
-                        <h3>Keywords and Tokens</h3>
+                        <h3 id="keywords-and-tokens">Keywords and Tokens <img src="./icons/copy.png" alt="Copy Link" style="cursor: pointer; height: 24px; width: 24px;" @click="copyHeaderLink('keywords-and-tokens')"></h3>
                         <div class="mx-2">
                             Here's a summary of the tokens that are currently allowed by Mori and what they do:
 
                             <div class="mt-3">
-                                <h4>Skipped Tokens</h4>
+                                <h4 id="skipped-tokens">Skipped Tokens <img src="./icons/copy.png" alt="Copy Link" style="cursor: pointer; height: 24px; width: 24px;" @click="copyHeaderLink('skipped-tokens')"></h4>
                                 <div class="px-4">
-                                    <div class="my-2">Mori will ignore any commas, tabs, newlines, and the indefinite article "a". You can add these for readability and clarity. For example, the following two commands are identical. </div>
-                                    <pre class="documentation-code-block">SKIP: , \t \n (a )</pre>
+                                    <div class="my-2">Mori will ignore any commas, tabs, newlines, and the indefinite article "a". Also the phrase "children to" and "child to". That will make sense later in the documentation if you are confused. You can add these for readability and clarity. For example, the following two commands are identical. </div>
+                                    <pre class="documentation-code-block">SKIP: , \t \n (a ) (?:children|child) to </pre>
                                     <pre class="documentation-code-block">//These are identical to the parser.
     if there are any farmers, hire a lumberack.
 if there are any farmers hire lumberjack.</pre>
@@ -70,7 +70,7 @@ if there are any farmers hire lumberjack.</pre>
 
                             </div>
                             <div class="mt-3">
-                                <h4>Numbers</h4>
+                                <h4 id="numbers">Numbers <img src="./icons/copy.png" alt="Copy Link" style="cursor: pointer; height: 24px; width: 24px;" @click="copyHeaderLink('numbers')"></h4>
                                 <div class="px-4">
                                     <div class="my-2">Mori uses Javascript floats for numbers, but requires integers, since the period marks the end of a command. For example, you can't hire 3.15 farmers. </div>
                                     <pre class="documentation-code-block">NUMBER: /^\d+/ (Any digit numbers)</pre>
@@ -80,7 +80,7 @@ INVALID: x is 7.5.</pre>
                                 </div>
                             </div>
                             <div class="mt-3">
-                                <h4>Text Numbers</h4>
+                                <h4 id="text-numbers">Text Numbers <img src="./icons/copy.png" alt="Copy Link" style="cursor: pointer; height: 24px; width: 24px;" @click="copyHeaderLink('text-numbers')"></h4>
                                 <div class="px-4">
                                     <div class="my-2">Mori can also understand textual numbers. A pre-processing step converts any text numbers into numbers. For example, the following two equations are identical.</div>
                                     <pre class="documentation-code-block">TEXT NUMBER: Any word number below 999 Quadrillion, as well as the word "no" to mean 0.</pre>
@@ -96,7 +96,7 @@ if there are no farmers, print 'true'.</pre>
                                 </div>
                             </div>
                             <div class="mt-3">
-                                <h4>Comparators</h4>
+                                <h4 id="comparators">Comparators <img src="./icons/copy.png" alt="Copy Link" style="cursor: pointer; height: 24px; width: 24px;" @click="copyHeaderLink('comparators')"></h4>
                                 <div class="px-4">
                                     <div class="my-2">Mori allows for a number of different comparator keywords, as well as some mixing and matching.</div>
                                     <pre class="documentation-code-block">COMPARATOR: ((?:is|are)* *(?:greater|more|less|fewer|equal) *(?:than)* *(?:or equal )* *(?:to|with)*)
@@ -111,7 +111,7 @@ print nine is the same as seven.
                                 </div>
                     </div>
                     <div class="mt-3">
-                        <h4>Special Comparators</h4>
+                        <h4 id="special-comparators">Special Comparators <img src="./icons/copy.png" alt="Copy Link" style="cursor: pointer; height: 24px; width: 24px;" @click="copyHeaderLink('special-comparators')"></h4>
                         <div class="px-4">
                             <div class="my-2">Mori allows for a few special comparators when you want to use more natural English in your commands. These are the MORE and LESS tokens.</div>
                             <pre class="documentation-code-block">MORE: more
@@ -126,7 +126,7 @@ If there is less food production than food consumption print 'we not okay'.
                         </div>
                     </div>
                     <div class="mt-3">
-                        <h4>Than</h4>
+                        <h4 id="than">Than <img src="./icons/copy.png" alt="Copy Link" style="cursor: pointer; height: 24px; width: 24px;" @click="copyHeaderLink('than')"></h4>
                         <div class="px-4">
                             <div class="my-2">You can use the than keyword when comparing with more or less or fewer comparators, but Mori understands without them too if you wanna make it sound weird.</div>
                             <pre class="documentation-code-block">//These two give the exact same output.
@@ -140,7 +140,7 @@ If there is less food production food consumption print 'we not okay'.
                         </div>
                     </div>
 <div class="mt-3">
-                    <h4>And And Or</h4>
+                    <h4 id="and-and-or">And And Or <img src="./icons/copy.png" alt="Copy Link" style="cursor: pointer; height: 24px; width: 24px;" @click="copyHeaderLink('and-and-or')"></h4>
                     <div class="px-4">
                         <div class="my-2">Mori allows for And and Or operations.</div>
                         <pre class="documentation-code-block">//Only prints if both are true.
@@ -149,7 +149,7 @@ If food is greater than 10 and food production is equal to 7 then print "ok" oth
                     </div>
                 </div>
                 <div class="mt-3">
-                    <h4>Not</h4>
+                    <h4 id="not">Not <img src="./icons/copy.png" alt="Copy Link" style="cursor: pointer; height: 24px; width: 24px;" @click="copyHeaderLink('not')"></h4>
                     <div class="px-4">
                         <div class="my-2">Mori is supposed to handle Nots but I changed things and at the time of writing this Not does not do anything.</div>
                         <pre class="documentation-code-block">//Not is parsed but it will not change things (yet).
@@ -158,7 +158,7 @@ If food is not greater than 7 print "uh oh".
                     </div>
                 </div>
                 <div class="mt-3">
-                    <h4>Xor</h4>
+                    <h4 id="xor">Xor <img src="./icons/copy.png" alt="Copy Link" style="cursor: pointer; height: 24px; width: 24px;" @click="copyHeaderLink('xor')"></h4>
                     <div class="px-4">
                         <div class="my-2">Mori is supposed to handle Xors but I changed things and at the time of writing this Xor does not do anything.</div>
                         <pre class="documentation-code-block">//Xor is parsed but it will not change things (yet).
@@ -167,7 +167,7 @@ If food is greater than 7 xor there are fewer than 7 farmers print "uh oh".
                     </div>
                 </div>
 <div class="mt-3">
-                    <h4>Assignment</h4>
+                    <h4 id="assignment">Assignment <img src="./icons/copy.png" alt="Copy Link" style="cursor: pointer; height: 24px; width: 24px;" @click="copyHeaderLink('assignment')"></h4>
                     <div class="px-4">
                         <div class="my-2">You can assign a value to a variable in a few ways.</div>
                         <pre class="documentation-code-block">ASSIGN: is = are
@@ -181,7 +181,7 @@ print x + y + zs.
                     </div>
                 </div>
 <div class="mt-3">
-                    <h4>Printing</h4>
+                    <h4 id="printing">Printing <img src="./icons/copy.png" alt="Copy Link" style="cursor: pointer; height: 24px; width: 24px;" @click="copyHeaderLink('printing')"></h4>
                     <div class="px-4">
                         <div class="my-2">Print statements can output either a number, variable, or any given string.</div>
                         <pre class="documentation-code-block">
@@ -196,7 +196,7 @@ print '7'.
                     </div>
                 </div>
 <div class="mt-3">
-                    <h4>Arithmetic</h4>
+                    <h4 id="arithmetic">Arithmetic <img src="./icons/copy.png" alt="Copy Link" style="cursor: pointer; height: 24px; width: 24px;" @click="copyHeaderLink('arithmetic')"></h4>
                     <div class="px-4">
                         <div class="my-2">Mori supports addition, multiplication, subtraction, division and modulus operators.</div>
                         <pre class="documentation-code-block">w is 7 % 4.
@@ -214,7 +214,7 @@ print z.
                     </div>
                 </div>
 <div class="mt-3">
-                    <h4>Parentheses</h4>
+                    <h4 id="parentheses">Parentheses <img src="./icons/copy.png" alt="Copy Link" style="cursor: pointer; height: 24px; width: 24px;" @click="copyHeaderLink('parentheses')"></h4>
                     <div class="px-4">
                         <div class="my-2">Mori can see parentheses, but as of right now they will only break the parser.</div>
                         <pre class="documentation-code-block">w is (7 % 4).//Syntax error.
@@ -222,7 +222,7 @@ print z.
                     </div>
                 </div>
 <div class="mt-3">
-                    <h4>Conditionals</h4>
+                    <h4 id="conditionals">Conditionals <img src="./icons/copy.png" alt="Copy Link" style="cursor: pointer; height: 24px; width: 24px;" @click="copyHeaderLink('conditionals')"></h4>
                     <div class="px-4">
                         <div class="my-2">A conditional in Mori can start with either if or when, else, otherwise, or until, depending on where in the command it is.</div>
                         <pre class="documentation-code-block">If there are 0 lumberjacks, hire a lumberjack.
@@ -234,13 +234,13 @@ Hire lumberjacks until there are 10. //Hires one lumberjack per game tick until 
                     </div>
                 </div>
                 <div class="mt-3">
-                    <h4>None</h4>
+                    <h4 id="none">None <img src="./icons/copy.png" alt="Copy Link" style="cursor: pointer; height: 24px; width: 24px;" @click="copyHeaderLink('none')"></h4>
                     <div class="px-4">
                         <div class="my-2">None operator currently isn't implemented and probably need to get the axe.</div>
                     </div>
                 </div>
                 <div class="mt-3">
-                    <h4>There Are</h4>
+                    <h4 id="there-are">There Are <img src="./icons/copy.png" alt="Copy Link" style="cursor: pointer; height: 24px; width: 24px;" @click="copyHeaderLink('there-are')"></h4>
                     <div class="px-4">
                         <div class="my-2">You can use there are in a conditional to compare two values in a way that is more idomatic in english.</div>
                         <pre class="documentation-code-block">//These are the same code.
@@ -256,9 +256,9 @@ If lumberjacks > 0 print 'We have lumberjacks'.
                     <div class="my-3">
                        <h2>Actions</h2>
                        <div class="mx-2">
-                            As of the time of writing this, the only actions Mori can perform are to hire, relocate and fire workers, and to build buildings. I'd like to add more.
+                            As of the time of writing this, the only actions Mori can perform are to hire, relocate and fire workers, assign and unassign children helpers, and to build buildings.
                         
-                            <h3 class="mt-2">Hire</h3>
+                            <h3 id="action-hire" class="mt-2">Hire <img src="./icons/copy.png" alt="Copy Link" style="cursor: pointer; height: 24px; width: 24px;" @click="copyHeaderLink('action-hire')"></h3>
                             <div>
                                 <div class="mx-2">You can hire a profession using the <pre style="display:inline;">hire</pre> keyword. Here are some examples:</div>
                                 <hr>
@@ -275,11 +275,14 @@ If lumberjacks > 0 print 'We have lumberjacks'.
                                 <hr>
                                 <div class="px-3 m-3">
                                     <pre class="documentation-code-block">Hire farmers until there are 10.</pre>
-                                    <div>This will hire farmers every game tick until the condition after the <pre style="display:inline;">until</pre> keyword is false.</div>
+                                    <div>This will hire farmers every game tick until the condition after the <pre style="display:inline;">until</pre> keyword is false. 
+                                    With no antecedent following the number 10, Mori will assume that you are still talking about farmers. If the command you've constructed
+                                includes two possibilities, Mori might throw an error. I say might because it does support no antecedent in the Assign section below, where it always
+                            assumes that the antecedent is children.</div>
                                 </div>
                             </div>
 
-                            <h3 class="mt-2">Fire</h3>
+                            <h3 id="action-fire" class="mt-2">Fire <img src="./icons/copy.png" alt="Copy Link" style="cursor: pointer; height: 24px; width: 24px;" @click="copyHeaderLink('action-fire')"></h3>
                             <div>
                                 <div class="mx-2">You can fire a profession using the <pre style="display:inline;">fire</pre> keyword. Here are some examples:</div>
                                 <hr>
@@ -302,7 +305,7 @@ If lumberjacks > 0 print 'We have lumberjacks'.
                                 </div>
                             </div>
 
-                            <h3 class="mt-2">Relocate</h3>
+                            <h3 id="action-relocate" class="mt-2">Relocate <img src="./icons/copy.png" alt="Copy Link" style="cursor: pointer; height: 24px; width: 24px;" @click="copyHeaderLink('action-relocate')"></h3>
                             <div>
                                 <div class="mx-2">You can relocate a profession using 
                                     the <pre style="display:inline;">relocate</pre> keyword 
@@ -319,7 +322,34 @@ If lumberjacks > 0 print 'We have lumberjacks'.
                                 </div>
                             </div>
 
-                            <h3 class="mt-2">Build</h3>
+                            <h3 id="action-assign" class="mt-2">Assign <img src="./icons/copy.png" alt="Copy Link" style="cursor: pointer; height: 24px; width: 24px;" @click="copyHeaderLink('action-assign')"></h3>
+                            <div>
+                                <div class="mx-2">You can assign children to help a profession using the <pre style="display:inline;">assign</pre> keyword. You can optionally
+                                    add "children to" to make it more like an english sentence, but the parser will actually drop those tokens because it makes it easier to evaluate correctly,
+                                    since it follows the same shape as the other actions without it. Here are some examples:</div>
+                                <hr>
+                                
+                                <div class="px-3 m-3">
+                                    <pre class="documentation-code-block">Assign 3 farmers.</pre>
+                                    <div>This will assign 3 children to help farmers every game tick. If there are no children available, nothing will happen.</div>
+                                </div>
+                                <hr>
+                                <div class="px-3 m-3">
+                                    <pre class="documentation-code-block">If farmers > 15, then assign 1 child to them.</pre>
+                                    <div>This will assign a child to help a farmer if there are 16 or more farmers. Mori will ignore commas, indefinite articles, and some unnecessary words like 'then' in the example above. 
+                                        The word "them" will be parsed as a reference incorrectly as a relocation target, since the syntax fits for that, but it will go unused. This is probably fine.
+                                    </div>
+                                </div>
+                                <hr>
+                                <div class="px-3 m-3">
+                                    <pre class="documentation-code-block">Assign children to farmers until there are 10.</pre>
+                                    <div>This will assign children to help farmers every game tick until the condition after the <pre style="display:inline;">until</pre> keyword is false.
+                                    The antecedent is assumed to be children when it is not specified and the assign or unassign actions are used. For other actions, the antecedent
+                                is assumed to be the first identity in the sentence.</div>
+                                </div>
+                            </div>
+
+                            <h3 id="action-build" class="mt-2">Build <img src="./icons/copy.png" alt="Copy Link" style="cursor: pointer; height: 24px; width: 24px;" @click="copyHeaderLink('action-build')"></h3>
                             <div>
                                 <div class="mx-2">You can build a new building using the <pre style="display:inline;">build</pre> keyword. Here are some examples:</div>
                                 <hr>
@@ -338,7 +368,7 @@ If Available Housing is 0, then build a hut.</pre>
                                 </div>
                             </div>
 
-                            <h3 class="mt-2">Demolish</h3>
+                            <h3 id="action-demolish" class="mt-2">Demolish <img src="./icons/copy.png" alt="Copy Link" style="cursor: pointer; height: 24px; width: 24px;" @click="copyHeaderLink('action-demolish')"></h3>
                             <div>
                                 <div class="mx-2">You can demolish a building using the <pre style="display:inline;">demolish</pre> keyword. Here are some examples:</div>
                                 <hr>
@@ -353,19 +383,19 @@ If Available Housing is 0, then build a hut.</pre>
                         </div>
                     </div>
                     <div>
-                        <h4>Reserved Currencies:</h4>
+                        <h4 id="reserved-currencies">Reserved Currencies: <img src="./icons/copy.png" alt="Copy Link" style="cursor: pointer; height: 24px; width: 24px;" @click="copyHeaderLink('reserved-currencies')"></h4>
                         <div class="mx-3"  v-for="reservedKeyword in currencyReservedNames">
                             [[reservedKeyword]]
                         </div>
                     </div>
                     <div>
-                        <h4>Reserved Professions:</h4>
+                        <h4 id="reserved-professions">Reserved Professions: <img src="./icons/copy.png" alt="Copy Link" style="cursor: pointer; height: 24px; width: 24px;" @click="copyHeaderLink('reserved-professions')"></h4>
                         <div class="mx-3"  v-for="reservedKeyword in professionReservedNames">
                             [[reservedKeyword]]
                         </div>
                     </div>
                     <div>
-                        <h4>Reserved Buildings:</h4>
+                        <h4 id="reserved-buildings">Reserved Buildings: <img src="./icons/copy.png" alt="Copy Link" style="cursor: pointer; height: 24px; width: 24px;" @click="copyHeaderLink('reserved-buildings')"></h4>
                         <div class="mx-3" v-for="reservedKeyword in buildingReservedNames">
                             [[reservedKeyword]]
                         </div>
@@ -376,6 +406,7 @@ If Available Housing is 0, then build a hut.</pre>
     <script src="./vue.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/lz-string@1.4.4/libs/lz-string.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+    
     <script src="./index.js" type="module"></script>
 </body>
 

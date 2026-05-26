@@ -3487,6 +3487,9 @@ const gamevm = Vue.createApp({
                 }
             }
         },
+        copyHeaderLink(headerId) {
+            navigator.clipboard.writeText(window.location.href.split('#')[0] + '#' + headerId);   
+        },
         formatNumber(n, isInteger = false) {
             if (this.hasNumbers() == false) {
                 return this.getRelativeNumber(n);
