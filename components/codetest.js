@@ -362,6 +362,17 @@ print ninety nine thousand nine hundred ninety nine = 99999.
                     }
                 },
                 {
+                    mori:'If food is not greater than 10 and 5 is equal to 7 then print "ok" otherwise print "Nope".',
+                    previousState:{
+
+                    },
+                    postState:{
+                        printOutputs:[
+                            'Line 1: Nope'
+                        ]
+                    }
+                },
+                {
                     mori:'If food is greater than 10 then print "ok" otherwise print "Nope".',
                     previousState:{
                         currencydata:{
@@ -1138,6 +1149,7 @@ print ninety nine thousand nine hundred ninety nine = 99999.
         }
     },
     mounted: function () {
+  
         // this.runTests();
         let asts = [];
         for(let v of this.validMori){
