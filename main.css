@@ -4,6 +4,16 @@ body {
   color: #e0e0e0;            /* Light gray text */
 }
 
+
+h1[id],
+h2[id],
+h3[id],
+h4[id],
+h5[id],
+h6[id] {
+  scroll-margin-top: 5rem;
+}
+
 /* Navbar */
 .navbar {
   background-color: #1f1f1f !important;
