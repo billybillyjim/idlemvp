@@ -52,7 +52,7 @@ const gamevm = Vue.createApp({
             basePopulationGrowthChance: 0.0025,
             baseChildLaborProductionBoost:0.15,
             civilizationName: "",
-            currentMenu: "Laws",
+            currentMenu: "Main",
             menus: ["Main", "Population", "Stockpiles", "Buildings", "Technology", "Government", "Laws", "Modifiers", "Log", "Charts", "Settings"],
             currentDate: new Date(2000, 0, 1),
             populationMenu: {
@@ -2717,7 +2717,17 @@ const gamevm = Vue.createApp({
             if(!this.hasNumbers()){
                 return `You can assign children to help with this profession. It's not totally clear how much that helps, but at least they aren't useless.`;
             }
-            return '';
+            let modified = this.relativeChildProductionChangeToString(prof, amount);
+
+            if (this.hasNumbers() == false) {
+                return modified;
+            }
+
+            if (1 == amount) {
+                return `Assigning ${amount} child to ${prof.Count == 1 ? 'our only ' : 'our'} ${this.toProperPluralize(prof.Name, prof.Count)} will result in:${modified}`;
+            }
+            return `Assigning ${amount} (${1} available) children to ${this.toProperPluralize(prof.Name, 1)} will result in:${modified}`;
+
         },
         tryUnassign(prof, amount = 1) {
             if (isNaN(amount)) {
@@ -2747,7 +2757,17 @@ const gamevm = Vue.createApp({
             if(!this.hasNumbers()){
                 return `You can unassign children to free them up to help elsewhere.`;
             }
-            return '';
+            let modified = this.relativeChildProductionChangeToString(prof, -amount);
+
+            if (this.hasNumbers() == false) {
+                return modified;
+            }
+
+            if (1 == amount) {
+                return `Unassigning ${amount} child from ${prof.Count == 1 ? 'our only ' : 'our'} ${this.toProperPluralize(prof.Name, prof.Count)} will result in:${modified}`;
+            }
+            return `Unassigning ${amount} (${1} available) children from ${this.toProperPluralize(prof.Name, 1)} will result in:${modified}`;
+
         },
         canAssign(prof){
             return this.getAvailableChildren() > 0;
@@ -3172,6 +3192,81 @@ const gamevm = Vue.createApp({
             return Object.entries(cost)
                 .map(([key, value]) => `<img class="image-icon" src="${this.currencydata[key].Icon}" /> ${this.formatNumber(value * amount)}`)
                 .join(', ');
+        },
+        relativeChildProductionChangeToString(profession, producedOrAmount = 1, amount = 1) {
+            if (typeof producedOrAmount == 'number') {
+                amount = producedOrAmount;
+            }
+            if (this.hasNumbers() == false) {
+                return "If we had a better way of keeping track of how many things there are, we could know more about what doing this would do.";
+            }
+
+            const keys = new Set();
+            const currentProduction = {};
+
+            for (const [k, v] of (this.getActualProduction(profession) || [])) {
+                currentProduction[k] = v;
+                keys.add(k);
+            }
+
+            const row = (current, op, change, result, reason, extraClass = '') =>
+                `<tr class="${extraClass}"><td></td><td style="text-align:left">${reason}</td><td>${current}</td><td>${op}</td><td>${change}</td><td>=</td><td>${result}</td></tr>`;
+
+            const sectionHeader = (label, initialValue) =>
+                `<tr style="text-align:left;font-weight:bold;vertical-align:bottom"><td colspan="6">${label}</td><td style="text-align:right">${initialValue}</td></tr>`;
+
+            let tableRows = [];
+            tableRows.push(`<table style="text-align:right">`);
+
+            let currentChildHelpers = profession.ChildHelperCount ?? 0;
+            let newChildHelpers = currentChildHelpers + amount;
+            let currentBoostMultiplier = 1 + (this.baseChildLaborProductionBoost * currentChildHelpers);
+            let newBoostMultiplier = 1 + (this.baseChildLaborProductionBoost * newChildHelpers);
+            let boostMultiplierChange = newBoostMultiplier - currentBoostMultiplier;
+            let boostRatio = currentBoostMultiplier == 0 ? 1 : (newBoostMultiplier / currentBoostMultiplier);
+
+            tableRows.push(`<tr style="border-top:solid 1px #555;border-bottom:solid 1px #888;background-color:#222"><td colspan="7" style="text-align:left;padding:4px">Child Labor Production Boost</td></tr>`);
+            tableRows.push(row(this.formatNumber(currentBoostMultiplier) + 'x', '', this.formatNumber(boostMultiplierChange) + 'x', this.formatNumber(newBoostMultiplier) + 'x', `${newChildHelpers} ${this.toProperPluralize('child', newChildHelpers)}`));
+            
+            for (const key of keys) {
+                const icon = `<img class="image-icon" src="${this.currencydata[key]?.Icon || ''}" />`;
+
+                let currentVal = this.currencyDailyChange[key] || 0;
+                let sectionsToAdd = [];
+
+                const prodDelta = (currentProduction[key] || 0) * (boostRatio - 1);
+                const prodDeltaChangeAbs = Math.abs(prodDelta);
+
+                const prodDeltaPot = this.currencyPotentialChange[key] || 0;
+                const prodDeltaReal = this.currencyDailyChange[key] || 0;
+
+                currentVal += prodDelta;
+
+                let prodDeltaNewOutputDescription = 'Will Produce';
+
+                if (prodDeltaPot > 0 && prodDeltaReal == 0 && prodDeltaChangeAbs > 0) {
+                    prodDeltaNewOutputDescription += ' (Capped)';
+                }
+
+                if (prodDeltaChangeAbs != 0) {
+                    sectionsToAdd.push(row('', this.getSignOfValue(prodDelta), this.formatNumber(prodDeltaChangeAbs), this.formatNumber(currentVal), prodDeltaNewOutputDescription));
+                }
+
+                tableRows.push(sectionHeader(`${icon} <span style="vertical-align:middle">Current ${key}</span>`.trim(), this.formatNumber(this.currencyDailyChange[key] || 0)));
+                for (let section of sectionsToAdd) {
+                    tableRows.push(section);
+                }
+
+                const netSpan = `<span style="${currentVal < 0 ? 'color:red' : ''}">${this.formatNumber(currentVal)}</span>`;
+
+                tableRows.push(
+                    `<tr class="net" style="border-top:solid 1px #555;border-bottom:solid 1px #888;background-color:#222"><td>${icon}</td><td colspan="4" style="text-align:left">New ${key}</td><td>=</td><td>${netSpan}</td></tr>`
+                );
+            }
+
+            tableRows.push(`</table>`);
+            return tableRows.join('');
+
         },
         relativeProductionChangeToString(profession, produced, amount = 1) {
             if (!produced) {
