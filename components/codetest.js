@@ -373,6 +373,22 @@ print ninety nine thousand nine hundred ninety nine = 99999.
                     }
                 },
                 {
+                    mori:'If food is not greater than 10 then print "ok" otherwise print "Nope".',
+                    previousState:{
+                        currencydata:{
+                            Food:10
+                        }
+                    },
+                    postState:{
+                        printOutputs:[
+                            'Line 1: ok'
+                        ],
+                        currencydata:{
+                            Food:10
+                        }
+                    }
+                },
+                {
                     mori:'If food is greater than 10 then print "ok" otherwise print "Nope".',
                     previousState:{
                         currencydata:{
@@ -449,6 +465,21 @@ print ninety nine thousand nine hundred ninety nine = 99999.
                         printOutputs:[
                             'Line 1: nope'
                         ],
+                    }
+                },
+                {
+                    mori:"If there are more than 7 farmers, hire a farmer otherwise print 'nope'.",
+                    previousState:{
+                        professions:{
+                            Farmer:8,
+                            Unemployed:1
+                        }
+                    },
+                    postState:{
+                        professions:{
+                            Farmer:9,
+                            Unemployed:0
+                        }
                     }
                 },
                 {
@@ -717,6 +748,7 @@ print ninety nine thousand nine hundred ninety nine = 99999.
                 "print 2 more than 1.",
                 "print 2 is more than 1.",
                 "print 2 are more than 1.",
+                "print 1 is not more than 2.",
                 "print 2 is more than or equal to 2.",
                 "print 2 are more than or equal to 2.",
                 "print 2 is more than or equal with 2.",
@@ -724,6 +756,7 @@ print ninety nine thousand nine hundred ninety nine = 99999.
                 "print 1 less than 2.",
                 "print 1 is less than 2.",
                 "print 1 are less than 2.",
+                "print 2 is not less than 1.",
                 "print 1 is less than or equal to 1.",
                 "print 1 are less than or equal to 1.",
                 "print 1 is less than or equal with 1.",
@@ -1251,7 +1284,7 @@ print ninety nine thousand nine hundred ninety nine = 99999.
                 //console.log(test);
                 this.$parent.runCode(test);
                 if(this.$parent.consoleOutputs[0] != 'Line 1: true'){
-                    console.error("Failed to evaluate truth for test", this.$parent.consoleOutputs[0]);
+                    console.error("Failed to evaluate truth for test", this.$parent.consoleOutputs[0], test);
                 }
             }
 
@@ -1286,18 +1319,21 @@ print ninety nine thousand nine hundred ninety nine = 99999.
                     if(this.$parent.currencydata[currency].Amount != count){
                         anyError = true;
                         console.error("Failed to reach currency value for ", currency, count, 'actual: ', this.$parent.currencydata[currency].Amount);
+                        console.error(test);
                     }
                 }
                 for(let [prof, count] of Object.entries(test.postState.professions || [])){
                     if(this.$parent.professions.find(x => x.Name == prof).Count != count){
                         anyError = true;
                         console.error("Failed to reach expected profession value for ", prof, count, " actual: ", this.$parent.professions.find(x => x.Name == prof).Count);
+                        console.error(test);
                     }
                 }
                 for(let [prof, count] of Object.entries(test.postState.childHelpers || [])){
                     if(this.$parent.professions.find(x => x.Name == prof).ChildHelperCount != count){
                         anyError = true;
                         console.error("Failed to reach expected child helper profession value for ", prof, count, " actual: ", this.$parent.professions.find(x => x.Name == prof).ChildHelperCount);
+                        console.error(test);
                     }
                 }
 
@@ -1305,6 +1341,7 @@ print ninety nine thousand nine hundred ninety nine = 99999.
                     if(test.postState.unassignedChildCount != this.$parent.professions.find(x => x.Name == 'Child').Count - this.$parent.professions.find(x => x.Name == 'Child').Assigned){
                         anyError = true;
                         console.error("Failed to reach expected unassigned child count for ", test.postState.unassignedChildCount, " actual: ", this.$parent.professions.find(x => x.Name == 'Child').Count - this.$parent.professions.find(x => x.Name == 'Child').Assigned);
+                        console.error(test);
                     }
                 }
                 for(let output of (test.postState.printOutputs || [])){
@@ -1312,7 +1349,7 @@ print ninety nine thousand nine hundred ninety nine = 99999.
                         if(output != actualOutput){
                             anyError = true;
                             console.error("Failed to print correct output for ", index, "\ngiven: " + output + "\nactual: ", actualOutput);
-
+                            console.error(test);
                         }
                     }
                 }
