@@ -205,6 +205,7 @@ print ninety nine thousand nine hundred ninety nine = 99999.
                             Farmer:0,
                         },
                         childCount:10,
+                        unassignedChildCount:10,
                     },
                     postState:{
                         professions:{
@@ -215,6 +216,78 @@ print ninety nine thousand nine hundred ninety nine = 99999.
                             Farmer:7,
                         },
                         unassignedChildCount:3,
+                    }
+                },
+                {
+                    mori:'Assign 7 children to Farmers.',
+                    previousState:{
+                        professions:{
+                            Farmer:5,
+                            Unemployed:0,
+                        },
+                        childHelpers:{
+                            Farmer:0,
+                        },
+                        childCount:10,
+                        unassignedChildCount:10,
+                    },
+                    postState:{
+                        professions:{
+                            Farmer:5,
+                            Unemployed:0
+                        },
+                        childHelpers:{
+                            Farmer:7,
+                        },
+                        unassignedChildCount:3,
+                    }
+                },
+                {
+                    mori:'Assign children to Farmers until there are 10.',
+                    previousState:{
+                        professions:{
+                            Farmer:5,
+                            Unemployed:0,
+                        },
+                        childHelpers:{
+                            Farmer:0,
+                        },
+                        childCount:10,
+                        unassignedChildCount:10,
+                    },
+                    postState:{
+                        professions:{
+                            Farmer:5,
+                            Unemployed:0
+                        },
+                        childHelpers:{
+                            Farmer:1,
+                        },
+                        unassignedChildCount:9,
+                    }
+                },
+                {
+                    mori:'Assign children to Farmers until there are 10.',
+                    previousState:{
+                        professions:{
+                            Farmer:5,
+                            Unemployed:0,
+                        },
+                        childHelpers:{
+                            Farmer:10,
+                        },
+                        childCount:10,
+                        unassignedChildCount:0,
+                    },
+                    postState:{
+                        professions:{
+                            Farmer:5,
+                            Unemployed:0
+                        },
+                        childHelpers:{
+                            Farmer:10,
+                        },
+                        unassignedChildCount:0,
                     }
                 },
                 {
@@ -1186,7 +1259,7 @@ print ninety nine thousand nine hundred ninety nine = 99999.
                     this.$parent.professions.find(x => x.Name == prof).ChildHelperCount = count;
                 }
                 this.$parent.professions.find(x => x.Name == 'Child').Count = test.previousState.childCount || 0;
-                this.$parent.professions.find(x => x.Name == 'Child').Assigned = 0;
+                this.$parent.professions.find(x => x.Name == 'Child').Assigned = this.$parent.professions.find(x => x.Name == 'Child').Count - (test.previousState.unassignedChildCount || 0);
 
                 this.$parent.runCode(test.mori);
                 let anyError = false;
