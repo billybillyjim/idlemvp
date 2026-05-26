@@ -113,7 +113,7 @@ export default {
                 <tbody>
                     <template v-for="profession in $parent.getVisibleProfessions()">
                         <tr :style="profession == 'Unlocked' ? '' : 'locked-item'">
-                            <td style="height: 96px;">
+                            <td :style="$parent.hasNumbers() ? '' : 'height: 96px;'">
                                 <tooltipwrapper :vm="$parent" :text="profession.Description">
                                     [[profession.Name]]
                                 </tooltipwrapper>
