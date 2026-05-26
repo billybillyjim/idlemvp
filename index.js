@@ -3021,6 +3021,10 @@ const gamevm = Vue.createApp({
             let children = this.professions.find(x => x.Name == 'Child');
             return children.Count - (children.Assigned ?? 0);
         },
+        getAssignedChildren() {
+            let children = this.professions.find(x => x.Name == 'Child');
+            return children.Assigned ?? 0;
+        },
         /**
          * Pay but only if you can afford it. If you can't afford it, the function returns 0.
          * 
@@ -3452,6 +3456,9 @@ const gamevm = Vue.createApp({
                 env[pluralize.plural(lowername)] = building.Count;
                 env[pluralize.singular(lowername)] = building.Count;
             }
+            env['unassigned children'] = this.getAvailableChildren();
+            env['assigned children'] = this.getAssignedChildren();
+
             env['current population'] = this.getPopulation();
             env['total population'] = this.getPopulation();
             env['unemployed people'] = this.getAvailableWorkers();
