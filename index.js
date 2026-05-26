@@ -3197,7 +3197,7 @@ const gamevm = Vue.createApp({
                 `<tr class="${extraClass}"><td></td><td style="text-align:left">${reason}</td><td>${current}</td><td>${op}</td><td>${change}</td><td>=</td><td>${result}</td></tr>`;
 
             const sectionHeader = (label, initialValue) =>
-                `<tr style="text-align:left;font-weight:bold;vertical-align:bottom""><td colspan="6">${label}</td><td style="text-align:right">${initialValue}</td></tr>`;
+                `<tr style="text-align:left;font-weight:bold;vertical-align:bottom"><td colspan="6">${label}</td><td style="text-align:right">${initialValue}</td></tr>`;
 
             let tableRows = [];
             tableRows.push(`<table style="text-align:right">`);
