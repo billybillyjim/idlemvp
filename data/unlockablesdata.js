@@ -19,6 +19,10 @@ export default [
                     ChildHelperCount: 0,
                     "BaseDemand": { 'Food': 8, 'Stone': 0.1 },
                     "ModifiedDemand": {},
+                    Description:'',
+                    GetDescription:function(vm){
+                        return this.Description;
+                    }
                 }
             )
             vm.logit("Your food stockpiles have grown enough to support labor outside of farming.");
@@ -47,6 +51,10 @@ export default [
                     BaseDemand: { 'Food': 1.5 },
                     ModifiedDemand: {},
                     RequiredBuilding: 'Mill',
+                    Description:'',
+                    GetDescription:function(vm){
+                        return this.Description;
+                    }
                 }
             )
             vm.logit("Your food stockpiles have grown enough to support labor outside of farming.");
@@ -74,6 +82,10 @@ export default [
                     ChildHelperCount: 0,
                     "BaseDemand": { 'Food': 1.2, 'Rope': 0.1 },
                     "ModifiedDemand": {},
+                    Description:'',
+                    GetDescription:function(vm){
+                        return this.Description;
+                    }
                 }
             )
             vm.logit("The introduction of boats allows for alternative food sources from the sea.");
@@ -101,6 +113,10 @@ export default [
                     ChildHelperCount: 0,
                     "BaseDemand": { 'Food': 1.8, 'Wood': 4 },
                     "ModifiedDemand": {},
+                    Description:'',
+                    GetDescription:function(vm){
+                        return this.Description;
+                    }
                 }
             )
             vm.logit("Better tooling has allowed for some to spend time making better furniture.");
@@ -128,6 +144,10 @@ export default [
                     ChildHelperCount: 0,
                     "BaseDemand": { 'Food': 1.2 },
                     "ModifiedDemand": {},
+                    Description:'',
+                    GetDescription:function(vm){
+                        return this.Description;
+                    }
                 }
             )
             vm.logit("The advent of tanning allows for making furs into clothing.");
@@ -155,6 +175,10 @@ export default [
                     ChildHelperCount: 0,
                     "BaseDemand": { 'Food': 3 },
                     "ModifiedDemand": {},
+                    Description:'',
+                    GetDescription:function(vm){
+                        return this.Description;
+                    }
                 }
             )
             vm.logit("We can coordinate to accomplish even greater tasks.");
@@ -182,6 +206,10 @@ export default [
                     ChildHelperCount: 0,
                     "BaseDemand": { 'Food': 2 },
                     "ModifiedDemand": {},
+                    Description:'',
+                    GetDescription:function(vm){
+                        return this.Description;
+                    }
                 }
             )
             vm.logit("You can further increase food production by irrigating your fields.");
@@ -209,6 +237,10 @@ export default [
                     ChildHelperCount: 0,
                     "BaseDemand": { 'Food': 1.7 },
                     "ModifiedDemand": {},
+                    Description:'',
+                    GetDescription:function(vm){
+                        return this.Description;
+                    }
                 }
             )
             vm.logit("Your nation now produces food, shelter, and wealth. Some of your citizens can start devoting themselves to other tasks.");
@@ -236,6 +268,10 @@ export default [
                     ChildHelperCount: 0,
                     "BaseDemand": { 'Food': 2, 'Stone': 0.1 },
                     "ModifiedDemand": {},
+                    Description:'',
+                    GetDescription:function(vm){
+                        return this.Description;
+                    }
                 }
             )
             vm.logit("We can dig for the shiny rocks now.");
@@ -263,6 +299,10 @@ export default [
                     ChildHelperCount: 0,
                     "BaseDemand": { 'Food': 1.5, 'Ore': 1 },
                     "ModifiedDemand": {},
+                    Description:'',
+                    GetDescription:function(vm){
+                        return this.Description;
+                    }
                 }
             )
             vm.logit("Heat the rocks, they melt.");
@@ -290,6 +330,10 @@ export default [
                     ChildHelperCount: 0,
                     "BaseDemand": { 'Food': 1.5, 'Bronze': 1 },
                     "ModifiedDemand": {},
+                    Description:'',
+                    GetDescription:function(vm){
+                        return this.Description;
+                    }
                 }
             )
             vm.logit("Heat the rocks, they melt.");
@@ -317,6 +361,10 @@ export default [
                     ChildHelperCount: 0,
                     "BaseDemand": { 'Food': 1.5, 'Ore': 5 },
                     "ModifiedDemand": {},
+                    Description:'',
+                    GetDescription:function(vm){
+                        return this.Description;
+                    }
                 }
             )
             vm.logit("Heat the rocks, they melt.");
@@ -344,6 +392,10 @@ export default [
                     ChildHelperCount: 0,
                     "BaseDemand": { 'Food': 1.5, 'Iron': 1 },
                     "ModifiedDemand": {},
+                    Description:'',
+                    GetDescription:function(vm){
+                        return this.Description;
+                    }
                 }
             )
             vm.logit("Heat the gray rocks, they melt.");
@@ -371,6 +423,10 @@ export default [
                     ChildHelperCount: 0,
                     "BaseDemand": { 'Food': 1.1, },
                     "ModifiedDemand": {},
+                    Description:'',
+                    GetDescription:function(vm){
+                        return this.Description;
+                    }
                 }
             )
             vm.logit("Someone can work to find more land for us to settle.");
@@ -399,6 +455,10 @@ export default [
                     ChildHelperCount: 0,
                     "BaseDemand": { 'Food': 1.3 },
                     "ModifiedDemand": {},
+                    Description:'',
+                    GetDescription:function(vm){
+                        return this.Description;
+                    }
                 }
             )
             vm.logit("Someone can make pots for us.");
@@ -427,6 +487,10 @@ export default [
                     ChildHelperCount: 0,
                     "BaseDemand": { 'Food': 1.1, 'Grain': 3 },
                     "ModifiedDemand": {},
+                    Description:'',
+                    GetDescription:function(vm){
+                        return this.Description;
+                    }
                 }
             )
             vm.logit("Someone can grind grain to flour for us.");
@@ -454,6 +518,10 @@ export default [
                     ChildHelperCount: 0,
                     "BaseDemand": { 'Food': 2, 'Wood': 1, 'Stone': 1 },
                     "ModifiedDemand": {},
+                    Description:'',
+                    GetDescription:function(vm){
+                        return this.Description;
+                    }
                 }
             )
             vm.logit("Someone can make houses for us.");
@@ -481,6 +549,10 @@ export default [
                     ChildHelperCount: 0,
                     "BaseDemand": { 'Food': 2 },
                     "ModifiedDemand": {},
+                    Description:'',
+                    GetDescription:function(vm){
+                        return this.Description;
+                    }
                 }
             )
             vm.logit("Someone can run the government offices.");

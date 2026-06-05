@@ -88,7 +88,7 @@
                         </div>
 
                     </li>
-                    <li class="nav-item my-3 col-6" style="color:white" v-if="civNameConfirmed">
+                    <li class="nav-item my-3 col-6" style="color:white" v-if="tutorialStage > 5">
                         Task: [[(goalLevelHints[currentGoalLevel])]]
                     </li>
                     <li class="nav-item my-3 align-right col-3 hide-on-mobile" style="color:white;justify-content: right;" v-if="hasTechnology('Weather')">
@@ -98,7 +98,7 @@
             </div>
         </nav>
 
-        <div class="offcanvas offcanvas-lg sidebar" tabindex="-1" id="appSidebar" aria-labelledby="appSidebarLabel">
+        <div class="offcanvas offcanvas-lg sidebar" tabindex="-1" id="appSidebar" aria-labelledby="appSidebarLabel" v-if="civNameConfirmed">
             <div class="offcanvas-header d-lg-none">
                 <h5 class="offcanvas-title" id="appSidebarLabel">Navigation</h5>
                 <button type="button" class="btn-close" data-bs-dismiss="offcanvas" aria-label="Close"></button>
@@ -137,14 +137,20 @@
         <main class="container-fluid py-5">
             <div class="row">
                 <template v-if="currentMenu == 'Main'">
-                    <h1 class="display-6 mb-4">[[civilizationName]]</h1>
-                    <div v-if="civNameConfirmed == false">
+                    <h1 class="display-6 mb-4"  v-if="civNameConfirmed">[[civilizationName]]</h1>
+                    <div v-else style="position:absolute;left:0px;right:0px;top:80px;">
                         <div>
-                            You finally had enough. You quit your office job and moved into the woods to start anew.
+                            You finally had enough. 
+                            <br/>
+                            <br/>
+                            You quit your office job and moved into the woods to start anew.
+                            <br/>
                             <br/>
                             In all, you number 15 adults, 7 children, and 3 infants.
                             <br/>
+                            <br/>
                             Unfortunately, neither you nor anyone you brought along knows how anything works, so it seems as though you're going to have to start from scratch.
+                            <br/>
                             <br/>
                             That all sounds rather hard, so you all agree you need to name your new civilization first.
                         </div>

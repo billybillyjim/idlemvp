@@ -26,7 +26,7 @@ export default [
         Progress: 0,
         Visible: false,
         Complexity: 1,
-        isLocked: false,
+        isLocked: true,
         demandModifiers: {
             Global: {},
             PerCapita: {}

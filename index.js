@@ -41,7 +41,7 @@ const gamevm = Vue.createApp({
     data: function () {
         return {
             Mori: Mori,
-            Verbose: true,
+            testMode: false,
             gravity: 9.81,
             sunlight: 1,
             isPaused: true,
@@ -92,7 +92,6 @@ const gamevm = Vue.createApp({
                 currencyStockpile: 0,
                 stockpileMaxSize: 100,
                 taxRate: 0.001,
-
             },
             governmentTypes: {
                 Tribal: {
@@ -170,7 +169,10 @@ const gamevm = Vue.createApp({
                     Visible: true,
                     Mortal: true,
                     ChildHelperCount:0,
-                    Description:"Unemployed people gather most of their own food, but they are generally more productive if you assign them a job."
+                    Description:"Unemployed people gather most of their own food, but they are generally more productive if you assign them a job.",
+                    GetDescription:function(vm){
+                        return this.Description;
+                    }
                 },
                 {
                     Name: 'Infant',
@@ -183,7 +185,14 @@ const gamevm = Vue.createApp({
                     Visible: true,
                     Mortal: false,
                     ChildHelperCount:0,
-                    Description:"Infants require a small amount of food and produce no labor. They turn into children at the age of 1."
+                    GetDescription:function(vm){
+                        if(vm.hasNumbers()){
+                            return "Infants require a small amount of food and produce no labor. They turn into children at the age of 1.";
+                        }
+                        else{
+                            return  "Infants require a small amount of food and produce no labor. They turn into children after a while.";
+                        }
+                    }
                 },
                 {
                     Name: 'Child',
@@ -197,7 +206,15 @@ const gamevm = Vue.createApp({
                     Mortal: false,
                     Assigned:0,
                     ChildHelperCount:0,
-                    Description:"Children provide a production boost to every adult profession. They turn into unemployed workers at the age of 15."
+                    Description:"",
+                    GetDescription:function(vm){
+                        if(vm.hasNumbers()){
+                            return "Children provide a production boost to every adult profession. They turn into unemployed workers at the age of 15.";
+                        }
+                        else{
+                            return  "Children provide a production boost to every adult profession. They turn into unemployed workers after a long while.";
+                        }
+                    }
                 },
                 {
                     Name: 'Farmer',
@@ -213,7 +230,10 @@ const gamevm = Vue.createApp({
                     Visible: true,
                     Mortal: true,
                     ChildHelperCount:0,
-                    Description:"Farmers are the lifeblood of the early civilization. They produce food and grain, which can be turned into food later."
+                    Description:"Farmers are the lifeblood of our early civilization. They produce food and grain, which can be turned into food somehow.",
+                    GetDescription:function(vm){
+                        return this.Description;
+                    }
                 },
                 // {Name:'Test', Count:0, Cost:{}, Produces:{}, Unlocked:true, Visible:true,},
 
@@ -276,7 +296,6 @@ const gamevm = Vue.createApp({
             historicalValuesHour: {},
             historicalLeaders:[],
             maxHistory: 1000,
-            testMode: true,
             technologyEnhancedSurvivability: 1,
             monthlyAgeBuckets: [
                 0, 0, 0,
@@ -448,9 +467,6 @@ const gamevm = Vue.createApp({
             this.techDict[tech.Name] = tech;
             if ((location.hostname === "localhost" || location.hostname === "127.0.0.1") && this.testMode) {
                 // tech.Unlock(this);
-            }
-            if(tech.Name == 'Numbers'){
-                tech.Unlock(this);
             }
         }
         this.generateReservedNames();
@@ -636,7 +652,7 @@ const gamevm = Vue.createApp({
         },
         confirmCivName() {
             this.civNameConfirmed = true;
-            this.isPaused = false;
+            
         },
         getPopulationTooltipForTutorial(){
             return 'What are One, a Hand, or Both Hands? Well,  we don\'t have a great way to describe how many things there are. We haven\'t figured that out yet. Surely this all will become a lot clearer once we do.';
@@ -2819,7 +2835,11 @@ const gamevm = Vue.createApp({
 
             profession.Count += maxPossible;
 
-            this.updateTutorialStage(1);
+            if(this.tutorialStage == 0){
+                this.isPaused = false;
+                this.updateTutorialStage(1);
+            }
+            
             if(profession.Name == "Lumberjack"){
                 this.updateTutorialStage(3);
             }
