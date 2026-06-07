@@ -41,7 +41,7 @@ const gamevm = Vue.createApp({
     data: function () {
         return {
             Mori: Mori,
-            testMode: true,
+            testMode: false,
             gravity: 9.81,
             sunlight: 1,
             isPaused: true,
