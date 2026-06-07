@@ -41,10 +41,11 @@ const gamevm = Vue.createApp({
     data: function () {
         return {
             Mori: Mori,
-            testMode: false,
+            testMode: true,
             gravity: 9.81,
             sunlight: 1,
             isPaused: true,
+            pausedTicks:0,
             keyboardModifiers: {
                 Shift: false,
                 Control: false,
@@ -466,8 +467,11 @@ const gamevm = Vue.createApp({
         for (let tech of this.technologies) {
             this.techDict[tech.Name] = tech;
             if ((location.hostname === "localhost" || location.hostname === "127.0.0.1") && this.testMode) {
-                // tech.Unlock(this);
+                tech.Unlock(this);
             }
+        }
+        if(this.testMode){
+            this.tutorialStage = 1000;
         }
         this.generateReservedNames();
     },
@@ -652,7 +656,7 @@ const gamevm = Vue.createApp({
         },
         confirmCivName() {
             this.civNameConfirmed = true;
-            
+            this.isPaused = false;
         },
         getPopulationTooltipForTutorial(){
             return 'What are One, a Hand, or Both Hands? Well,  we don\'t have a great way to describe how many things there are. We haven\'t figured that out yet. Surely this all will become a lot clearer once we do.';
@@ -1209,14 +1213,27 @@ const gamevm = Vue.createApp({
         getWorkRatio() {
             return (this.workingHours / this.hoursInDay);
         },
+        togglePause(){
+            this.isPaused = !this.isPaused;
+        },
         gameTick() {
             if (this.isPaused) {
+                this.pausedTicks +=this.tickspeed / 300;
                 return;
+            }
+            if(this.tickspeed < 300){
+                this.pausedTicks--;
+                if(this.pausedTicks <= 0){
+                    this.setSpeed(300, 1);
+                }
             }
             this.advanceTime();
             this.initializeTickValues();
             this.runAllProcesses();
             this.handlePeriodicTasks();
+            if(this.tutorialStage == 0 && this.civNameConfirmed && this.currentTick > 2){
+                this.isPaused = true;
+            }
         },
         advanceTime() {
             this.currentTick++;
@@ -1396,16 +1413,24 @@ const gamevm = Vue.createApp({
                     Total: this.getPopulation()
                 }],
             ];
+            let minuteWasTicked = false;
+            let hourWasTicked = false;
             for (let pair of pairs) {
                 this.processHistoricalValue(pair[0], pair[1]);
-                if (this.currentTick % 33 == 0) {
+                if (this.currentTick % 180 == 0) {
                     this.processHistoricalValueMinute(pair[0], pair[1]);
-                    this.minuteTick++;
-                    if (this.currentTick % 60 == 0) {
-                        this.processHistoricalValueHour(pair[0], pair[1]);
-                        this.hourTick++;
-                    }
+                    minuteWasTicked = true;
                 }
+                if (this.currentTick % (180 * 60) == 0) {
+                    this.processHistoricalValueHour(pair[0], pair[1]);
+                    hourWasTicked = true;
+                }
+            }
+            if(minuteWasTicked){
+                this.minuteTick++;
+            }
+            if(hourWasTicked){
+                this.hourTick++;
             }
         },
         pushHistoricalValues(store, key, idx, data){
@@ -2104,6 +2129,9 @@ const gamevm = Vue.createApp({
             }
         },
         toProperPluralize(word, number) {
+            if(!word){
+                return '';
+            }
             if (number == 1) {
                 return pluralize.singular(word);
             }

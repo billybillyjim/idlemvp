@@ -22,13 +22,13 @@ export default {
         <h4 class="my-2" v-if="!fulldisplaymode">Technology</h4>
         <div>Current Stockpiled Knowledge: [[$parent.formatNumber($parent.currencydata['Knowledge'].Amount)]]</div>
         <div v-if="$parent.tutorialStage < 2" style="color:orange; font-weight:bold;">
-            <tooltipwrapper :vm="$parent" :text="''">
+            <tooltipwrapper :vm="$parent" :text="'This is useful information from one of your coworkers. He used to work in HR. If you think this is unnecessary, click this text 5 times he will go away and stop bothering you.'"  @click="$parent.incrementTutorialSkip()">
                 As we have spent some time growing, we realize we don't really know how anything works at all.
                 We can start building a combined knowledge of the world, but you need to tell the people
                 where to put that focus. When there is no focus, their knowledge will still accumulate, and apply
                 more quickly to whatever you select.
 
-                Try focusing on Stone Tools or Firemaking. Please. It's cold out here and we are farming with sticks.
+                Try focusing on Stone Tools. Please. It's cold out here and we are farming with sticks.
             </tooltipwrapper>
         </div>
         <div v-if="fulldisplaymode">

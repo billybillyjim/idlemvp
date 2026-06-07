@@ -142,7 +142,7 @@
 </head>
 
 <body>
-	<div style="color:white;">
+	<div style="color:white;position:fixed;z-index:1000;">
 		<div>Legend</div>
 		<div>Green: Has requirements and is a requirement</div>
 		<div>Orange: Has no requirements (Available at start of game.)</div>
@@ -158,6 +158,10 @@
 				<label for="linkSlider">Link distance</label>
 				<input id="linkSlider" type="range" min="40" max="200" step="5" value="100">
 				<span id="linkVal">100</span>
+			</div>
+			<div style="margin-top:6px;">
+				<label for="showArrowMarkersToggle">Show arrow markers</label>
+				<input id="showArrowMarkersToggle" type="checkbox" checked>
 			</div>
 			<div style="margin-top:6px;">
 				<button id="clearHighlightBtn" style="display:none; color:white; background:#333; border:1px solid #666; border-radius:4px; padding:3px 8px; cursor:pointer;">✕ Clear Highlight</button>
@@ -213,7 +217,7 @@
 				for (const source of data.dependsOn) {
 					links.push({ source, target });
 				}
-			}
+			} 
 
 			return { nodes, links };
 		}
@@ -222,7 +226,7 @@
 		const nodeById = new Map(nodes.map(n => [n.id, n]));
 
 		let width = window.innerWidth;
-		let height = window.innerHeight;
+		let height = window.innerHeight + 850;
 
 
 		const nodeRadius = d => {
@@ -232,6 +236,7 @@
 
 		const svg = d3.select("body").append("svg")
 			.attr("width", width)
+			.attr("style", 'top:0px;position:absolute;')
 			.attr("height", height);
 		const zoomTarget = svg.append("g")
 			.classed("zoom-target", true);
@@ -239,7 +244,7 @@
 		// Setup zoom behavior
 		const zoom = d3.zoom()
 			.scaleExtent([0.5, 5])
-			.translateExtent([[-width, -height], [2 * width, 2 * height]])
+			.translateExtent([[-width * 2.5, -height * 2.5], [2.5 * width, 2.5 * height]])
 			.on("zoom", function (event) {
 				zoomTarget.attr("transform", event.transform);
 			});
@@ -280,16 +285,25 @@
 		const simulation = d3.forceSimulation(nodes)
 			.force("link", d3.forceLink(links).id(d => d.id).distance(100))
 			.force("charge", d3.forceManyBody().strength(-600))
-			.force("center", d3.forceCenter(width / 2, height / 2));
+			.force("center", d3.forceCenter(width / 2, 0));
 
 		const link = zoomTarget.append("g")
 			.attr("stroke", "#999")
-			.attr("stroke-opacity", 0.6)
+			.attr("stroke-opacity", 0.0)
 			.selectAll("line")
 			.data(links)
 			.enter().append("line")
 			.attr("class", "link")
 			.attr("marker-end", "url(#arrow)");
+
+		function setArrowMarkersVisible() {
+			if(!showArrowMarkersToggle.checked){
+				hideLinks();
+			}
+			else{
+				showLinks();
+			}
+		}
 
 		const node = zoomTarget.append("g")
 			.attr("stroke", "#fff")
@@ -446,6 +460,7 @@
 			tooltipEl.select('.close').on('click', () => tooltipEl.classed('hidden', true));
 			// highlight dependencies button
 			tooltipEl.select('.hl-deps-btn').on('click', () => applyHighlight(getAncestors(d.id)));
+
 		}
 
 		function hideTooltip() {
@@ -514,6 +529,26 @@
 			if (clearBtn) clearBtn.style.display = "inline-block";
 		}
 
+		function hideLinks(links) {
+			link
+				.style("stroke-opacity", d => {
+					return 0;
+				})
+			defs.style("stroke-opacity", d => {
+					return 0;
+				})
+		}
+
+		function showLinks(links) {
+			link
+				.style("stroke-opacity", d => {
+					return 0.65;
+				})
+			defs.style("stroke-opacity", d => {
+					return 0.65;
+				})
+		}
+
 		function clearHighlight() {
 			highlightedSet = null;
 			node.select("circle")
@@ -531,6 +566,7 @@
 
 		const chargeSlider = document.getElementById('chargeSlider');
 		const linkSlider = document.getElementById('linkSlider');
+		const showArrowMarkersToggle = document.getElementById('showArrowMarkersToggle');
 		const chargeVal = document.getElementById('chargeVal');
 		const linkVal = document.getElementById('linkVal');
 		const techSearchInput = document.getElementById('techSearchInput');
@@ -650,6 +686,9 @@
 			applyLinkDistance(v);
 			reheat();
 		});
+
+		showArrowMarkersToggle.addEventListener('input', setArrowMarkersVisible);
+		showArrowMarkersToggle.addEventListener('change', setArrowMarkersVisible);
 
 		let resizeRaf = null;
 		window.addEventListener("resize", () => {

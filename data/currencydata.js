@@ -210,6 +210,16 @@ export default
             Icon:'./icons/sickle.svg',
             Unlocked:false,
         },
+        'Iron Tools':{
+            Name:'Iron Tools',
+            Value:1,
+            Amount:0,
+            MaxStock:1000,
+            Description:"Iron can be used by our people for many tasks, making everyone more efficient.",
+            Type:'Tool',
+            Icon:'./icons/sickle2.svg',
+            Unlocked:false,
+        },
         Knowledge:{
             Name:'Knowledge',
             Value:1,

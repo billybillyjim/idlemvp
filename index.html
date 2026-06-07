@@ -69,9 +69,9 @@
                 <a class="navbar-brand" href="">Vanitasia</a>
                 <a href="/techgraph.html" v-if="currentMenu == 'Settings'">Tech</a>
 
-                <ul class="navbar-nav w-100 row">
-                    <li class="nav-item my-3 col-1" style="color:white" v-if="hasTechnology('Stone Tools')">
-                        <div style="text-align:center;">
+                <ul class="navbar-nav w-100 row" style="justify-content: space-between;">
+                    <li class="nav-item my-3 col-auto col-sm-3 col-lg-2" style="color:white" v-if="hasTechnology('Stone Tools')">
+                        <div style="text-align:center; min-width:100px;">
                             Population
                         </div>
                         <tooltipwrapper :vm="this" :calcfrom="() => hasNumbers() ? getPopulation() : formatNumber(getPopulation(), true)">
@@ -80,19 +80,33 @@
                             </div>
                         </tooltipwrapper>
                     </li>
-                    <li class="nav-item my-2 col-2" style="color:white;text-align:center;" v-if="testMode">
+                    <li class="nav-item my-2 col-auto hide-on-600" style="color:white;text-align:center;" v-if="hasTechnology('Lunar Calendar')">
                         <div>
-                            <button v-for="n in [1, 2, 5, 200, 300, 900, 2700, 9000]" :key="n" type="button" class="btn btn-outline-light" :class="{ active: tickspeed == 300 / n }" @click="setSpeed(300 / n, n / 300)">
-                                [[n]]
+                            <button v-for="n in [1, 2]" :key="n" type="button" class="btn btn-outline-light" :class="{ active: tickspeed == 300 / n }" @click="setSpeed(300 / n, n / 300)">
+                                [[formatNumber(n, true)]]
                             </button>
+                            <template v-if="hasTechnology('Solar Calendar')">
+                                <button v-for="n in [3, 5]" :key="n" type="button" class="btn btn-outline-light" :class="{ active: tickspeed == 300 / n }" @click="setSpeed(300 / n, n / 300)">
+                                    [[formatNumber(n, true)]]
+                                </button>
+                            </template>
+
+
+                            <button class="btn btn-primary mx-2" @click="togglePause()">
+                                [[isPaused ? 'Resume' : 'Pause']] Time
+                            </button>
+
+                            <div>
+                                Time Nuggets: [[formatNumber(pausedTicks, true)]]
+                            </div>
                         </div>
 
                     </li>
-                    <li class="nav-item my-3 col-6" style="color:white" v-if="tutorialStage > 5">
-                        Task: [[(goalLevelHints[currentGoalLevel])]]
+                    <li class="nav-item my-3 align-right col-auto float-end hide-on-700" style="color:white;justify-content: right;" v-if="hasTechnology('Solar Calendar')">
+                        <span  v-if="settingsMenu.renderDate">[[formatDate(currentDate)]]</span>
                     </li>
-                    <li class="nav-item my-3 align-right col-3 hide-on-mobile" style="color:white;justify-content: right;" v-if="hasTechnology('Weather')">
-                        <span v-if="settingsMenu.renderDate">[[formatDate(currentDate)]]</span> <span v-if="settingsMenu.renderWeather">[[getWeatherForDate(currentDate)]]</span>
+                    <li class="nav-item my-3 align-right col-auto float-end hide-on-1100" style="color:white;justify-content: right;min-width:400px;" v-if="hasTechnology('Weather')">
+                        <span v-if="settingsMenu.renderWeather">[[getWeatherForDate(currentDate)]]</span>
                     </li>
                 </ul>
             </div>
@@ -106,6 +120,30 @@
             <div class="offcanvas-body p-0">
                 <div class="d-flex flex-column p-3 h-100 w-100">
                     <ul class="nav nav-pills flex-column mb-auto">
+                        <li class="nav-item show-on-700 mb-2" style="align-self:center;"  v-if="hasTechnology('Solar Calendar') && settingsMenu.renderDate">
+                            [[formatDate(currentDate)]]
+                        </li>
+                        <li class="nav-item show-on-600 mb-2">
+                            <div style="text-align: center;">
+                            <button v-for="n in [1, 2]" :key="n" type="button" class="btn btn-outline-light" :class="{ active: tickspeed == 300 / n }" @click="setSpeed(300 / n, n / 300)">
+                                [[formatNumber(n, true)]]
+                            </button>
+                            <template v-if="hasTechnology('Solar Calendar')">
+                                <button v-for="n in [3, 5]" :key="n" type="button" class="btn btn-outline-light" :class="{ active: tickspeed == 300 / n }" @click="setSpeed(300 / n, n / 300)">
+                                    [[formatNumber(n, true)]]
+                                </button>
+                            </template>
+
+
+                            <button class="btn btn-primary mx-2" @click="togglePause()">
+                                [[isPaused ? 'Resume' : 'Pause']] Time
+                            </button>
+
+                            <div>
+                                Time Nuggets: [[formatNumber(pausedTicks, true)]]
+                            </div>
+                        </div>
+                        </li>
                         <li class="nav-item" v-for="menu in getAvailableMenus()">
                             <button @click="setMenu(menu)" :class="currentMenu == menu ? 'active' : ''" class="btn-link nav-link ps-2 w-100" style="text-align: left;" data-bs-dismiss="offcanvas"
                                 aria-current="page">[[menu]]
@@ -160,21 +198,20 @@
                         <button class="btn btn-primary m-2" @click="generateRandomCivName()">See a Random Name</button>
                     </div>
                     <template v-if="civNameConfirmed">
-                        <div class="col">
+
                             <population :fulldisplaymode="false"></population>
-                        </div>
-                        <div  class="col">
+
                             <stockpiles :fulldisplaymode="false"></stockpiles>
                         </div>
                         <template v-if="hasTechnology('Firemaking')">
-                            <div class="col">
+
                                 <buildings :fulldisplaymode="false"></buildings>
-                            </div>
+
                         </template>
                         <template v-if="tutorialStage > 0">
-                            <div class="col">
+
                                 <technology :fulldisplaymode="false"></technology>
-                            </div>
+
                         </template>
                         
                         <div class="col-12">
@@ -191,21 +228,21 @@
                     </template>
                 </template>
                 <template v-else-if="currentMenu == 'Population'">
-                    <div class="col">
+                    <div>
                         <h4>The People of [[civilizationName]]</h4>
                         <population :fulldisplaymode="true"></population>
                     </div>
                     
                 </template>
                 <template v-else-if="currentMenu == 'Stockpiles'">
-                    <div class="col">
+                    <div>
                         <h4>The Stockpiles of [[civilizationName]]</h4>
                         <stockpiles :fulldisplaymode="true"></stockpiles>
 
                     </div>
                 </template>
                 <template v-else-if="currentMenu == 'Technology'">
-                    <div class="col">
+                    <div>
                         <h4>The Technologies of [[civilizationName]]</h4>
                         <technology :fulldisplaymode="true"></technology>
                     </div>

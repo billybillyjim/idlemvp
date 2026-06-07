@@ -68,9 +68,15 @@ export default {
         },
         getActionTooltip(profession){
             if(this.currentAction == 'Hire'){
+                if(this.$parent.getAvailableWorkers() == 0){
+                    return "All our workers are currently busy doing other tasks. Any additional workers you attempt to hire will be added to the hiring queue. You will need to Fire or Relocate some to put any to work as " + this.$parent.toProperPluralize(profession?.Name) + '.';
+                }
                 return this.$parent.hireInfo(profession, this.$parent.populationMenu.amount * this.$parent.getKeyboardModifiers());
             }
             else if(this.currentAction == 'Fire'){
+                if(profession.Amount == 0){
+                    return "Nobody is doing this job, so there isn't anyone to fire.";
+                }
                 return this.$parent.fireInfo(profession, this.$parent.populationMenu.amount * this.$parent.getKeyboardModifiers());
             }
             else if(this.currentAction == 'Relocate'){
@@ -89,6 +95,9 @@ export default {
             }
         },
         doAction(profession){
+            if(!profession){
+                return;
+            }
             if(this.currentAction == 'Hire'){
                 this.$parent.tryHire(profession, this.$parent.populationMenu.amount * this.$parent.getKeyboardModifiers());
             }
@@ -97,7 +106,12 @@ export default {
             }
             else if(this.currentAction == 'Relocate'){
                 if(this.$parent.relocationInfo.IsRelocating){
-                    this.$parent.tryRelocate(profession, this.$parent.populationMenu.amount * this.$parent.getKeyboardModifiers());
+                    if(this.$parent.relocationInfo.Profession.Name == profession?.Name){
+                        this.$parent.clearRelocation();
+                    }
+                    else{
+                        this.$parent.tryRelocate(profession, this.$parent.populationMenu.amount * this.$parent.getKeyboardModifiers());
+                    }
                     
                 }
                 else{
@@ -112,7 +126,10 @@ export default {
                 this.$parent.tryUnassign(profession, this.$parent.populationMenu.amount * this.$parent.getKeyboardModifiers());
             }
         },
-        getActionText(){
+        setActionFromDropdown(event){
+            this.setAction(event.target.value);
+        },
+        getActionText(profession){
             let total = this.$parent.populationMenu.amount * this.$parent.getKeyboardModifiers();
             let formattedTotal = this.$parent.formatNumber(total, true);
             if(this.currentAction == 'Hire'){
@@ -125,6 +142,9 @@ export default {
                 if(this.$parent.relocationInfo.IsRelocating){
                     if(!this.$parent.relocationInfo.Profession){
                         return 'Relocate';
+                    }
+                    if(this.$parent.relocationInfo.Profession.Name == profession.Name){
+                        return 'End Relocating';
                     }
                     return 'Relocate ' + formattedTotal + ' ' + this.$parent.toProperPluralize(this.$parent.relocationInfo.Profession?.Name, total);
                     
@@ -181,10 +201,18 @@ export default {
                
             </template>
         </div>
-        <div class="btn-group" v-if="$parent.tutorialStage > 1">
+        <div class="btn-group my-2 float-end hide-on-800" v-if="$parent.tutorialStage > 1">
             <template  v-for="action in getAvailableActions()">
                 <button class="btn btn-outline-primary" :class="action == currentAction ? 'active' : ''" @click="setAction(action)">[[action]]</button>
             </template>
+        </div>
+        <div class="btn-group my-2 float-end show-on-800" v-if="$parent.tutorialStage > 1">
+            <select class="form-select" @change="setActionFromDropdown($event)">
+                <template  v-for="action in getAvailableActions()">
+                    <option class="" :class="action == currentAction ? 'active' : ''" @click="setAction(action)">[[action]]</option>
+                </template>
+            </select>
+            
         </div>
         <div v-if="$parent.testMode">
             <div>
@@ -209,15 +237,15 @@ export default {
             
         </div>
         <div class="m-2">
-            <div v-if="$parent.getNationGrowthIssues()?.length > 0" style="color:red; font-weight:bold;">
-                <tooltipwrapper :vm="$parent" :text="$parent.getNationGrowthIssues().join(' ')">
+            <div v-if="$parent.getNationGrowthIssues()?.length > 0" class="alert-warning" style="font-weight:bold;">
+                <tooltipwrapper :vm="$parent" :text="$parent.getNationGrowthIssues().join('<br/>')" ishtml="true">
                     Our people are stagnating.
                 </tooltipwrapper>
             </div>
             <div v-else>
                 Our people can grow.
             </div>
-            <div>
+            <div v-if="$parent.testMode">
                 [[$parent.professions.find(x => x.Name == 'Child').Assigned]].
             </div>
         </div>
@@ -251,10 +279,16 @@ export default {
                                             ([[ ($parent.formatNumber($parent.missingProfessionCounts[profession.Name], true)) ]])</span>
                                         </tooltipwrapper>
                                          <tooltipwrapper :vm="$parent"
-                                        :text="'The total number of child labor helpers assigned for this profession. Each child helper gives a ' + $parent.getChildLaborProductionBoost() + 'x boost to production, giving a total of ' + ($parent.getChildLaborProductionBoost() * profession.ChildHelperCount) + 'x boost for this profession.'">
-                                        <span v-if="profession.ChildHelperCount > 0" class="ms-2">+
-                                            ([[ ($parent.formatNumber(profession.ChildHelperCount, true)) ]])</span>
-                                    </tooltipwrapper>
+                                            :text="'The total number of child labor helpers assigned for this profession. Each child helper gives a ' + $parent.getChildLaborProductionBoost() + 'x boost to production, giving a total of ' + ($parent.getChildLaborProductionBoost() * profession.ChildHelperCount) + 'x boost for this profession.'">
+                                            <span v-if="profession.ChildHelperCount > 0" class="ms-2">+
+                                                ([[ ($parent.formatNumber(profession.ChildHelperCount, true)) ]])</span>
+                                        </tooltipwrapper>
+
+                                        <tooltipwrapper :vm="$parent"
+                                            :text="'The total number of child labor helpers assigned to any profession. Each child helper gives a ' + $parent.getChildLaborProductionBoost() + 'x boost to production.'">
+                                            <span v-if="profession.Assigned > 0" class="ms-2">-
+                                                 ([[ ($parent.formatNumber(profession.Assigned, true)) ]])</span>
+                                        </tooltipwrapper>
                                 </template>
                                 <template v-else>
                                     
@@ -340,7 +374,7 @@ export default {
                                 <div class="btn-group" role="group" aria-label="Actions">
                                     <button class="btn btn-primary btn-sm" @click="doAction(profession)" :style="canDoAction(profession) == false ? 'opacity:0.65' : ''">
                                         <tooltipwrapper :vm="$parent" :calcfrom="() => getActionTooltip(profession)" :ishtml="true">
-                                           [[getActionText()]]
+                                           [[getActionText(profession)]]
                                         </tooltipwrapper>
                                     </button>
 

@@ -58,7 +58,7 @@ export default [
         Name: "Firemaking",
         Description: "All the best games have firemaking.",
         Cost: { "Food": 10 },
-        Requirements: {Populations:{Farmer:1}},
+        Requirements: { Technologies: ["Stone Tools"] },
         Progress: 0,
         Visible: false,
         Complexity: 1.5,
@@ -119,7 +119,7 @@ export default [
         Requirements: { Technologies:["Pottery"]},
         Progress: 0,
         Visible: false,
-        Complexity: 60,
+        Complexity: 30,
         isLocked: true,
         demandModifiers: {
             Global: {},
@@ -137,7 +137,7 @@ export default [
         Requirements: { Technologies: ["Stone Tools", "Rope"] },
         Progress: 0,
         Visible: false,
-        Complexity: 90,
+        Complexity: 50,
         isLocked: true,
         demandModifiers: {
             Global: {},
@@ -167,6 +167,24 @@ export default [
         },
     },
     {
+        Name: "Flint Knapping",
+        Description: "We can refine tools with sharper edges.",
+        Cost: { "Food": 600 },
+        Requirements: { Technologies: ["Stone Tools"] },
+        Progress: 0,
+        Visible: false,
+        Complexity: 20,
+        isLocked: true,
+        demandModifiers: {
+            Global: {},
+            PerCapita: {"Stone":0.01},
+        },
+        Unlock(vm) {
+            vm.logit("These sharper stone tools will come in handy for all sorts of things.");
+            this.isLocked = false;
+        },
+    },
+    {
         Name: "Numbers",
         Description: "There is a theory that we could write down a symbol for the amount of bullae we would use, instead of using them. We will have to research further.",
         Cost: {},
@@ -188,7 +206,7 @@ export default [
         Name: "Hide Tanning",
         Description: "There's gotta be something we can do with all these animal skins.",
         Cost: { "Food": 200 },
-        Requirements: { Technologies: ["Stone Tools"], Populations:{Farmer:7} },
+        Requirements: { Technologies: ["Stone Tools", "Firemaking"], Populations:{Farmer:7} },
         Progress: 0,
         Visible: false,
         Complexity: 150,
@@ -370,24 +388,6 @@ export default [
         },
     },
     {
-        Name: "Flint Knapping",
-        Description: "We can refine tools with sharper edges.",
-        Cost: { "Food": 600 },
-        Requirements: { Technologies: ["Stone Tools"] },
-        Progress: 0,
-        Visible: false,
-        Complexity: 60,
-        isLocked: true,
-        demandModifiers: {
-            Global: {},
-            PerCapita: {"Stone":0.01},
-        },
-        Unlock(vm) {
-            vm.logit("These sharper stone tools will come in handy for all sorts of things.");
-            this.isLocked = false;
-        },
-    },
-    {
         Name: "Mining",
         Description: "We can use hard metal to dig out rocks.",
         Cost: { "Food": 600 },
@@ -409,7 +409,7 @@ export default [
         Name: "Rope",
         Description: "Some of these plants could be used to tie things together.",
         Cost: { "Food": 100 },
-        Requirements: { Technologies: ["Stone Tools"] },
+        Requirements: { Technologies: ["Flint Knapping"] },
         Progress: 0,
         Visible: false,
         Complexity: 40,
@@ -427,7 +427,7 @@ export default [
         Name: "Flax Processing",
         Description: "Some particular plants seem extra good for making fibers.",
         Cost: { "Food": 900 },
-        Requirements: { Technologies: ["Stone Tools", "Rope"] },
+        Requirements: { Technologies: ["Rope"] },
         Progress: 0,
         Visible: false,
         Complexity: 200,
@@ -682,7 +682,7 @@ export default [
         Requirements: { Technologies: ["Measuring Sticks", "Clay Bullae"] },
         Progress: 0,
         Visible: false,
-        Complexity: 900,
+        Complexity: 300,
         isLocked: true,
         demandModifiers: {
             Global: {},
@@ -697,10 +697,10 @@ export default [
         Name: "Animal Domestication",
         Description: "Watch this cow do cool tricks.",
         Cost: {  },
-        Requirements: { Technologies: [] },
+        Requirements: { Technologies: ["Firemaking"] },
         Progress: 0,
         Visible: false,
-        Complexity: 700,
+        Complexity: 500,
         isLocked: true,
         demandModifiers: {
             Global: {},
@@ -859,7 +859,7 @@ export default [
         Name: "Wax",
         Description: "Get the wax from... bees? Probably?",
         Cost: { "Food": 800 },
-        Requirements: {},
+        Requirements: {Technologies: [ "Animal Domestication" ]},
         Progress: 0,
         Visible: false,
         Complexity: 200,

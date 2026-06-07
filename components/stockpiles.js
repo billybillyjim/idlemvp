@@ -58,7 +58,7 @@ export default {
     },
     delimiters: ['[[', ']]'],
     template: /*html*/`
-    <div class="grid-item">
+    <div class="grid-item col">
 
         <h4 class="my-2" v-if="!fulldisplaymode">Stockpiles</h4>
         <div>
